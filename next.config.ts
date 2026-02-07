@@ -1,14 +1,12 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/personal-path',
-        permanent: true,
-      },
-    ];
+  experimental: {
+    // Enable router cache for faster client-side navigation
+    staleTimes: {
+      dynamic: 30, // Cache dynamic routes for 30 seconds
+      static: 180, // Cache static routes for 3 minutes
+    },
   },
 };
 
