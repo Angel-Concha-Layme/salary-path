@@ -4,6 +4,8 @@ export interface CareerEvent {
   type: CareerEventType;
   date: string;
   rate: number;
+  roleTitle?: string;
+  note?: string;
 }
 
 export interface BonusRule {
