@@ -1,36 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Salary Path
 
-## Getting Started
+Web application for modeling professional salary progression, with authentication, onboarding, employment history management, and versioned APIs.
 
-First, run the development server:
+## Current status
+
+Implemented today:
+- Authentication with Better Auth (email/password, GitHub, and Google).
+- Session management in frontend and backend (cookie and JWT bearer for API).
+- Initial onboarding (`/onboarding`).
+- Companies and salary events module (`/companies`).
+- User profile (`/profile`).
+- Admin users panel (`/admin/users`).
+- REST API at `/api/v1/*` with typed contracts.
+- Turso/libSQL database + Drizzle with migrations in `/drizzle`.
+
+Pending or visual placeholder:
+- `/explore`
+- `/personal-path`
+- `/comparison`
+- `/settings`
+- `/admin/users/[userId]`
+
+## Tech stack
+
+- Next.js 16 (App Router)
+- React 19 + TypeScript
+- Better Auth
+- Drizzle ORM + drizzle-kit
+- Turso/libSQL
+- TanStack Query v4
+- Tailwind CSS + internal UI components
+- Sonner (notifications)
+- Vitest
+
+## Requirements
+
+- Node.js 20+
+- pnpm
+- Accessible Turso database
+
+## Local setup
+
+1. Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Create environment variables:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Complete `.env` with your actual credentials.
 
-## Learn More
+4. Run migrations:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm db:migrate
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Start the app:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+The app runs at [http://localhost:3001](http://localhost:3001).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `pnpm dev`: local environment on port `3001`.
+- `pnpm build`: runs migrations (`prebuild`) and compiles for production.
+- `pnpm start`: starts server in production mode.
+- `pnpm typecheck`: TypeScript validation.
+- `pnpm lint`: project linting.
+- `pnpm test`: unit tests with Vitest.
+- `pnpm db:generate`: generates migrations from schema.
+- `pnpm db:migrate`: applies pending migrations.
+
+## Environment variables
+
+Defined in `.env.example`:
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `BETTER_AUTH_TRUSTED_ORIGINS`
+- `BETTER_AUTH_JWT_ISSUER`
+- `BETTER_AUTH_JWT_AUDIENCE`
+- `BETTER_AUTH_JWT_EXPIRATION`
+- `NEXT_PUBLIC_BETTER_AUTH_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+- `ADMIN_EMAILS`
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+
+## Main routes
+
+Public:
+- `/sign-in`
+- `/explore`
+
+Protected:
+- `/onboarding`
+- `/personal-path`
+- `/companies`
+- `/comparison`
+- `/profile`
+- `/settings`
+
+Admin:
+- `/admin/users`
+- `/admin/users/[userId]`
+
+## API
+
+- Base URL: `/api/v1`
+- Response envelope:
+  - Success: `{ success: true, data: ... }`
+  - Error: `{ success: false, error: { status, code, message, details? } }`
+- Auth API:
+  - Better Auth session cookie.
+  - Or `Authorization: Bearer <jwt>` for external consumers.
+
+Endpoint details: see [`/docs/api-v1.md`](docs/api-v1.md).
+
+## Database and migrations
+
+- Drizzle configuration: `drizzle.config.ts`
+- Schema: `app/lib/db/schema/*`
+- SQL migrations: `/drizzle`
+- `pnpm build` already runs `pnpm db:migrate` automatically before compiling.
+
+## Documentation
+
+- General index: [`/docs/README.md`](docs/README.md)
+- Previous README audit: [`/docs/readme-audit.md`](docs/readme-audit.md)
+- Original README copy (template): [`/docs/readme-original-next-template.md`](docs/readme-original-next-template.md)
+- Project status review: [`/docs/project-review.md`](docs/project-review.md)
