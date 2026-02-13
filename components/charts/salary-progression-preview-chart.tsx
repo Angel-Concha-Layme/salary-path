@@ -1,16 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  ColorType,
-  createChart,
-  CrosshairMode,
-  LineSeries,
-  LineType,
-  type LineData,
-  type MouseEventParams,
-  type Time,
-} from "lightweight-charts"
+import { useMemo, useState } from "react"
+
+import { SalaryHistoryChartWrapper } from "@/components/charts/salary-history-chart-wrapper"
 
 interface SalaryProgressionPreviewChartProps {
   locale: string
@@ -40,17 +32,14 @@ interface SalaryEvent {
   company: CompanyKey
 }
 
-interface SalaryEventMetadata {
-  type: SalaryEventType
-  increase: number
+interface PreviewPointMeta {
   company: CompanyKey
+  eventType: SalaryEventType
+  increase: number
   salary: number
 }
 
-interface ChartPointState {
-  visible: boolean
-  x: number
-  y: number
+interface PreviewPointState {
   date: string
   salary: number
   company: CompanyKey
@@ -97,61 +86,7 @@ const SALARY_EVENTS: SalaryEvent[] = [
   { time: "2026-02-02", value: 84500, type: "promotion", company: "atlas" },
 ]
 
-const SALARY_DATA: LineData<Time>[] = SALARY_EVENTS.map((event) => ({
-  time: event.time,
-  value: event.value,
-}))
-
-const COMPANY_SEGMENT_DATA = COMPANY_ORDER.reduce<Record<CompanyKey, LineData<Time>[]>>(
-  (acc, company) => {
-    acc[company] = SALARY_EVENTS
-      .filter((event) => event.company === company)
-      .map((event) => ({
-        time: event.time,
-        value: event.value,
-      }))
-    return acc
-  },
-  {
-    northbyte: [],
-    terracloud: [],
-    pulseai: [],
-    atlas: [],
-  }
-)
-
-const EVENT_METADATA_BY_TIME = new Map<string, SalaryEventMetadata>(
-  SALARY_EVENTS.map((event, index) => {
-    const previousValue = SALARY_EVENTS[index - 1]?.value ?? event.value
-    return [
-      event.time,
-      {
-        type: event.type,
-        increase: event.value - previousValue,
-        company: event.company,
-        salary: event.value,
-      },
-    ]
-  })
-)
-
-function toDateKey(time: Time | undefined): string {
-  if (!time) {
-    return ""
-  }
-
-  if (typeof time === "string") {
-    return time
-  }
-
-  if (typeof time === "number") {
-    return new Date(time * 1000).toISOString().slice(0, 10)
-  }
-
-  const month = time.month.toString().padStart(2, "0")
-  const day = time.day.toString().padStart(2, "0")
-  return `${time.year}-${month}-${day}`
-}
+const LAST_EVENT = SALARY_EVENTS[SALARY_EVENTS.length - 1]
 
 function toDateLabel(dateKey: string, locale: string) {
   if (!dateKey) {
@@ -179,10 +114,6 @@ function formatIncrease(currencyFormatter: Intl.NumberFormat, value: number) {
   return `${sign}${currencyFormatter.format(Math.abs(value))}`
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max)
-}
-
 function getEventTypeLabel(locale: string, type: SalaryEventType) {
   const isSpanish = locale.startsWith("es")
 
@@ -205,8 +136,49 @@ function getEventTypeLabel(locale: string, type: SalaryEventType) {
   return "Promotion"
 }
 
-const LAST_EVENT = SALARY_EVENTS[SALARY_EVENTS.length - 1]
-const LAST_METADATA = EVENT_METADATA_BY_TIME.get(LAST_EVENT.time)
+function buildPreviewSeries() {
+  const basePoints = SALARY_EVENTS.map((event, index) => {
+    const previousValue = SALARY_EVENTS[index - 1]?.value ?? event.value
+
+    return {
+      time: event.time,
+      value: event.value,
+      meta: {
+        company: event.company,
+        eventType: event.type,
+        increase: event.value - previousValue,
+        salary: event.value,
+      } satisfies PreviewPointMeta,
+    }
+  })
+
+  return [
+    {
+      id: "base",
+      label: "base",
+      color: "rgba(71, 85, 105, 0.45)",
+      lineType: "steps" as const,
+      lineWidth: 1 as const,
+      pointMarkersVisible: false,
+      showInLegend: false,
+      showInTooltip: false,
+      points: basePoints,
+    },
+    ...COMPANY_ORDER.map((company) => {
+      const points = basePoints.filter((point) => point.meta.company === company)
+
+      return {
+        id: company,
+        label: COMPANY_STYLES[company].label,
+        color: COMPANY_STYLES[company].color,
+        lineType: "steps" as const,
+        lineWidth: 3 as const,
+        pointMarkersVisible: true,
+        points,
+      }
+    }),
+  ]
+}
 
 export function SalaryProgressionPreviewChart({
   locale,
@@ -217,18 +189,6 @@ export function SalaryProgressionPreviewChart({
   periodLabel,
   dateLabel,
 }: SalaryProgressionPreviewChartProps) {
-  const chartContainerRef = useRef<HTMLDivElement | null>(null)
-  const [point, setPoint] = useState<ChartPointState>({
-    visible: false,
-    x: 12,
-    y: 12,
-    date: LAST_EVENT.time,
-    salary: LAST_EVENT.value,
-    company: LAST_METADATA?.company ?? "atlas",
-    eventType: LAST_METADATA?.type ?? "annual",
-    increase: LAST_METADATA?.increase ?? 0,
-  })
-
   const currencyFormatter = useMemo(
     () =>
       new Intl.NumberFormat(locale, {
@@ -239,153 +199,35 @@ export function SalaryProgressionPreviewChart({
     [locale]
   )
 
-  useEffect(() => {
-    const container = chartContainerRef.current
+  const initialPoint = useMemo<PreviewPointState>(() => {
+    const previous = SALARY_EVENTS[SALARY_EVENTS.length - 2]
+    const increase = LAST_EVENT
+      ? LAST_EVENT.value - (previous?.value ?? LAST_EVENT.value)
+      : 0
 
-    if (!container) {
-      return
-    }
-
-    const chart = createChart(container, {
-      width: container.clientWidth,
-      height: container.clientHeight,
-      layout: {
-        background: {
-          type: ColorType.Solid,
-          color: "transparent",
-        },
-        textColor: "#334155",
-        fontFamily: "var(--font-geist-sans), sans-serif",
-        fontSize: 11,
-      },
-      grid: {
-        vertLines: {
-          color: "rgba(148, 163, 184, 0.24)",
-        },
-        horzLines: {
-          color: "rgba(148, 163, 184, 0.2)",
-        },
-      },
-      rightPriceScale: {
-        borderColor: "rgba(148, 163, 184, 0.28)",
-      },
-      leftPriceScale: {
-        visible: false,
-      },
-      timeScale: {
-        borderColor: "rgba(148, 163, 184, 0.28)",
-      },
-      crosshair: {
-        mode: CrosshairMode.Magnet,
-        vertLine: {
-          color: "rgba(51, 65, 85, 0.35)",
-          width: 1,
-          labelVisible: false,
-        },
-        horzLine: {
-          color: "rgba(51, 65, 85, 0.35)",
-          width: 1,
-          labelVisible: false,
-        },
-      },
-      handleScroll: false,
-      handleScale: false,
-    })
-
-    const baseSeries = chart.addSeries(LineSeries, {
-      color: "rgba(71, 85, 105, 0.45)",
-      lineWidth: 1,
-      lineType: LineType.WithSteps,
-      priceLineVisible: false,
-      pointMarkersVisible: false,
-      crosshairMarkerVisible: false,
-      lastValueVisible: false,
-    })
-    baseSeries.setData(SALARY_DATA)
-
-    COMPANY_ORDER.forEach((company) => {
-      const companyColor = COMPANY_STYLES[company].color
-      const companySeries = chart.addSeries(LineSeries, {
-        color: companyColor,
-        lineWidth: 3,
-        lineType: LineType.WithSteps,
-        priceLineVisible: false,
-        crosshairMarkerBackgroundColor: companyColor,
-        crosshairMarkerBorderColor: companyColor,
-        pointMarkersVisible: true,
-        pointMarkersRadius: 3,
-        lastValueVisible: false,
-      })
-      companySeries.setData(COMPANY_SEGMENT_DATA[company])
-    })
-
-    chart.timeScale().fitContent()
-
-    const handleCrosshairMove = (event: MouseEventParams<Time>) => {
-      const dateKey = toDateKey(event.time)
-      const metadata = EVENT_METADATA_BY_TIME.get(dateKey)
-
-      if (
-        !event.point ||
-        !dateKey ||
-        !metadata ||
-        event.point.x < 0 ||
-        event.point.y < 0 ||
-        event.point.x > container.clientWidth ||
-        event.point.y > container.clientHeight
-      ) {
-        setPoint((current) => ({ ...current, visible: false }))
-        return
-      }
-
-      setPoint({
-        visible: true,
-        x: clamp(event.point.x + 12, 8, container.clientWidth - 230),
-        y: clamp(event.point.y + 12, 8, container.clientHeight - 104),
-        date: dateKey,
-        salary: metadata.salary,
-        company: metadata.company,
-        eventType: metadata.type,
-        increase: metadata.increase,
-      })
-    }
-
-    chart.subscribeCrosshairMove(handleCrosshairMove)
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-
-      if (!entry) {
-        return
-      }
-
-      chart.applyOptions({
-        width: Math.max(100, Math.floor(entry.contentRect.width)),
-        height: Math.max(180, Math.floor(entry.contentRect.height)),
-      })
-    })
-
-    observer.observe(container)
-
-    return () => {
-      observer.disconnect()
-      chart.unsubscribeCrosshairMove(handleCrosshairMove)
-      chart.remove()
+    return {
+      date: LAST_EVENT?.time ?? "",
+      salary: LAST_EVENT?.value ?? 0,
+      company: LAST_EVENT?.company ?? "atlas",
+      eventType: LAST_EVENT?.type ?? "annual",
+      increase,
     }
   }, [])
 
-  const formattedDate = toDateLabel(point.date, locale)
-  const salaryValue = currencyFormatter.format(point.salary)
-  const increaseValue = formatIncrease(currencyFormatter, point.increase)
-  const eventType = getEventTypeLabel(locale, point.eventType)
-  const activeCompany = COMPANY_STYLES[point.company]
+  const [activePoint, setActivePoint] = useState<PreviewPointState>(initialPoint)
+
+  const salaryValue = currencyFormatter.format(activePoint.salary)
+  const increaseValue = formatIncrease(currencyFormatter, activePoint.increase)
+  const eventType = getEventTypeLabel(locale, activePoint.eventType)
+  const activeCompany = COMPANY_STYLES[activePoint.company]
+  const chartSeries = useMemo(() => buildPreviewSeries(), [])
 
   return (
     <div className="relative mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3">
       <div className="mb-2 flex items-center justify-between gap-2 text-[11px] text-slate-500">
         <span className="font-medium uppercase tracking-[0.14em]">{periodLabel}</span>
         <span className="rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 shadow-sm">
-          {dateLabel}: {formattedDate}
+          {dateLabel}: {toDateLabel(activePoint.date, locale)}
         </span>
       </div>
 
@@ -422,22 +264,57 @@ export function SalaryProgressionPreviewChart({
         ))}
       </div>
 
-      <div ref={chartContainerRef} className="h-[220px] w-full xl:h-[240px]" />
+      <SalaryHistoryChartWrapper<PreviewPointMeta>
+        view="rate"
+        series={chartSeries}
+        height={230}
+        className="!border-slate-200 !bg-transparent !p-0"
+        formatters={{
+          date: (dateKey) => toDateLabel(dateKey, locale),
+          value: (value) => currencyFormatter.format(value),
+        }}
+        onTooltipChange={(payload) => {
+          const item = payload?.items[0]
 
-      {point.visible ? (
-        <div
-          className="pointer-events-none absolute z-20 min-w-[220px] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs text-slate-700 shadow-lg backdrop-blur"
-          style={{ left: point.x, top: point.y }}
-        >
-          <p className="font-semibold text-slate-900">
-            {dateLabel}: {formattedDate}
-          </p>
-          <p>{salaryLabel}: {salaryValue}</p>
-          <p>{companyLabel}: {activeCompany.label}</p>
-          <p>{eventTypeLabel}: {eventType}</p>
-          <p>{increaseLabel}: {increaseValue}</p>
-        </div>
-      ) : null}
+          if (!item || item.meta.company === undefined) {
+            return
+          }
+
+          setActivePoint((current) => ({
+            date: payload?.dateKey ?? current.date,
+            salary: item.value,
+            company: item.meta.company,
+            eventType: item.meta.eventType,
+            increase: item.meta.increase,
+          }))
+        }}
+        tooltip={{
+          className: "!border-slate-200 !bg-white/95 !text-slate-700",
+          render: (payload) => {
+            const item = payload.items[0]
+
+            if (!item) {
+              return null
+            }
+
+            return (
+              <div className="space-y-1">
+                <p className="font-semibold text-slate-900">
+                  {dateLabel}: {payload.formattedDate}
+                </p>
+                <p>{salaryLabel}: {currencyFormatter.format(item.value)}</p>
+                <p>{companyLabel}: {COMPANY_STYLES[item.meta.company].label}</p>
+                <p>{eventTypeLabel}: {getEventTypeLabel(locale, item.meta.eventType)}</p>
+                <p>{increaseLabel}: {formatIncrease(currencyFormatter, item.meta.increase)}</p>
+              </div>
+            )
+          },
+        }}
+      />
+
+      <p className="mt-3 text-xs text-slate-600">
+        {eventTypeLabel}: <span className="font-medium text-slate-700">{eventType}</span>
+      </p>
     </div>
   )
 }

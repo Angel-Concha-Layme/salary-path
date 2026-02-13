@@ -14,16 +14,16 @@ interface LanguageSwitcherProps {
 const LOCALES: AppLocale[] = ["es", "en"]
 const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
 
+function setLocaleCookie(nextLocale: AppLocale) {
+  document.cookie = `${encodeURIComponent(getLocaleCookieName())}=${encodeURIComponent(nextLocale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; samesite=lax`
+}
+
 export function LanguageSwitcher({
   compact = false,
   small = false,
 }: LanguageSwitcherProps) {
   const { locale, dictionary, setLocale } = useDictionary()
   const [isChanging, setIsChanging] = useState(false)
-
-  function setLocaleCookie(nextLocale: AppLocale) {
-    document.cookie = `${encodeURIComponent(getLocaleCookieName())}=${encodeURIComponent(nextLocale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; samesite=lax`
-  }
 
   function changeLocale(nextLocale: AppLocale) {
     if (nextLocale === locale || isChanging) {

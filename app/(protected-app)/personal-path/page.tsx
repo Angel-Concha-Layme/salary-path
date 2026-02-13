@@ -1,11 +1,5 @@
-import { RoutePlaceholder } from "@/components/layout/route-placeholder"
+import { PersonalPathWorkspace } from "@/components/personal-path/personal-path-workspace"
 
 export default function PersonalPathPage() {
-  return (
-    <RoutePlaceholder
-      routeKey="personalPath"
-      access="protected"
-      protectedRoute
-    />
-  )
+  return <PersonalPathWorkspace />
 }
