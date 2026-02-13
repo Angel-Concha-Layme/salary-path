@@ -45,7 +45,7 @@ export function AdminUsersPanel() {
   const { dictionary } = useDictionary()
   const usersQuery = useAdminUsersQuery({ limit: 50 })
 
-  if (usersQuery.isPending) {
+  if (usersQuery.isLoading) {
     return <StateCard title={dictionary.navigation.adminUsers} message={dictionary.common.loading} />
   }
 

@@ -295,7 +295,7 @@ export function CompaniesWorkspace() {
   }
 
   function renderCompaniesContent() {
-    if (companiesQuery.isPending) {
+    if (companiesQuery.isLoading) {
       return <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
     }
 
@@ -357,7 +357,7 @@ export function CompaniesWorkspace() {
       return <p className="text-sm text-muted-foreground">{dictionary.companies.empty.noCompanySelected}</p>
     }
 
-    if (companyEventsQuery.isPending) {
+    if (companyEventsQuery.isLoading) {
       return <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
     }
 
@@ -412,7 +412,7 @@ export function CompaniesWorkspace() {
       return <p className="text-sm text-muted-foreground">{dictionary.companies.empty.details}</p>
     }
 
-    if (selectedEventId && !selectedEvent && companyEventsQuery.isPending) {
+    if (selectedEventId && !selectedEvent && companyEventsQuery.isLoading) {
       return <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
     }
 
@@ -423,8 +423,8 @@ export function CompaniesWorkspace() {
           event={selectedEvent}
           onSubmit={handleUpdateEvent}
           onDelete={handleDeleteEvent}
-          isSaving={updateEventMutation.isPending}
-          isDeleting={deleteEventMutation.isPending}
+          isSaving={updateEventMutation.isLoading}
+          isDeleting={deleteEventMutation.isLoading}
         />
       )
     }
@@ -435,8 +435,8 @@ export function CompaniesWorkspace() {
         company={selectedCompany}
         onSubmit={handleUpdateCompany}
         onDelete={handleDeleteCompany}
-        isSaving={updateCompanyMutation.isPending}
-        isDeleting={deleteCompanyMutation.isPending}
+        isSaving={updateCompanyMutation.isLoading}
+        isDeleting={deleteCompanyMutation.isLoading}
       />
     )
   }
@@ -481,7 +481,7 @@ export function CompaniesWorkspace() {
           action={
             <CreateCompanyDialog
               onCreate={handleCreateCompany}
-              isPending={createCompanyMutation.isPending || createEventMutation.isPending}
+              isPending={createCompanyMutation.isLoading || createEventMutation.isLoading}
             />
           }
           className={activeMobileTab !== "companies" ? "hidden md:flex" : undefined}
@@ -496,7 +496,7 @@ export function CompaniesWorkspace() {
               key={selectedCompanyId ?? "no-company"}
               canCreate={Boolean(selectedCompanyId)}
               onCreate={handleCreateEvent}
-              isPending={createEventMutation.isPending}
+              isPending={createEventMutation.isLoading}
             />
           }
           className={activeMobileTab !== "events" ? "hidden md:flex" : undefined}

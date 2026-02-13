@@ -573,9 +573,9 @@ export function OnboardingWizard() {
                     type="button"
                     className="hover:bg-primary/90"
                     onClick={() => void form.handleSubmit()}
-                    disabled={completeOnboardingMutation.isPending || isShowingCompletionAnimation}
+                    disabled={completeOnboardingMutation.isLoading || isShowingCompletionAnimation}
                   >
-                    {completeOnboardingMutation.isPending
+                    {completeOnboardingMutation.isLoading
                       ? dictionary.onboarding.actions.complete
                       : dictionary.onboarding.actions.submit}
                   </Button>
