@@ -4,6 +4,7 @@ export const pathCompanyEventTypeOptions = [
   "annual_increase",
   "mid_year_increase",
   "promotion",
+  "end_of_employment",
 ] as const
 
 export type PathCompanyEventType = (typeof pathCompanyEventTypeOptions)[number]

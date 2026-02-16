@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 
 import { db } from "@/app/lib/db/client"
@@ -21,6 +21,7 @@ import type { UserFinanceSettingsEntity } from "@/app/lib/models/settings/user-f
 import { getRandomCompanyColor } from "@/app/lib/models/personal-path/company-colors"
 import { ApiError } from "@/app/lib/server/api-error"
 import { normalizeSearchText, toIso, toSlug } from "@/app/lib/server/domain/common"
+import { syncEndOfEmploymentEvent } from "@/app/lib/server/domain/personal-path/end-of-employment-event-sync"
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
@@ -328,7 +329,7 @@ export async function completeOnboarding(
           ownerUserId,
           pathCompanyId: pathCompany.id,
           eventType: "rate_increase",
-          effectiveDate: now,
+          effectiveDate: payload.endDate ?? now,
           amount: payload.currentRate,
           notes: null,
           createdAt: now,
@@ -343,6 +344,40 @@ export async function completeOnboarding(
       }
 
       createdEvents.push(rateIncreaseEvent)
+    }
+
+    if (payload.endDate) {
+      await syncEndOfEmploymentEvent(tx, {
+        ownerUserId,
+        pathCompanyId: pathCompany.id,
+        endDate: payload.endDate,
+        now,
+      })
+
+      const endEventRows = await tx
+        .select()
+        .from(pathCompanyEvents)
+        .where(
+          and(
+            eq(pathCompanyEvents.ownerUserId, ownerUserId),
+            eq(pathCompanyEvents.pathCompanyId, pathCompany.id),
+            eq(pathCompanyEvents.eventType, "end_of_employment"),
+            isNull(pathCompanyEvents.deletedAt)
+          )
+        )
+        .orderBy(
+          desc(pathCompanyEvents.effectiveDate),
+          desc(pathCompanyEvents.updatedAt),
+          desc(pathCompanyEvents.createdAt),
+          desc(pathCompanyEvents.id)
+        )
+        .limit(1)
+
+      const endEvent = endEventRows[0]
+
+      if (endEvent) {
+        createdEvents.push(endEvent)
+      }
     }
 
     const existingSettingsRows = await tx

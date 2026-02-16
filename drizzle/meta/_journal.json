@@ -43,6 +43,13 @@
       "when": 1764100000000,
       "tag": "0005_path_companies_review",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764200000000,
+      "tag": "0006_path_company_end_of_employment",
+      "breakpoints": true
     }
   ]
 }

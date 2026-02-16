@@ -312,6 +312,7 @@ export const enDictionary = {
       annual_increase: "Annual raise",
       mid_year_increase: "Mid-year raise",
       promotion: "Promotion",
+      end_of_employment: "End of employment",
     },
     validations: {
       companyName: "Enter a company.",
@@ -386,6 +387,7 @@ export const enDictionary = {
       allCompaniesSelected: "All companies",
       selectedCompaniesCount: "{count} selected",
       selectAllCompanies: "Select all",
+      clearCompanySelection: "Clear selection",
       legendTitle: "Series",
       emptyState: "No chart data for the selected filters.",
       dateLabel: "Date",

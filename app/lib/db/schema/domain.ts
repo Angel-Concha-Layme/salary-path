@@ -313,7 +313,7 @@ export const pathCompanyEvents = sqliteTable(
     check("path_company_events_amount_non_negative", sql`${table.amount} >= 0`),
     check(
       "path_company_events_event_type_check",
-      sql`${table.eventType} IN ('start_rate', 'rate_increase', 'annual_increase', 'mid_year_increase', 'promotion')`
+      sql`${table.eventType} IN ('start_rate', 'rate_increase', 'annual_increase', 'mid_year_increase', 'promotion', 'end_of_employment')`
     ),
   ]
 )

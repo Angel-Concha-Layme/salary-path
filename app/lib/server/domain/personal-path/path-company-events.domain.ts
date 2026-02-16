@@ -13,6 +13,7 @@ import type {
 import { pathCompanyEventTypeOptions } from "@/app/lib/models/personal-path/path-company-events.model"
 import { ApiError } from "@/app/lib/server/api-error"
 import { clampLimit, requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
+import { syncEndOfEmploymentEventForCompany } from "@/app/lib/server/domain/personal-path/end-of-employment-event-sync"
 import { assertPathCompanyOwnership } from "@/app/lib/server/domain/personal-path/path-companies.domain"
 
 const createSchema = z.object({
@@ -130,26 +131,36 @@ export async function createPathCompanyEvent(
   const payload = createSchema.parse(input)
   const now = new Date()
 
-  const rows = await db
-    .insert(pathCompanyEvents)
-    .values({
-      id: crypto.randomUUID(),
+  const row = await db.transaction(async (tx) => {
+    const rows = await tx
+      .insert(pathCompanyEvents)
+      .values({
+        id: crypto.randomUUID(),
+        ownerUserId,
+        pathCompanyId,
+        eventType: payload.eventType,
+        effectiveDate: payload.effectiveDate,
+        amount: payload.amount,
+        notes: payload.notes ?? null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
+
+    const created = rows[0]
+
+    if (!created) {
+      throw new ApiError(500, "INTERNAL_ERROR", "Failed to create path company event")
+    }
+
+    await syncEndOfEmploymentEventForCompany(tx, {
       ownerUserId,
       pathCompanyId,
-      eventType: payload.eventType,
-      effectiveDate: payload.effectiveDate,
-      amount: payload.amount,
-      notes: payload.notes ?? null,
-      createdAt: now,
-      updatedAt: now,
+      now,
     })
-    .returning()
 
-  const row = rows[0]
-
-  if (!row) {
-    throw new ApiError(500, "INTERNAL_ERROR", "Failed to create path company event")
-  }
+    return created
+  })
 
   return mapEntity(row)
 }
@@ -163,24 +174,39 @@ export async function updatePathCompanyEvent(
   await assertPathCompanyOwnership(ownerUserId, pathCompanyId)
 
   const payload = requirePatchPayload(updateSchema.parse(input))
+  const updatedAt = new Date()
 
-  const rows = await db
-    .update(pathCompanyEvents)
-    .set({
-      ...payload,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(pathCompanyEvents.id, eventId),
-        eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
-        eq(pathCompanyEvents.ownerUserId, ownerUserId),
-        isNull(pathCompanyEvents.deletedAt)
+  const row = await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(pathCompanyEvents)
+      .set({
+        ...payload,
+        updatedAt,
+      })
+      .where(
+        and(
+          eq(pathCompanyEvents.id, eventId),
+          eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
+          eq(pathCompanyEvents.ownerUserId, ownerUserId),
+          isNull(pathCompanyEvents.deletedAt)
+        )
       )
-    )
-    .returning()
+      .returning()
 
-  const row = rows[0]
+    const updated = rows[0]
+
+    if (!updated) {
+      return null
+    }
+
+    await syncEndOfEmploymentEventForCompany(tx, {
+      ownerUserId,
+      pathCompanyId,
+      now: updatedAt,
+    })
+
+    return updated
+  })
 
   if (!row) {
     throw new ApiError(404, "NOT_FOUND", "Path company event not found")
@@ -198,23 +224,37 @@ export async function deletePathCompanyEvent(
 
   const deletedAt = new Date()
 
-  const rows = await db
-    .update(pathCompanyEvents)
-    .set({
-      deletedAt,
-      updatedAt: deletedAt,
-    })
-    .where(
-      and(
-        eq(pathCompanyEvents.id, eventId),
-        eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
-        eq(pathCompanyEvents.ownerUserId, ownerUserId),
-        isNull(pathCompanyEvents.deletedAt)
+  const row = await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(pathCompanyEvents)
+      .set({
+        deletedAt,
+        updatedAt: deletedAt,
+      })
+      .where(
+        and(
+          eq(pathCompanyEvents.id, eventId),
+          eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
+          eq(pathCompanyEvents.ownerUserId, ownerUserId),
+          isNull(pathCompanyEvents.deletedAt)
+        )
       )
-    )
-    .returning({ id: pathCompanyEvents.id, deletedAt: pathCompanyEvents.deletedAt })
+      .returning({ id: pathCompanyEvents.id, deletedAt: pathCompanyEvents.deletedAt })
 
-  const row = rows[0]
+    const deleted = rows[0]
+
+    if (!deleted || !deleted.deletedAt) {
+      return null
+    }
+
+    await syncEndOfEmploymentEventForCompany(tx, {
+      ownerUserId,
+      pathCompanyId,
+      now: deletedAt,
+    })
+
+    return deleted
+  })
 
   if (!row || !row.deletedAt) {
     throw new ApiError(404, "NOT_FOUND", "Path company event not found")

@@ -9,6 +9,7 @@ import {
   buildCumulativeIncomeSeries,
   buildPersonalPathCompanyTableRows,
   buildRateChartSeries,
+  PERSONAL_PATH_NO_COMPANIES_SELECTION,
   resolveBaseCurrency,
   type PersonalPathChartFilters,
   type PersonalPathChartSeries,
@@ -72,6 +73,10 @@ export function usePersonalPathDashboard({
 
     if (filters.companyIds.length === 0) {
       return availableCompanyIds
+    }
+
+    if (filters.companyIds.includes(PERSONAL_PATH_NO_COMPANIES_SELECTION)) {
+      return []
     }
 
     const availableIdSet = new Set(availableCompanyIds)

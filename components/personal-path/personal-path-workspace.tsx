@@ -6,12 +6,13 @@ import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
 
 import { usePersonalPathDashboard } from "@/app/hooks/personal-path/use-personal-path-dashboard"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
-import type {
-  PersonalPathChartFilters,
-  PersonalPathChartPointMeta,
-  PersonalPathRateBasis,
-  PersonalPathChartView,
-  PersonalPathRangePreset,
+import {
+  PERSONAL_PATH_NO_COMPANIES_SELECTION,
+  type PersonalPathChartFilters,
+  type PersonalPathChartPointMeta,
+  type PersonalPathRateBasis,
+  type PersonalPathChartView,
+  type PersonalPathRangePreset,
 } from "@/app/lib/models/personal-path/personal-path-chart.model"
 import {
   DropdownMenu,
@@ -165,6 +166,10 @@ export function PersonalPathWorkspace() {
 
   function selectAllCompanies() {
     setCompanyIds(dashboard.availableCompanyIds)
+  }
+
+  function clearCompanySelection() {
+    setCompanyIds([PERSONAL_PATH_NO_COMPANIES_SELECTION])
   }
 
   const selectedCompaniesLabel = dashboard.availableCompanyIds.length === 0
@@ -321,8 +326,8 @@ export function PersonalPathWorkspace() {
       </header>
 
       <section className="space-y-4 rounded-xl border border-primary/20 bg-primary/[0.03] p-4 text-card-foreground shadow-sm">
-        <div className="grid gap-3 rounded-lg border border-border/70 bg-background/80 p-3 lg:grid-cols-[minmax(0,180px)_minmax(0,180px)_minmax(0,180px)_minmax(0,1fr)]">
-          <div className="space-y-1">
+        <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/80 p-3 lg:flex-row">
+          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.viewLabel}
             </p>
@@ -332,7 +337,7 @@ export function PersonalPathWorkspace() {
                 setView(nextValue as PersonalPathChartView)
               }
             >
-              <SelectTrigger className="bg-background">
+              <SelectTrigger className="w-full bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -344,7 +349,7 @@ export function PersonalPathWorkspace() {
             </Select>
           </div>
 
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.rangeLabel}
             </p>
@@ -354,7 +359,7 @@ export function PersonalPathWorkspace() {
                 setRange(nextValue as PersonalPathRangePreset)
               }
             >
-              <SelectTrigger className="bg-background">
+              <SelectTrigger className="w-full bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -367,7 +372,7 @@ export function PersonalPathWorkspace() {
             </Select>
           </div>
 
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.rateBasisLabel}
             </p>
@@ -377,7 +382,7 @@ export function PersonalPathWorkspace() {
                 setRateBasis(nextValue as PersonalPathRateBasis)
               }
             >
-              <SelectTrigger className="bg-background">
+              <SelectTrigger className="w-full bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -387,7 +392,7 @@ export function PersonalPathWorkspace() {
             </Select>
           </div>
 
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.companiesLabel}
             </p>
@@ -403,10 +408,17 @@ export function PersonalPathWorkspace() {
                 <DropdownMenuItem
                   onSelect={(event) => {
                     event.preventDefault()
+                    if (allCompaniesSelected) {
+                      clearCompanySelection()
+                      return
+                    }
+
                     selectAllCompanies()
                   }}
                 >
-                  {dictionary.personalPath.chart.selectAllCompanies}
+                  {allCompaniesSelected
+                    ? dictionary.personalPath.chart.clearCompanySelection
+                    : dictionary.personalPath.chart.selectAllCompanies}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {sortedCompanies.map((company) => (

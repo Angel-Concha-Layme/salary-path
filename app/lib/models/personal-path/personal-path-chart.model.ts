@@ -3,6 +3,7 @@ import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-co
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const DEFAULT_MONTHLY_WORK_HOURS = 174
+export const PERSONAL_PATH_NO_COMPANIES_SELECTION = "__none__"
 
 export type PersonalPathChartView = "rate" | "cumulativeIncome"
 

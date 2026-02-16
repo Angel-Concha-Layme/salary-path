@@ -18,6 +18,10 @@ import type {
 import { ApiError } from "@/app/lib/server/api-error"
 import { clampLimit, requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
 import { resolveCompanyCatalogByName } from "@/app/lib/server/domain/companies/company-catalog.domain"
+import {
+  clearEndOfEmploymentEvents,
+  syncEndOfEmploymentEvent,
+} from "@/app/lib/server/domain/personal-path/end-of-employment-event-sync"
 import { resolveRoleCatalogByName } from "@/app/lib/server/domain/roles/role-catalog.domain"
 
 const colorSchema = z
@@ -261,32 +265,45 @@ export async function createPathCompany(
     throw new ApiError(400, "VALIDATION_ERROR", "roleName is required")
   }
 
-  const rows = await db
-    .insert(pathCompanies)
-    .values({
-      id: crypto.randomUUID(),
-      ownerUserId,
-      companyCatalogId: companyReference.companyCatalogId,
-      roleCatalogId: roleReference.roleCatalogId,
-      color: payload.color ?? getRandomCompanyColor(),
-      displayName: companyReference.displayName,
-      roleDisplayName: roleReference.roleDisplayName,
-      compensationType: payload.compensationType ?? "monthly",
-      currency: payload.currency ?? "USD",
-      score: payload.score ?? 5,
-      review: payload.review ?? "",
-      startDate: payload.startDate,
-      endDate: payload.endDate ?? null,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .returning()
+  const row = await db.transaction(async (tx) => {
+    const rows = await tx
+      .insert(pathCompanies)
+      .values({
+        id: crypto.randomUUID(),
+        ownerUserId,
+        companyCatalogId: companyReference.companyCatalogId,
+        roleCatalogId: roleReference.roleCatalogId,
+        color: payload.color ?? getRandomCompanyColor(),
+        displayName: companyReference.displayName,
+        roleDisplayName: roleReference.roleDisplayName,
+        compensationType: payload.compensationType ?? "monthly",
+        currency: payload.currency ?? "USD",
+        score: payload.score ?? 5,
+        review: payload.review ?? "",
+        startDate: payload.startDate,
+        endDate: payload.endDate ?? null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
 
-  const row = rows[0]
+    const inserted = rows[0]
 
-  if (!row) {
-    throw new ApiError(500, "INTERNAL_ERROR", "Failed to create path company")
-  }
+    if (!inserted) {
+      throw new ApiError(500, "INTERNAL_ERROR", "Failed to create path company")
+    }
+
+    if (inserted.endDate) {
+      await syncEndOfEmploymentEvent(tx, {
+        ownerUserId,
+        pathCompanyId: inserted.id,
+        endDate: inserted.endDate,
+        now,
+      })
+    }
+
+    return inserted
+  })
 
   return mapEntity(row)
 }
@@ -297,6 +314,7 @@ export async function updatePathCompany(
   input: PathCompaniesUpdateInput
 ): Promise<PathCompaniesEntity> {
   const payload = requirePatchPayload(updateSchema.parse(input))
+  const hasEndDateChange = Object.prototype.hasOwnProperty.call(payload, "endDate")
   const current = await getRecordOrThrow(ownerUserId, pathCompanyId)
 
   const nextStartDate = payload.startDate ?? current.startDate
@@ -360,22 +378,47 @@ export async function updatePathCompany(
     nextValues.color = payload.color
   }
 
-  const rows = await db
-    .update(pathCompanies)
-    .set({
-      ...nextValues,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(pathCompanies.id, pathCompanyId),
-        eq(pathCompanies.ownerUserId, ownerUserId),
-        isNull(pathCompanies.deletedAt)
-      )
-    )
-    .returning()
+  const updatedAt = new Date()
 
-  const row = rows[0]
+  const row = await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(pathCompanies)
+      .set({
+        ...nextValues,
+        updatedAt,
+      })
+      .where(
+        and(
+          eq(pathCompanies.id, pathCompanyId),
+          eq(pathCompanies.ownerUserId, ownerUserId),
+          isNull(pathCompanies.deletedAt)
+        )
+      )
+      .returning()
+
+    const updated = rows[0]
+
+    if (!updated) {
+      return null
+    }
+
+    if (hasEndDateChange && nextEndDate) {
+      await syncEndOfEmploymentEvent(tx, {
+        ownerUserId,
+        pathCompanyId,
+        endDate: nextEndDate,
+        now: updatedAt,
+      })
+    } else if (hasEndDateChange) {
+      await clearEndOfEmploymentEvents(tx, {
+        ownerUserId,
+        pathCompanyId,
+        now: updatedAt,
+      })
+    }
+
+    return updated
+  })
 
   if (!row) {
     throw new ApiError(404, "NOT_FOUND", "Path company not found")

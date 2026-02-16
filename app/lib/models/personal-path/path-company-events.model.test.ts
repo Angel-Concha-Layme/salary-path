@@ -10,6 +10,7 @@ describe("path company event types", () => {
       "annual_increase",
       "mid_year_increase",
       "promotion",
+      "end_of_employment",
     ])
   })
 })
