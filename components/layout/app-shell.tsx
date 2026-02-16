@@ -10,6 +10,7 @@ interface AppShellProps {
   role: AppRole
   userName: string
   userEmail: string
+  userImage: string | null
   children: React.ReactNode
 }
 
@@ -17,6 +18,7 @@ export function AppShell({
   role,
   userName,
   userEmail,
+  userImage,
   children,
 }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
@@ -28,6 +30,7 @@ export function AppShell({
           role={role}
           userName={userName}
           userEmail={userEmail}
+          userImage={userImage}
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed((value) => !value)}
         />
