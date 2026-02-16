@@ -497,6 +497,8 @@ export function CompaniesWorkspace() {
         <EventDetailsForm
           key={selectedEvent.id}
           event={selectedEvent}
+          compensationType={selectedCompany.compensationType}
+          currency={selectedCompany.currency}
           onSubmit={handleUpdateEvent}
           onDelete={handleDeleteEvent}
           isSaving={updateEventMutation.isLoading}
@@ -588,6 +590,8 @@ export function CompaniesWorkspace() {
             <CreateEventDialog
               key={selectedCompanyId ?? "no-company"}
               canCreate={Boolean(selectedCompanyId)}
+              compensationType={selectedCompany?.compensationType ?? "monthly"}
+              currency={selectedCompany?.currency ?? "USD"}
               onCreate={handleCreateEvent}
               isPending={createEventMutation.isLoading}
             />

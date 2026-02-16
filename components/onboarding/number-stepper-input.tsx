@@ -8,12 +8,18 @@ interface NumberStepperInputProps {
   id: string
   name: string
   value: number
+  className?: string
   min?: number
   max?: number
   step?: number
   disabled?: boolean
   ariaInvalid?: boolean
   onBlur?: () => void
+  onClamp?: (payload: {
+    attemptedValue: number
+    clampedValue: number
+    bound: "min" | "max"
+  }) => void
   onChange: (value: number) => void
 }
 
@@ -31,25 +37,49 @@ function clamp(value: number, min?: number, max?: number) {
   return next
 }
 
+function getClampBound(value: number, min?: number, max?: number): "min" | "max" | null {
+  if (typeof max === "number" && value > max) {
+    return "max"
+  }
+
+  if (typeof min === "number" && value < min) {
+    return "min"
+  }
+
+  return null
+}
+
 export function NumberStepperInput({
   id,
   name,
   value,
+  className,
   min,
   max,
   step = 1,
   disabled,
   ariaInvalid,
   onBlur,
+  onClamp,
   onChange,
 }: NumberStepperInputProps) {
   function setStep(delta: number) {
-    const next = clamp(value + delta, min, max)
+    const attemptedValue = value + delta
+    const next = clamp(attemptedValue, min, max)
     onChange(next)
+
+    const bound = getClampBound(attemptedValue, min, max)
+    if (bound) {
+      onClamp?.({
+        attemptedValue,
+        clampedValue: next,
+        bound,
+      })
+    }
   }
 
   return (
-    <InputGroup>
+    <InputGroup className={className}>
       <InputGroupInput
         id={id}
         name={name}
@@ -59,14 +89,40 @@ export function NumberStepperInput({
         max={max}
         step={step}
         onBlur={onBlur}
-        onChange={(event) => {
-          const parsed = Number(event.target.value)
-
-          if (Number.isNaN(parsed)) {
+        onFocus={(event) => {
+          if (value !== 0) {
             return
           }
 
-          onChange(clamp(parsed, min, max))
+          const inputElement = event.currentTarget
+
+          requestAnimationFrame(() => {
+            inputElement.select()
+          })
+        }}
+        onChange={(event) => {
+          const parsed = Number(event.target.value)
+
+          if (!Number.isFinite(parsed)) {
+            return
+          }
+
+          const nextValue = clamp(parsed, min, max)
+          onChange(nextValue)
+
+          const bound = getClampBound(parsed, min, max)
+          if (bound) {
+            onClamp?.({
+              attemptedValue: parsed,
+              clampedValue: nextValue,
+              bound,
+            })
+          }
+
+          const normalizedValue = String(nextValue)
+          if (event.currentTarget.value !== normalizedValue) {
+            event.currentTarget.value = normalizedValue
+          }
         }}
         aria-invalid={ariaInvalid}
         disabled={disabled}

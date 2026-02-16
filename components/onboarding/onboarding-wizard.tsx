@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "@tanstack/react-form"
+import { useStore } from "@tanstack/react-store"
 import { toast } from "sonner"
 
 import { useCompanyCatalogListQuery } from "@/app/hooks/companies/use-company-catalog"
@@ -10,6 +11,7 @@ import { useRoleCatalogListQuery } from "@/app/hooks/roles/use-role-catalog"
 import { useCompleteOnboardingMutation } from "@/app/hooks/onboarding/use-onboarding"
 import {
   currencyOptions,
+  getCompensationRateStep,
   onboardingDefaultValues,
   onboardingFormSchema,
   onboardingStepSchemas,
@@ -29,6 +31,7 @@ import {
 } from "@/components/ui/combobox"
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 const TOTAL_STEPS = 3
@@ -48,6 +51,8 @@ export function OnboardingWizard() {
   const [companySearch, setCompanySearch] = useState("")
   const [roleSearch, setRoleSearch] = useState("")
   const [isShowingCompletionAnimation, setIsShowingCompletionAnimation] = useState(false)
+  const [monthlyWorkHoursLimitFeedback, setMonthlyWorkHoursLimitFeedback] = useState(false)
+  const [workDaysPerYearLimitFeedback, setWorkDaysPerYearLimitFeedback] = useState(false)
 
   const companyCatalogQuery = useCompanyCatalogListQuery({
     limit: 10,
@@ -107,6 +112,9 @@ export function OnboardingWizard() {
     },
   })
 
+  const selectedCompensationType = useStore(form.store, (state) => state.values.compensationType)
+  const selectedCurrency = useStore(form.store, (state) => state.values.currency)
+
   const companyOptions = useMemo(() => {
     const catalogNames = (companyCatalogQuery.data?.items ?? []).map((c) => c.name)
     const current = form.state.values.companyName
@@ -139,16 +147,47 @@ export function OnboardingWizard() {
 
   async function handleNextStep() {
     const isValid = await validateCurrentStep()
-    if (isValid) setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1))
+    if (isValid) {
+      setMonthlyWorkHoursLimitFeedback(false)
+      setWorkDaysPerYearLimitFeedback(false)
+      setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1))
+    }
   }
 
   function handlePreviousStep() {
+    setMonthlyWorkHoursLimitFeedback(false)
+    setWorkDaysPerYearLimitFeedback(false)
     setStep((s) => Math.max(s - 1, 0))
+  }
+
+  function handleResetCurrentStep() {
+    const stepFields = STEP_FIELD_NAMES[step]
+    const stepDefaults = Object.fromEntries(
+      stepFields.map((fieldName) => [fieldName, onboardingDefaultValues[fieldName]])
+    ) as Partial<OnboardingFormValues>
+
+    form.reset({
+      ...form.state.values,
+      ...stepDefaults,
+    })
+
+    if (step === 0) {
+      setCompanySearch("")
+      setRoleSearch("")
+    }
+
+    setMonthlyWorkHoursLimitFeedback(false)
+    setWorkDaysPerYearLimitFeedback(false)
   }
 
   const progressLabel = dictionary.onboarding.stepProgress
     .replace("{current}", String(step + 1))
     .replace("{total}", String(TOTAL_STEPS))
+
+  const compensationRateStep = getCompensationRateStep(
+    selectedCompensationType,
+    selectedCurrency
+  )
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-100">
@@ -243,7 +282,7 @@ export function OnboardingWizard() {
                                 }}
                                 aria-invalid={isInvalid}
                                 placeholder={dictionary.onboarding.placeholders.companyName}
-                                className="h-10"
+                                className="h-10 bg-background"
                               />
                               <ComboboxContent>
                                 <ComboboxList>
@@ -303,7 +342,7 @@ export function OnboardingWizard() {
                                 }}
                                 aria-invalid={isInvalid}
                                 placeholder={dictionary.onboarding.placeholders.roleName}
-                                className="h-10"
+                                className="h-10 bg-background"
                               />
                               <ComboboxContent>
                                 <ComboboxList>
@@ -367,7 +406,11 @@ export function OnboardingWizard() {
                             value={field.state.value}
                             onValueChange={(v) => field.handleChange(v as "hourly" | "monthly")}
                           >
-                            <SelectTrigger id="onboarding-compensation-type" aria-invalid={isInvalid} className="h-10">
+                            <SelectTrigger
+                              id="onboarding-compensation-type"
+                              aria-invalid={isInvalid}
+                              className="h-10 bg-background"
+                            >
                               <SelectValue placeholder={dictionary.onboarding.fields.compensationType} />
                             </SelectTrigger>
                             <SelectContent>
@@ -395,7 +438,7 @@ export function OnboardingWizard() {
                             {dictionary.onboarding.fields.currency}
                           </FieldLabel>
                           <Select name={field.name} value={field.state.value} onValueChange={field.handleChange}>
-                            <SelectTrigger id="onboarding-currency" aria-invalid={isInvalid} className="h-10">
+                            <SelectTrigger id="onboarding-currency" aria-invalid={isInvalid} className="h-10 bg-background">
                               <SelectValue placeholder={dictionary.onboarding.placeholders.selectCurrency} />
                             </SelectTrigger>
                             <SelectContent>
@@ -426,8 +469,9 @@ export function OnboardingWizard() {
                               id="onboarding-initial-rate"
                               name={field.name}
                               value={field.state.value}
+                              className="bg-background"
                               min={0}
-                              step={0.5}
+                              step={compensationRateStep}
                               onBlur={field.handleBlur}
                               ariaInvalid={isInvalid}
                               onChange={field.handleChange}
@@ -451,8 +495,9 @@ export function OnboardingWizard() {
                               id="onboarding-current-rate"
                               name={field.name}
                               value={field.state.value}
+                              className="bg-background"
                               min={0}
-                              step={0.5}
+                              step={compensationRateStep}
                               onBlur={field.handleBlur}
                               ariaInvalid={isInvalid}
                               onChange={field.handleChange}
@@ -486,17 +531,45 @@ export function OnboardingWizard() {
                             <FieldLabel htmlFor="onboarding-monthly-hours">
                               {dictionary.onboarding.fields.monthlyWorkHours}
                             </FieldLabel>
-                            <NumberStepperInput
-                              id="onboarding-monthly-hours"
-                              name={field.name}
-                              value={field.state.value}
-                              min={1}
-                              max={744}
-                              step={1}
-                              onBlur={field.handleBlur}
-                              ariaInvalid={isInvalid}
-                              onChange={field.handleChange}
-                            />
+                            <TooltipProvider delayDuration={100}>
+                              <Tooltip open={monthlyWorkHoursLimitFeedback}>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <NumberStepperInput
+                                      id="onboarding-monthly-hours"
+                                      name={field.name}
+                                      value={field.state.value}
+                                      className={cn(
+                                        "bg-background",
+                                        monthlyWorkHoursLimitFeedback &&
+                                          "border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:ring-amber-500/35"
+                                      )}
+                                      min={1}
+                                      max={744}
+                                      step={1}
+                                      onBlur={field.handleBlur}
+                                      ariaInvalid={isInvalid}
+                                      onChange={(nextValue) => {
+                                        setMonthlyWorkHoursLimitFeedback(false)
+                                        field.handleChange(nextValue)
+                                      }}
+                                      onClamp={({ bound }) => {
+                                        if (bound === "max") {
+                                          setMonthlyWorkHoursLimitFeedback(true)
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="bottom"
+                                  align="start"
+                                  className="border border-amber-300/80 bg-amber-500 text-amber-950 ring-amber-700/35"
+                                >
+                                  {dictionary.onboarding.hints.monthlyWorkHoursLimit}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             {isInvalid && <FieldError errors={field.state.meta.errors} />}
                           </Field>
                         )
@@ -512,17 +585,45 @@ export function OnboardingWizard() {
                             <FieldLabel htmlFor="onboarding-work-days">
                               {dictionary.onboarding.fields.workDaysPerYear}
                             </FieldLabel>
-                            <NumberStepperInput
-                              id="onboarding-work-days"
-                              name={field.name}
-                              value={field.state.value}
-                              min={1}
-                              max={366}
-                              step={1}
-                              onBlur={field.handleBlur}
-                              ariaInvalid={isInvalid}
-                              onChange={field.handleChange}
-                            />
+                            <TooltipProvider delayDuration={100}>
+                              <Tooltip open={workDaysPerYearLimitFeedback}>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <NumberStepperInput
+                                      id="onboarding-work-days"
+                                      name={field.name}
+                                      value={field.state.value}
+                                      className={cn(
+                                        "bg-background",
+                                        workDaysPerYearLimitFeedback &&
+                                          "border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:ring-amber-500/35"
+                                      )}
+                                      min={1}
+                                      max={366}
+                                      step={1}
+                                      onBlur={field.handleBlur}
+                                      ariaInvalid={isInvalid}
+                                      onChange={(nextValue) => {
+                                        setWorkDaysPerYearLimitFeedback(false)
+                                        field.handleChange(nextValue)
+                                      }}
+                                      onClamp={({ bound }) => {
+                                        if (bound === "max") {
+                                          setWorkDaysPerYearLimitFeedback(true)
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="bottom"
+                                  align="start"
+                                  className="border border-amber-300/80 bg-amber-500 text-amber-950 ring-amber-700/35"
+                                >
+                                  {dictionary.onboarding.hints.workDaysPerYearLimit}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             {isInvalid && <FieldError errors={field.state.meta.errors} />}
                           </Field>
                         )
@@ -538,19 +639,31 @@ export function OnboardingWizard() {
             </FieldGroup>
 
             <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isShowingCompletionAnimation}
-                onClick={() => {
-                  form.reset()
-                  setCompanySearch("")
-                  setRoleSearch("")
-                  setStep(0)
-                }}
-              >
-                {dictionary.onboarding.actions.reset}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isShowingCompletionAnimation}
+                  onClick={handleResetCurrentStep}
+                >
+                  {dictionary.onboarding.actions.resetStep}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isShowingCompletionAnimation}
+                  onClick={() => {
+                    form.reset()
+                    setCompanySearch("")
+                    setRoleSearch("")
+                    setMonthlyWorkHoursLimitFeedback(false)
+                    setWorkDaysPerYearLimitFeedback(false)
+                    setStep(0)
+                  }}
+                >
+                  {dictionary.onboarding.actions.reset}
+                </Button>
+              </div>
 
               <div className="flex items-center gap-2">
                 {step > 0 && (

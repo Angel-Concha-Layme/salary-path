@@ -9,7 +9,10 @@ import { z } from "zod"
 import { useCompanyCatalogListQuery } from "@/app/hooks/companies/use-company-catalog"
 import { useRoleCatalogListQuery } from "@/app/hooks/roles/use-role-catalog"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
-import { currencyOptions } from "@/app/lib/models/onboarding/onboarding-form.model"
+import {
+  currencyOptions,
+  getCompensationRateStep,
+} from "@/app/lib/models/onboarding/onboarding-form.model"
 import { getRandomCompanyColor, isValidCompanyColor } from "@/app/lib/models/personal-path/company-colors"
 import type { PathCompaniesCreateInput } from "@/app/lib/models/personal-path/path-companies.model"
 import { NumberStepperInput } from "@/components/onboarding/number-stepper-input"
@@ -69,6 +72,36 @@ function isFutureDate(date: Date) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return date.getTime() > today.getTime()
+}
+
+function normalizeNonNegativeAmountInput(rawValue: string): string | null {
+  const value = rawValue.trim()
+
+  if (value.length === 0) {
+    return ""
+  }
+
+  if (!/^\d*\.?\d*$/.test(value)) {
+    return null
+  }
+
+  if (value === ".") {
+    return "0."
+  }
+
+  const [integerPartRaw = "", decimalPartRaw] = value.split(".")
+  const normalizedIntegerPart = integerPartRaw.replace(/^0+(?=\d)/, "") || "0"
+  const hasDecimalPart = decimalPartRaw !== undefined
+  const normalizedValue = hasDecimalPart
+    ? `${normalizedIntegerPart}.${decimalPartRaw}`
+    : normalizedIntegerPart
+
+  const parsed = Number(normalizedValue)
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return null
+  }
+
+  return normalizedValue
 }
 
 export function CreateCompanyDialog({ onCreate, disabled = false, isPending = false }: CreateCompanyDialogProps) {
@@ -183,6 +216,10 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
 
   const formValues = useStore(form.store, () => form.state.values)
   const isFormSubmitting = useStore(form.store, () => form.state.isSubmitting)
+  const compensationRateStep = getCompensationRateStep(
+    formValues.compensationType,
+    formValues.currency
+  )
 
   const companyOptions = useMemo(() => {
     const names = (companyCatalogQuery.data?.items ?? []).map((item) => item.name)
@@ -517,7 +554,7 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
                         name={field.name}
                         value={field.state.value}
                         min={0}
-                        step={0.01}
+                        step={compensationRateStep}
                         onChange={field.handleChange}
                         onBlur={field.handleBlur}
                         ariaInvalid={isInvalid}
@@ -543,10 +580,17 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
                         name={field.name}
                         type="number"
                         min={0}
-                        step="0.01"
+                        step={String(compensationRateStep)}
                         value={field.state.value}
                         onBlur={field.handleBlur}
-                        onChange={(event) => field.handleChange(event.target.value)}
+                        onChange={(event) => {
+                          const normalizedValue = normalizeNonNegativeAmountInput(event.target.value)
+                          if (normalizedValue === null) {
+                            return
+                          }
+
+                          field.handleChange(normalizedValue)
+                        }}
                         aria-invalid={isInvalid}
                         placeholder={dictionary.companies.placeholders.currentRate}
                         disabled={isPending}

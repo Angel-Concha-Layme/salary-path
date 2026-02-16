@@ -124,12 +124,17 @@ export const esDictionary = {
         "Valores por defecto para personas que trabajan 8 horas diarias de lunes a viernes.",
       sameRate:
         "Si la compensación inicial y actual son iguales, no se crea un evento de aumento.",
+      monthlyWorkHoursLimit:
+        "Límite: 744 horas por mes (31 días x 24 horas). No puedes ingresar más porque un mes no tiene más horas.",
+      workDaysPerYearLimit:
+        "Límite: 366 días por año (año bisiesto). No puedes ingresar más porque un año no tiene más días.",
     },
     actions: {
       previous: "Anterior",
       next: "Siguiente",
       submit: "Finalizar",
-      reset: "Reset",
+      resetStep: "Limpiar paso",
+      reset: "Limpiar todo",
       complete: "Completando...",
     },
     validations: {

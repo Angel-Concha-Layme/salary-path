@@ -6,6 +6,7 @@ import { useStore } from "@tanstack/react-store"
 import { z } from "zod"
 
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
+import { getCompensationRateStep } from "@/app/lib/models/onboarding/onboarding-form.model"
 import {
   pathCompanyEventTypeOptions,
   type PathCompanyEventsEntity,
@@ -31,6 +32,8 @@ import { Textarea } from "@/components/ui/textarea"
 
 interface EventDetailsFormProps {
   event: PathCompanyEventsEntity
+  compensationType: "hourly" | "monthly"
+  currency: string
   onSubmit: (input: PathCompanyEventsUpdateInput) => Promise<void>
   onDelete: () => Promise<void>
   isSaving?: boolean
@@ -46,12 +49,15 @@ interface EventDetailsFormValues {
 
 export function EventDetailsForm({
   event,
+  compensationType,
+  currency,
   onSubmit,
   onDelete,
   isSaving = false,
   isDeleting = false,
 }: EventDetailsFormProps) {
   const { dictionary } = useDictionary()
+  const compensationRateStep = getCompensationRateStep(compensationType, currency)
 
   const schema = useMemo(
     () =>
@@ -192,7 +198,7 @@ export function EventDetailsForm({
                   name={field.name}
                   value={field.state.value}
                   min={0}
-                  step={0.01}
+                  step={compensationRateStep}
                   onChange={field.handleChange}
                   onBlur={field.handleBlur}
                   ariaInvalid={isInvalid}

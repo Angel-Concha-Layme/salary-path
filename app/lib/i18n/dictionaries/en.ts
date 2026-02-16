@@ -123,12 +123,17 @@ export const enDictionary = {
         "Defaults for people working 8 hours daily from Monday to Friday.",
       sameRate:
         "If initial and current rate are equal, no increase event is created.",
+      monthlyWorkHoursLimit:
+        "Limit: 744 hours per month (31 days x 24 hours). You cannot enter more because a month has no additional hours.",
+      workDaysPerYearLimit:
+        "Limit: 366 work days per year (leap year). You cannot enter more because a year has no additional days.",
     },
     actions: {
       previous: "Previous",
       next: "Next",
       submit: "Finish",
-      reset: "Reset",
+      resetStep: "Clear step",
+      reset: "Clear all steps",
       complete: "Completing...",
     },
     validations: {

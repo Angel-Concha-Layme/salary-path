@@ -6,6 +6,7 @@ import { useStore } from "@tanstack/react-store"
 import { z } from "zod"
 
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
+import { getCompensationRateStep } from "@/app/lib/models/onboarding/onboarding-form.model"
 import type {
   PathCompanyEventsCreateInput,
   PathCompanyEventsEntity,
@@ -21,6 +22,8 @@ import { Textarea } from "@/components/ui/textarea"
 
 interface CreateEventDialogProps {
   canCreate: boolean
+  compensationType: "hourly" | "monthly"
+  currency: string
   onCreate: (input: PathCompanyEventsCreateInput) => Promise<void>
   isPending?: boolean
 }
@@ -39,10 +42,17 @@ const defaultValues: CreateEventFormValues = {
   notes: "",
 }
 
-export function CreateEventDialog({ canCreate, onCreate, isPending = false }: CreateEventDialogProps) {
+export function CreateEventDialog({
+  canCreate,
+  compensationType,
+  currency,
+  onCreate,
+  isPending = false,
+}: CreateEventDialogProps) {
   const { dictionary } = useDictionary()
   const [open, setOpen] = useState(false)
   const actualOpen = canCreate && open
+  const compensationRateStep = getCompensationRateStep(compensationType, currency)
 
   const schema = useMemo(
     () =>
@@ -187,7 +197,7 @@ export function CreateEventDialog({ canCreate, onCreate, isPending = false }: Cr
                       name={field.name}
                       value={field.state.value}
                       min={0}
-                      step={0.01}
+                      step={compensationRateStep}
                       onChange={field.handleChange}
                       onBlur={field.handleBlur}
                       ariaInvalid={isInvalid}

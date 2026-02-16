@@ -2,11 +2,11 @@ import { z } from "zod"
 
 export const currencyOptions = [
   "USD",
+  "PEN",
   "EUR",
   "GBP",
   "MXN",
   "COP",
-  "PEN",
   "CLP",
   "ARS",
   "BRL",
@@ -14,6 +14,35 @@ export const currencyOptions = [
 ] as const
 
 export const compensationTypeOptions = ["hourly", "monthly"] as const
+export type CompensationTypeOption = (typeof compensationTypeOptions)[number]
+export type CurrencyOption = (typeof currencyOptions)[number]
+
+interface CompensationStepConfig {
+  hourly: number
+  monthly: number
+}
+
+export const compensationStepByCurrency: Record<CurrencyOption, CompensationStepConfig> = {
+  USD: { hourly: 0.5, monthly: 100 },
+  PEN: { hourly: 0.5, monthly: 100 },
+  EUR: { hourly: 0.5, monthly: 100 },
+  GBP: { hourly: 0.5, monthly: 100 },
+  MXN: { hourly: 5, monthly: 500 },
+  COP: { hourly: 1000, monthly: 100000 },
+  CLP: { hourly: 500, monthly: 50000 },
+  ARS: { hourly: 1000, monthly: 100000 },
+  BRL: { hourly: 1, monthly: 100 },
+  CAD: { hourly: 0.5, monthly: 100 },
+}
+
+export function getCompensationRateStep(
+  compensationType: CompensationTypeOption,
+  currency: string
+): number {
+  const normalizedCurrency = currency.trim().toUpperCase()
+  const config = compensationStepByCurrency[normalizedCurrency as CurrencyOption] ?? compensationStepByCurrency.USD
+  return config[compensationType]
+}
 
 const onboardingFormBaseSchema = z.object({
   companyName: z.string().trim().min(1),
