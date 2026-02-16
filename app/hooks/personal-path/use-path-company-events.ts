@@ -24,7 +24,7 @@ const PERSONAL_DATA_CACHE_TIME_MS = 1000 * 60 * 20
 export function getPathCompanyEventsByOwnerListQueryOptions(
   params: UsePathCompanyEventsByOwnerListParams = {}
 ) {
-  const limit = params.limit ?? 500
+  const limit = params.limit ?? 100
 
   return queryOptions({
     queryKey: queryKeys.personalPath.companyEvents.list({ limit }),

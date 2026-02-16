@@ -75,11 +75,11 @@ describe("queryKeys", () => {
   })
 
   it("builds nested personal path event keys", () => {
-    expect(queryKeys.personalPath.companyEvents.list({ limit: 1000 })).toEqual([
+    expect(queryKeys.personalPath.companyEvents.list({ limit: 100 })).toEqual([
       "personal-path",
       "company-events",
       "list",
-      { limit: 1000 },
+      { limit: 100 },
     ])
     expect(queryKeys.personalPath.companies.list({ limit: 25 })).toEqual([
       "personal-path",

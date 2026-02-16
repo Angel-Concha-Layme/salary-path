@@ -53,7 +53,7 @@ export function usePersonalPathDashboard({
   filters,
 }: UsePersonalPathDashboardOptions): PersonalPathDashboardResult {
   const companiesQuery = usePathCompaniesListQuery({ limit: 200 })
-  const eventsQuery = usePathCompanyEventsByOwnerListQuery({ limit: 2000 })
+  const eventsQuery = usePathCompanyEventsByOwnerListQuery({ limit: 100 })
   const financeSettingsQuery = useUserFinanceSettingsListQuery({ limit: 1 })
 
   const companies = useMemo(() => companiesQuery.data?.items ?? [], [companiesQuery.data?.items])

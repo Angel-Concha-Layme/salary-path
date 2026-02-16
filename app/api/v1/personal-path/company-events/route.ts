@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   try {
     const session = await requireApiSession(request)
     const searchParams = new URL(request.url).searchParams
-    const requestedLimit = Number(searchParams.get("limit") ?? 500)
+    const requestedLimit = Number(searchParams.get("limit") ?? 100)
 
     const result = await listPathCompanyEventsByOwner(session.user.id, {
       limit: requestedLimit,

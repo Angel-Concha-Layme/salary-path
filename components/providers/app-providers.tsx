@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ThemeProvider } from "next-themes"
 import { useState } from "react"
 
-import { Toaster } from "@/components/notifications/toaster"
+import { Toaster } from "@/components/ui/sonner"
 import { DictionaryProvider } from "@/app/lib/i18n/dictionary-context"
 import type { AppLocale } from "@/app/lib/i18n/locales"
 
@@ -37,7 +37,7 @@ export function AppProviders({ children, locale }: AppProvidersProps) {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <QueryClientProvider client={queryClient}>
           {children}
-          <Toaster />
+          <Toaster position="top-right" duration={1500} closeButton expand />
         </QueryClientProvider>
       </ThemeProvider>
     </DictionaryProvider>

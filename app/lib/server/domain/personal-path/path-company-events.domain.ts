@@ -96,7 +96,7 @@ export async function listPathCompanyEventsByOwner(
   ownerUserId: string,
   params: PathCompanyEventsListParams = {}
 ): Promise<PathCompanyEventsListResponse> {
-  const limit = clampLimit(params.limit, 500, 2000)
+  const limit = clampLimit(params.limit, 50, 100)
 
   const rows = await db
     .select()

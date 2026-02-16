@@ -53,7 +53,7 @@ async function listPathCompanyEventsByOwner(
 ) {
   return apiClient.get<PathCompanyEventsListResponse>("/personal-path/company-events", {
     query: {
-      limit: options.limit ?? 500,
+      limit: options.limit ?? 100,
     },
     signal: options.signal,
   })

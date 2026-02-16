@@ -110,7 +110,7 @@ export function CompaniesWorkspace() {
     [companies, selectedCompanyId]
   )
 
-  const companyEventsQuery = usePathCompanyEventsByOwnerListQuery({ limit: 1000 })
+  const companyEventsQuery = usePathCompanyEventsByOwnerListQuery({ limit: 100 })
   const events = useMemo(() => {
     if (!selectedCompanyId) {
       return []

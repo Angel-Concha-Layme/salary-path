@@ -41,7 +41,7 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "relative hidden shrink-0 border-r bg-sidebar md:sticky md:top-0 md:self-start md:flex md:h-screen md:flex-col",
+        "relative hidden shrink-0 border-r border-sidebar-border bg-sidebar md:sticky md:top-0 md:self-start md:flex md:h-screen md:flex-col",
         collapsed ? "w-[60px] p-2" : "w-[220px] p-3"
       )}
     >
@@ -72,15 +72,19 @@ export function AppSidebar({
         })}
       </nav>
 
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute -right-3 top-1/2 z-20 -translate-y-1/2 rounded-full !border-sidebar-border !bg-sidebar shadow-sm hover:!bg-sidebar-accent dark:!border-sidebar-border dark:!bg-sidebar dark:hover:!bg-sidebar-accent"
-        onClick={onToggleCollapse}
-        aria-label={collapsed ? dictionary.navigation.expand : dictionary.navigation.collapse}
-      >
-        <ChevronLeftIcon className={cn("size-4 transition-transform", collapsed && "rotate-180")} />
-      </Button>
+      <div className="absolute top-1/2 left-full z-20 -translate-x-1/2 -translate-y-1/2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-full !border-sidebar-border !bg-sidebar !text-sidebar-foreground shadow-sm hover:!bg-sidebar-accent hover:!text-sidebar-foreground"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? dictionary.navigation.expand : dictionary.navigation.collapse}
+        >
+          <ChevronLeftIcon
+            className={cn("size-4 text-sidebar-foreground transition-transform", collapsed && "rotate-180")}
+          />
+        </Button>
+      </div>
 
       <SidebarUserMenu
         collapsed={collapsed}
