@@ -17,11 +17,14 @@ export default async function ProtectedAppLayout({
     redirect("/onboarding")
   }
 
+  const userImage = (session.user as { image?: string | null }).image ?? null
+
   return (
     <AppShell
       role={normalizeRole(session.user.role)}
       userName={session.user.name ?? session.user.email}
       userEmail={session.user.email}
+      userImage={userImage}
     >
       {children}
     </AppShell>
