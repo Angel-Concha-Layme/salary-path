@@ -24,6 +24,7 @@ describe("queryKeys", () => {
   it("exposes root keys for domain-level invalidation", () => {
     expect(queryKeys.settings.root()).toEqual(["settings"])
     expect(queryKeys.profile.root()).toEqual(["profile"])
+    expect(queryKeys.profile.overview()).toEqual(["profile", "overview"])
     expect(queryKeys.companies.root()).toEqual(["companies"])
     expect(queryKeys.roles.root()).toEqual(["roles"])
     expect(queryKeys.onboarding.root()).toEqual(["onboarding"])

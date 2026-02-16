@@ -30,9 +30,10 @@ describe("invalidateDomain", () => {
 
     await invalidateDomain(queryClient, "settings")
 
-    expect(invalidateSpy).toHaveBeenCalledTimes(2)
+    expect(invalidateSpy).toHaveBeenCalledTimes(3)
     expect(invalidateSpy).toHaveBeenNthCalledWith(1, { queryKey: queryKeys.settings.root() })
     expect(invalidateSpy).toHaveBeenNthCalledWith(2, { queryKey: queryKeys.me.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(3, { queryKey: queryKeys.profile.root() })
   })
 
   it("invalidates companies and personal path keys for companies domain", async () => {
@@ -58,17 +59,18 @@ describe("invalidateDomain", () => {
     expect(invalidateSpy).toHaveBeenNthCalledWith(1, { queryKey: queryKeys.roles.root() })
   })
 
-  it("invalidates personal path, companies and roles for personalPath domain", async () => {
+  it("invalidates personal path, profile, companies and roles for personalPath domain", async () => {
     const invalidateSpy = vi
       .spyOn(queryClient, "invalidateQueries")
       .mockResolvedValue(undefined)
 
     await invalidateDomain(queryClient, "personalPath")
 
-    expect(invalidateSpy).toHaveBeenCalledTimes(3)
+    expect(invalidateSpy).toHaveBeenCalledTimes(4)
     expect(invalidateSpy).toHaveBeenNthCalledWith(1, { queryKey: queryKeys.personalPath.root() })
-    expect(invalidateSpy).toHaveBeenNthCalledWith(2, { queryKey: queryKeys.companies.root() })
-    expect(invalidateSpy).toHaveBeenNthCalledWith(3, { queryKey: queryKeys.roles.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(2, { queryKey: queryKeys.profile.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(3, { queryKey: queryKeys.companies.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(4, { queryKey: queryKeys.roles.root() })
   })
 
   it("invalidates onboarding-related domains for onboarding domain", async () => {
@@ -78,12 +80,13 @@ describe("invalidateDomain", () => {
 
     await invalidateDomain(queryClient, "onboarding")
 
-    expect(invalidateSpy).toHaveBeenCalledTimes(6)
+    expect(invalidateSpy).toHaveBeenCalledTimes(7)
     expect(invalidateSpy).toHaveBeenNthCalledWith(1, { queryKey: queryKeys.onboarding.root() })
     expect(invalidateSpy).toHaveBeenNthCalledWith(2, { queryKey: queryKeys.me.root() })
-    expect(invalidateSpy).toHaveBeenNthCalledWith(3, { queryKey: queryKeys.settings.root() })
-    expect(invalidateSpy).toHaveBeenNthCalledWith(4, { queryKey: queryKeys.personalPath.root() })
-    expect(invalidateSpy).toHaveBeenNthCalledWith(5, { queryKey: queryKeys.companies.root() })
-    expect(invalidateSpy).toHaveBeenNthCalledWith(6, { queryKey: queryKeys.roles.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(3, { queryKey: queryKeys.profile.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(4, { queryKey: queryKeys.settings.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(5, { queryKey: queryKeys.personalPath.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(6, { queryKey: queryKeys.companies.root() })
+    expect(invalidateSpy).toHaveBeenNthCalledWith(7, { queryKey: queryKeys.roles.root() })
   })
 })
