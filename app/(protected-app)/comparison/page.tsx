@@ -1,11 +1,5 @@
-import { RoutePlaceholder } from "@/components/layout/route-placeholder"
+import { ComparisonOnboardingWizard } from "@/components/comparison/comparison-onboarding-wizard"
 
 export default function ComparisonPage() {
-  return (
-    <RoutePlaceholder
-      routeKey="comparison"
-      access="protected"
-      protectedRoute
-    />
-  )
+  return <ComparisonOnboardingWizard />
 }

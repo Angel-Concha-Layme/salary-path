@@ -154,6 +154,82 @@ export const esDictionary = {
       description: "Gracias por usar Salary Path.",
     },
   },
+  comparisonOnboarding: {
+    title: "Activa Comparación Salarial",
+    subtitle:
+      "Comparte tu salario de forma anónima para comparar tu evolución con personas similares.",
+    stepProgress: "Paso {current} de {total}",
+    steps: {
+      consent: "Permiso para compartir de forma anónima",
+      preview: "Qué podrás comparar",
+      ready: "Resumen y acceso anticipado",
+    },
+    consent: {
+      description:
+        "Para entrar a esta tab, necesitamos tu permiso para compartir tu salario de forma anónima con la comunidad.",
+      commitmentsTitle: "Cómo protegemos tu información",
+      commitments: {
+        anonymity: "Tus datos se comparten de forma anónima.",
+        permissionOnly: "Solo se usan datos de personas que también aceptaron compartir.",
+        revokeAnytime: "Podrás cambiar esta preferencia cuando quieras.",
+      },
+      acceptAction: "Acepto compartir mis datos salariales de forma anónima",
+      requiredError: "Debes aceptar el permiso anónimo para continuar.",
+    },
+    preview: {
+      description:
+        "Con este permiso podrás analizar tendencias reales y detectar si tu crecimiento salarial está alineado con el mercado.",
+      features: {
+        sameCompanyTitle: "Misma empresa",
+        sameCompanyDescription:
+          "Compara tu salario con otras personas de tu empresa que aceptaron compartir datos.",
+        otherCompaniesTitle: "Otras empresas",
+        otherCompaniesDescription:
+          "Contrasta tu rol y salario inicial con empresas similares para medir oportunidades.",
+        similarPeopleTitle: "Perfiles similares",
+        similarPeopleDescription:
+          "Evalúa tu evolución frente a personas con trayectorias y punto de partida parecidos.",
+      },
+    },
+    chart: {
+      salaryLabel: "Salario",
+      periodLabel: "2018-2026 · evolución salarial (USD)",
+      dateLabel: "Fecha",
+      companyLabel: "Empresa",
+      eventLabel: "Evento",
+      personOneLabel: "Tu perfil",
+      personTwoLabel: "Perfil similar",
+      legendTitle: "Personas comparadas",
+    },
+    ready: {
+      description:
+        "Terminaste el onboarding de Comparison. En la versión final podrás explorar estos escenarios:",
+      items: {
+        sameCompany: "Comparar crecimiento con personas en tu misma empresa.",
+        otherCompanies: "Comparar con otras empresas para roles y salarios iniciales similares.",
+        similarPeople: "Comparar evolución general con perfiles parecidos para evaluar tu progreso.",
+      },
+      uiOnlyHint: "Por ahora este flujo no persiste datos y funciona únicamente como UI.",
+    },
+    actions: {
+      reset: "Reset",
+      previous: "Anterior",
+      next: "Siguiente",
+      finish: "Finalizar onboarding",
+      startOver: "Volver a empezar",
+    },
+    wip: {
+      badge: "Work in progress",
+      title: "Comparison está en construcción",
+      description:
+        "Ya tenemos el onboarding inicial listo. Las comparaciones reales de la comunidad se habilitarán en próximos releases.",
+      items: {
+        sameCompany: "Comparación en la misma empresa",
+        otherCompanies: "Comparación entre empresas",
+        similarPeople: "Evolución de perfiles similares",
+      },
+    },
+  },
   companies: {
     title: "Empresas y eventos",
     subtitle: "Gestiona tu historial laboral y sus cambios de compensación.",

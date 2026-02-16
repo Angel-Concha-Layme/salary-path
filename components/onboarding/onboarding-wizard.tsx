@@ -18,6 +18,7 @@ import {
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import { SingleDatePickerField } from "@/components/shared/single-date-picker-field"
 import { NumberStepperInput } from "@/components/onboarding/number-stepper-input"
+import { OnboardingWizardShell } from "@/components/onboarding/onboarding-wizard-shell"
 import { Button } from "@/components/ui/button"
 import {
   Combobox,
@@ -155,8 +156,12 @@ export function OnboardingWizard() {
       <div className="absolute bottom-[-120px] right-[-96px] h-96 w-96 rounded-full bg-primary/25 blur-3xl" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_10%,rgba(255,255,255,0.12),transparent_28%),radial-gradient(circle_at_84%_88%,rgba(255,255,255,0.12),transparent_30%)]" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-8 sm:px-6 md:px-8">
-        <div className="w-full rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-2xl backdrop-blur-sm">
+      <OnboardingWizardShell
+        maxWidthClassName="max-w-6xl"
+        containerClassName="flex min-h-screen items-center"
+        outerPaddingClassName="px-4 py-8 sm:px-6 md:px-8"
+        cardClassName="rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-2xl backdrop-blur-sm"
+      >
           <div className="border-b border-border p-6 pb-4 md:p-8 md:pb-6">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Salary Path</p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
@@ -583,8 +588,7 @@ export function OnboardingWizard() {
               </div>
             </div>
           </form>
-        </div>
-      </div>
+      </OnboardingWizardShell>
 
       {isShowingCompletionAnimation ? (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950/60 px-4 backdrop-blur-sm">
