@@ -37,6 +37,7 @@ export const queryKeys = {
   },
   profile: {
     root: () => ["profile"] as const,
+    overview: () => ["profile", "overview"] as const,
   },
   companies: {
     root: () => ["companies"] as const,
