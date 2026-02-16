@@ -14,13 +14,17 @@ export interface UsePathCompaniesListParams {
   limit?: number
 }
 
+const PERSONAL_DATA_STALE_TIME_MS = 1000 * 60 * 10
+const PERSONAL_DATA_CACHE_TIME_MS = 1000 * 60 * 20
+
 export function getPathCompaniesListQueryOptions(params: UsePathCompaniesListParams = {}) {
   const limit = params.limit ?? 50
 
   return queryOptions({
     queryKey: queryKeys.personalPath.companies.list({ limit }),
     queryFn: ({ signal }) => pathCompaniesService.listPathCompanies({ limit, signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
   })
 }
 
@@ -28,7 +32,8 @@ export function getPathCompanyDetailQueryOptions(pathCompanyId: string) {
   return queryOptions({
     queryKey: queryKeys.personalPath.companies.detail(pathCompanyId),
     queryFn: ({ signal }) => pathCompaniesService.getPathCompany(pathCompanyId, { signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
     enabled: Boolean(pathCompanyId),
   })
 }

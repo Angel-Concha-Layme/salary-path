@@ -18,6 +18,9 @@ export interface UsePathCompanyEventsByOwnerListParams {
   limit?: number
 }
 
+const PERSONAL_DATA_STALE_TIME_MS = 1000 * 60 * 10
+const PERSONAL_DATA_CACHE_TIME_MS = 1000 * 60 * 20
+
 export function getPathCompanyEventsByOwnerListQueryOptions(
   params: UsePathCompanyEventsByOwnerListParams = {}
 ) {
@@ -27,7 +30,8 @@ export function getPathCompanyEventsByOwnerListQueryOptions(
     queryKey: queryKeys.personalPath.companyEvents.list({ limit }),
     queryFn: ({ signal }) =>
       pathCompanyEventsService.listPathCompanyEventsByOwner({ limit, signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
   })
 }
 
@@ -41,7 +45,8 @@ export function getPathCompanyEventsListQueryOptions(
     queryKey: queryKeys.personalPath.companies.events.list(pathCompanyId, { limit }),
     queryFn: ({ signal }) =>
       pathCompanyEventsService.listPathCompanyEvents(pathCompanyId, { limit, signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
     enabled: Boolean(pathCompanyId),
   })
 }
@@ -51,7 +56,8 @@ export function getPathCompanyEventDetailQueryOptions(pathCompanyId: string, eve
     queryKey: queryKeys.personalPath.companies.events.detail(pathCompanyId, eventId),
     queryFn: ({ signal }) =>
       pathCompanyEventsService.getPathCompanyEvent(pathCompanyId, eventId, { signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
     enabled: Boolean(pathCompanyId && eventId),
   })
 }
