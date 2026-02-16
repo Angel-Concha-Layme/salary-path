@@ -52,6 +52,7 @@ export function useCreatePathCompanyMutation() {
     invalidate: async (queryClient) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.personalPath.companies.root() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.root() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.companies.companyCatalog.root() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.roles.roleCatalog.root() }),
       ])
@@ -66,6 +67,7 @@ export function useUpdatePathCompanyMutation() {
     invalidate: async (queryClient, _data, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.personalPath.companies.root() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.root() }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.detail(variables.pathCompanyId),
         }),
@@ -92,6 +94,7 @@ export function useDeletePathCompanyMutation() {
     invalidate: async (queryClient, _data, pathCompanyId) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.personalPath.companies.root() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.root() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.personalPath.companyEvents.root() }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.events.root(pathCompanyId),

@@ -88,6 +88,9 @@ export function useCreatePathCompanyEventMutation() {
           queryKey: queryKeys.personalPath.companyEvents.root(),
         }),
         queryClient.invalidateQueries({
+          queryKey: queryKeys.profile.root(),
+        }),
+        queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.events.root(variables.pathCompanyId),
         }),
       ])
@@ -109,6 +112,9 @@ export function useUpdatePathCompanyEventMutation() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companyEvents.root(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.profile.root(),
         }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.events.root(variables.pathCompanyId),
@@ -134,6 +140,9 @@ export function useDeletePathCompanyEventMutation() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companyEvents.root(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.profile.root(),
         }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.events.root(variables.pathCompanyId),
