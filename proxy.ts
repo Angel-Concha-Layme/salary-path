@@ -18,11 +18,22 @@ function buildRedirect(request: NextRequest, pathname: string): NextResponse {
   return NextResponse.redirect(url)
 }
 
-function withLocaleCookie(response: NextResponse, locale: AppLocale): NextResponse {
+function withLocaleCookie(
+  request: NextRequest,
+  response: NextResponse,
+  locale: AppLocale
+): NextResponse {
+  const currentLocale = request.cookies.get(getLocaleCookieName())?.value
+
+  if (currentLocale === locale) {
+    return response
+  }
+
   response.cookies.set(getLocaleCookieName(), locale, {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
   })
+
   return response
 }
 
@@ -78,6 +89,7 @@ export async function proxy(request: NextRequest) {
 
   if (legacyLocalizedPath) {
     return withLocaleCookie(
+      request,
       buildRedirect(request, `${legacyLocalizedPath.pathname}${search}`),
       legacyLocalizedPath.locale
     )
@@ -88,6 +100,7 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === "/") {
     return withLocaleCookie(
+      request,
       buildRedirect(request, hasSession ? "/personal-path" : "/sign-in"),
       locale
     )
@@ -97,6 +110,7 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === "/sign-in" && hasSession) {
     return withLocaleCookie(
+      request,
       buildRedirect(request, "/personal-path"),
       locale
     )
@@ -104,6 +118,7 @@ export async function proxy(request: NextRequest) {
 
   if (isProtectedSegment(pathname) && !hasSession) {
     return withLocaleCookie(
+      request,
       buildRedirect(request, `/sign-in?callbackUrl=${callbackUrl}`),
       locale
     )
@@ -112,6 +127,7 @@ export async function proxy(request: NextRequest) {
   if (isAdminSegment(pathname)) {
     if (!hasSession) {
       return withLocaleCookie(
+        request,
         buildRedirect(request, `/sign-in?callbackUrl=${callbackUrl}`),
         locale
       )
@@ -121,13 +137,14 @@ export async function proxy(request: NextRequest) {
 
     if (!isAdmin) {
       return withLocaleCookie(
+        request,
         buildRedirect(request, "/403"),
         locale
       )
     }
   }
 
-  return withLocaleCookie(NextResponse.next(), locale)
+  return withLocaleCookie(request, NextResponse.next(), locale)
 }
 
 export const config = {
