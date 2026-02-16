@@ -16,6 +16,9 @@ export interface UseRoleCatalogListParams {
   enabled?: boolean
 }
 
+const PERSONAL_DATA_STALE_TIME_MS = 1000 * 60 * 10
+const PERSONAL_DATA_CACHE_TIME_MS = 1000 * 60 * 20
+
 export function getRoleCatalogListQueryOptions(params: UseRoleCatalogListParams = {}) {
   const limit = params.limit ?? 50
 
@@ -30,7 +33,8 @@ export function getRoleCatalogListQueryOptions(params: UseRoleCatalogListParams 
         search: params.search,
         signal,
       }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
     enabled: params.enabled ?? true,
   })
 }
@@ -39,7 +43,8 @@ export function getRoleCatalogDetailQueryOptions(roleId: string) {
   return queryOptions({
     queryKey: queryKeys.roles.roleCatalog.detail(roleId),
     queryFn: ({ signal }) => roleCatalogService.getRoleCatalog(roleId, { signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
     enabled: Boolean(roleId),
   })
 }

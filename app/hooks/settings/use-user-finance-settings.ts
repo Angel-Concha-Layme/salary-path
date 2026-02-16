@@ -14,6 +14,9 @@ export interface UseUserFinanceSettingsListParams {
   limit?: number
 }
 
+const PERSONAL_DATA_STALE_TIME_MS = 1000 * 60 * 10
+const PERSONAL_DATA_CACHE_TIME_MS = 1000 * 60 * 20
+
 export function getUserFinanceSettingsListQueryOptions(
   params: UseUserFinanceSettingsListParams = {}
 ) {
@@ -22,7 +25,8 @@ export function getUserFinanceSettingsListQueryOptions(
   return queryOptions({
     queryKey: queryKeys.settings.userFinanceSettings.list({ limit }),
     queryFn: ({ signal }) => userFinanceSettingsService.listUserFinanceSettings({ limit, signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
   })
 }
 
@@ -30,7 +34,8 @@ export function getUserFinanceSettingsDetailQueryOptions(id: string) {
   return queryOptions({
     queryKey: queryKeys.settings.userFinanceSettings.detail(id),
     queryFn: ({ signal }) => userFinanceSettingsService.getUserFinanceSettings(id, { signal }),
-    staleTime: 1000 * 30,
+    staleTime: PERSONAL_DATA_STALE_TIME_MS,
+    cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
     enabled: Boolean(id),
   })
 }

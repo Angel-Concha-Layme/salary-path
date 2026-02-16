@@ -72,6 +72,10 @@ export function CompanyDetailsForm({
   const { dictionary } = useDictionary()
   const [companySearch, setCompanySearch] = useState("")
   const [roleSearch, setRoleSearch] = useState("")
+  const [shouldLoadCompanyCatalog, setShouldLoadCompanyCatalog] = useState(false)
+  const [shouldLoadRoleCatalog, setShouldLoadRoleCatalog] = useState(false)
+  const companySearchTerm = companySearch.trim()
+  const roleSearchTerm = roleSearch.trim()
 
   const schema = useMemo(
     () =>
@@ -109,12 +113,14 @@ export function CompanyDetailsForm({
 
   const companyCatalogQuery = useCompanyCatalogListQuery({
     limit: 10,
-    search: companySearch.trim() || undefined,
+    search: companySearchTerm || undefined,
+    enabled: shouldLoadCompanyCatalog || companySearchTerm.length > 0,
   })
 
   const roleCatalogQuery = useRoleCatalogListQuery({
     limit: 10,
-    search: roleSearch.trim() || undefined,
+    search: roleSearchTerm || undefined,
+    enabled: shouldLoadRoleCatalog || roleSearchTerm.length > 0,
   })
 
   const defaultValues = useMemo<CompanyDetailsFormValues>(
@@ -232,6 +238,7 @@ export function CompanyDetailsForm({
                     id={`company-details-name-${company.id}`}
                     name={field.name}
                     onBlur={field.handleBlur}
+                    onFocus={() => setShouldLoadCompanyCatalog(true)}
                     onKeyDown={(event) => {
                       const expanded = event.currentTarget.getAttribute("aria-expanded") === "true"
                       if (event.key === "Enter" && !expanded) {
@@ -292,6 +299,7 @@ export function CompanyDetailsForm({
                     id={`company-details-role-${company.id}`}
                     name={field.name}
                     onBlur={field.handleBlur}
+                    onFocus={() => setShouldLoadRoleCatalog(true)}
                     onKeyDown={(event) => {
                       const expanded = event.currentTarget.getAttribute("aria-expanded") === "true"
                       if (event.key === "Enter" && !expanded) {
