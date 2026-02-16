@@ -124,8 +124,8 @@ export function usePersonalPathDashboard({
     : null
 
   const tableRows = useMemo(
-    () => buildPersonalPathCompanyTableRows(companies, events),
-    [companies, events]
+    () => buildPersonalPathCompanyTableRows(companies, events, financeSettings?.monthlyWorkHours),
+    [companies, events, financeSettings?.monthlyWorkHours]
   )
 
   const isLoading =

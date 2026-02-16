@@ -400,14 +400,14 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
   return (
     <div
       className={cn(
-        "relative rounded-2xl border border-border bg-card p-3 text-card-foreground",
+        "relative rounded-2xl border border-border/80 bg-card p-3 text-card-foreground",
         className
       )}
     >
       {legend ? (
         <div className={cn("mb-3 space-y-2", legend.className)}>
           {legend.title ? (
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/80">
               {legend.title}
             </p>
           ) : null}
@@ -415,11 +415,11 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
             <p className="text-xs text-muted-foreground">{legend.description}</p>
           ) : null}
           {legendItems.length > 0 ? (
-            <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap gap-2 text-[11px] text-foreground/90">
               {legendItems.map((entry) => (
                 <span
                   key={entry.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-1"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-primary/5 px-2 py-1"
                 >
                   <span
                     className="size-2 rounded-full"
@@ -441,7 +441,7 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
         />
       ) : (
         <div
-          className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground"
+          className="flex items-center justify-center rounded-lg border border-dashed border-primary/35 bg-primary/5 p-5 text-sm text-muted-foreground"
           style={{ height: `${height}px` }}
         >
           {emptyState ?? "No data to display yet."}
@@ -451,7 +451,7 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
       {tooltipState ? (
         <div
           className={cn(
-            "pointer-events-none absolute z-20 min-w-[220px] rounded-lg border border-border bg-background/95 px-3 py-2 text-xs text-foreground shadow-lg backdrop-blur",
+            "pointer-events-none absolute z-20 min-w-[220px] rounded-lg border border-border/80 bg-card/95 px-3 py-2 text-xs text-foreground shadow-lg backdrop-blur",
             tooltip?.className
           )}
           style={{ left: tooltipState.x, top: tooltipState.y }}

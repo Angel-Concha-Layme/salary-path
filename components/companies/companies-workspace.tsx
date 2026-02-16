@@ -29,9 +29,17 @@ import { CreateCompanyDialog } from "@/components/companies/create-company-dialo
 import { CreateEventDialog } from "@/components/companies/create-event-dialog"
 import { EventDetailsForm } from "@/components/companies/event-details-form"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
 type MobileTab = "companies" | "events" | "details"
+type CompaniesSortOrder = "newest_first" | "oldest_first"
+
+const COMPANIES_SORT_ORDER_STORAGE_KEY = "salary-path:companies-sort-order"
+
+function normalizeCompaniesSortOrder(value: string | null): CompaniesSortOrder {
+  return value === "oldest_first" ? "oldest_first" : "newest_first"
+}
 
 interface CreateCompanySubmission {
   company: PathCompaniesCreateInput
@@ -70,12 +78,12 @@ function ColumnPanel({ title, action, className, children }: ColumnPanelProps) {
   return (
     <section
       className={cn(
-        "flex min-h-[500px] flex-col rounded-xl border border-border bg-card text-card-foreground",
+        "flex min-h-[500px] flex-col rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm",
         className
       )}
     >
-      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">{title}</h2>
+      <header className="flex min-h-[60px] items-center justify-between gap-3 border-b border-border/70 bg-primary/5 px-4 py-3">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-primary/80">{title}</h2>
         {action}
       </header>
       <div className="min-h-0 flex-1 p-3">{children}</div>
@@ -89,9 +97,32 @@ export function CompaniesWorkspace() {
   const [selectedCompanyIdState, setSelectedCompanyId] = useState<string | null>(null)
   const [selectedEventIdState, setSelectedEventId] = useState<string | null>(null)
   const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>("companies")
+  const [companiesSortOrder, setCompaniesSortOrder] = useState<CompaniesSortOrder>(() => {
+    if (typeof window === "undefined") {
+      return "newest_first"
+    }
+
+    try {
+      return normalizeCompaniesSortOrder(window.localStorage.getItem(COMPANIES_SORT_ORDER_STORAGE_KEY))
+    } catch {
+      return "newest_first"
+    }
+  })
+  const sortDirection = companiesSortOrder === "oldest_first" ? 1 : -1
 
   const companiesQuery = usePathCompaniesListQuery({ limit: 100 })
-  const companies = useMemo(() => companiesQuery.data?.items ?? [], [companiesQuery.data?.items])
+  const companies = useMemo(() => {
+    const items = companiesQuery.data?.items ?? []
+    return [...items].sort((left, right) => {
+      const byStartDate =
+        (new Date(left.startDate).getTime() - new Date(right.startDate).getTime()) * sortDirection
+      if (byStartDate !== 0) {
+        return byStartDate
+      }
+
+      return (new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()) * sortDirection
+    })
+  }, [companiesQuery.data?.items, sortDirection])
 
   const selectedCompanyId = useMemo(() => {
     if (companies.length === 0) {
@@ -119,10 +150,17 @@ export function CompaniesWorkspace() {
     const allEvents = companyEventsQuery.data?.items ?? []
     return allEvents
       .filter((event) => event.pathCompanyId === selectedCompanyId)
-      .sort(
-        (a, b) => new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime()
-      )
-  }, [companyEventsQuery.data?.items, selectedCompanyId])
+      .sort((left, right) => {
+        const byEffectiveDate =
+          (new Date(left.effectiveDate).getTime() - new Date(right.effectiveDate).getTime()) *
+          sortDirection
+        if (byEffectiveDate !== 0) {
+          return byEffectiveDate
+        }
+
+        return (new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()) * sortDirection
+      })
+  }, [companyEventsQuery.data?.items, selectedCompanyId, sortDirection])
 
   const selectedEventId = useMemo(() => {
     if (!selectedEventIdState) {
@@ -153,6 +191,21 @@ export function CompaniesWorkspace() {
   const createEventMutation = useCreatePathCompanyEventMutation()
   const updateEventMutation = useUpdatePathCompanyEventMutation()
   const deleteEventMutation = useDeletePathCompanyEventMutation()
+
+  const handleCompaniesSortOrderChange = (value: string) => {
+    const nextOrder = normalizeCompaniesSortOrder(value)
+    setCompaniesSortOrder(nextOrder)
+
+    if (typeof window === "undefined") {
+      return
+    }
+
+    try {
+      window.localStorage.setItem(COMPANIES_SORT_ORDER_STORAGE_KEY, nextOrder)
+    } catch {
+      // Ignore storage write errors (private mode, blocked storage, etc.).
+    }
+  }
 
   async function handleCreateCompany(input: CreateCompanySubmission) {
     const created = await notificationService.promise(
@@ -294,6 +347,14 @@ export function CompaniesWorkspace() {
     setSelectedEventId(fallbackEvent?.id ?? null)
   }
 
+  function renderEmptyState(message: string) {
+    return (
+      <div className="rounded-lg border border-dashed border-primary/35 bg-primary/5 px-3 py-4">
+        <p className="text-sm text-muted-foreground">{message}</p>
+      </div>
+    )
+  }
+
   function renderCompaniesContent() {
     if (companiesQuery.isLoading) {
       return <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
@@ -308,7 +369,7 @@ export function CompaniesWorkspace() {
     }
 
     if (companies.length === 0) {
-      return <p className="text-sm text-muted-foreground">{dictionary.companies.empty.companies}</p>
+      return renderEmptyState(dictionary.companies.empty.companies)
     }
 
     return (
@@ -328,21 +389,32 @@ export function CompaniesWorkspace() {
                 setActiveMobileTab("events")
               }}
               className={cn(
-                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:bg-muted/70",
-                isSelected ? "border-primary bg-primary/10" : "border-border bg-background"
+                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-primary/5",
+                isSelected
+                  ? "border-primary/40 bg-primary/10 shadow-xs"
+                  : "border-border/80 bg-background"
               )}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{company.displayName}</p>
-                  <p className="truncate text-xs text-muted-foreground">{company.roleDisplayName}</p>
+                  <p className={cn("truncate text-sm font-medium", isSelected && "text-primary")}>
+                    {company.displayName}
+                  </p>
+                  <p
+                    className={cn(
+                      "truncate text-xs text-muted-foreground",
+                      isSelected && "text-primary/75"
+                    )}
+                  >
+                    {company.roleDisplayName}
+                  </p>
                 </div>
                 <span
                   className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full border border-border/80"
                   style={{ backgroundColor: company.color }}
                 />
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-primary/70")}>
                 {endDate ? `${startDate} - ${endDate}` : startDate}
               </p>
             </button>
@@ -354,7 +426,7 @@ export function CompaniesWorkspace() {
 
   function renderEventsContent() {
     if (!selectedCompanyId) {
-      return <p className="text-sm text-muted-foreground">{dictionary.companies.empty.noCompanySelected}</p>
+      return renderEmptyState(dictionary.companies.empty.noCompanySelected)
     }
 
     if (companyEventsQuery.isLoading) {
@@ -370,7 +442,7 @@ export function CompaniesWorkspace() {
     }
 
     if (events.length === 0) {
-      return <p className="text-sm text-muted-foreground">{dictionary.companies.empty.events}</p>
+      return renderEmptyState(dictionary.companies.empty.events)
     }
 
     return (
@@ -387,17 +459,21 @@ export function CompaniesWorkspace() {
                 setActiveMobileTab("details")
               }}
               className={cn(
-                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:bg-muted/70",
-                isSelected ? "border-primary bg-primary/10" : "border-border bg-background"
+                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-primary/5",
+                isSelected
+                  ? "border-primary/40 bg-primary/10 shadow-xs"
+                  : "border-border/80 bg-background"
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">{dictionary.companies.eventTypes[event.eventType]}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className={cn("text-sm font-medium", isSelected && "text-primary")}>
+                  {dictionary.companies.eventTypes[event.eventType]}
+                </p>
+                <p className={cn("text-xs text-muted-foreground", isSelected && "text-primary/75")}>
                   {formatAmount(locale, selectedCompany?.currency ?? "USD", event.amount)}
                 </p>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-primary/70")}>
                 {dateFormatter.format(new Date(event.effectiveDate))}
               </p>
             </button>
@@ -409,7 +485,7 @@ export function CompaniesWorkspace() {
 
   function renderDetailsContent() {
     if (!selectedCompany) {
-      return <p className="text-sm text-muted-foreground">{dictionary.companies.empty.details}</p>
+      return renderEmptyState(dictionary.companies.empty.details)
     }
 
     if (selectedEventId && !selectedEvent && companyEventsQuery.isLoading) {
@@ -443,32 +519,49 @@ export function CompaniesWorkspace() {
 
   return (
     <div className="space-y-5">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{dictionary.companies.title}</h1>
+      <header className="space-y-1 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-primary">{dictionary.companies.title}</h1>
         <p className="text-sm text-muted-foreground">{dictionary.companies.subtitle}</p>
+        <div className="pt-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-primary/70">
+            {dictionary.companies.order.label}
+          </p>
+          <Select value={companiesSortOrder} onValueChange={handleCompaniesSortOrderChange}>
+            <SelectTrigger size="sm" className="mt-1 w-full max-w-[230px] bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start">
+              <SelectItem value="newest_first">{dictionary.companies.order.newestFirst}</SelectItem>
+              <SelectItem value="oldest_first">{dictionary.companies.order.oldestFirst}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </header>
 
-      <div className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-muted/40 p-1 md:hidden">
+      <div className="grid grid-cols-3 gap-2 rounded-xl border border-border/80 bg-card p-2 shadow-sm md:hidden">
         <Button
           type="button"
-          variant={activeMobileTab === "companies" ? "secondary" : "ghost"}
+          variant={activeMobileTab === "companies" ? "default" : "outline"}
           size="sm"
+          className={cn(activeMobileTab === "companies" && "bg-primary text-primary-foreground hover:bg-primary/90")}
           onClick={() => setActiveMobileTab("companies")}
         >
           {dictionary.companies.tabs.companies}
         </Button>
         <Button
           type="button"
-          variant={activeMobileTab === "events" ? "secondary" : "ghost"}
+          variant={activeMobileTab === "events" ? "default" : "outline"}
           size="sm"
+          className={cn(activeMobileTab === "events" && "bg-primary text-primary-foreground hover:bg-primary/90")}
           onClick={() => setActiveMobileTab("events")}
         >
           {dictionary.companies.tabs.events}
         </Button>
         <Button
           type="button"
-          variant={activeMobileTab === "details" ? "secondary" : "ghost"}
+          variant={activeMobileTab === "details" ? "default" : "outline"}
           size="sm"
+          className={cn(activeMobileTab === "details" && "bg-primary text-primary-foreground hover:bg-primary/90")}
           onClick={() => setActiveMobileTab("details")}
         >
           {dictionary.companies.tabs.details}

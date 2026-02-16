@@ -67,6 +67,8 @@ export interface PersonalPathCompanyTableRow {
   roleDisplayName: string
   startDate: string
   endDate: string | null
+  monthlyAverageSalary: number | null
+  annualSalary: number | null
   compensationType: PathCompaniesEntity["compensationType"]
   currency: string
   score: number
@@ -654,7 +656,8 @@ export function buildCumulativeIncomeSeries(
 
 export function buildPersonalPathCompanyTableRows(
   companies: PathCompaniesEntity[],
-  events: PathCompanyEventsEntity[]
+  events: PathCompanyEventsEntity[],
+  monthlyWorkHours?: number
 ): PersonalPathCompanyTableRow[] {
   const eventsByCompany = buildCompanyEventsMap(events)
 
@@ -663,6 +666,13 @@ export function buildPersonalPathCompanyTableRows(
     .map((company) => {
       const companyEvents = sortEventsDesc(eventsByCompany.get(company.id) ?? [])
       const latestEvent = companyEvents[0]
+      const monthlyAverageSalary = latestEvent
+        ? normalizeAmountToMonthly(
+          latestEvent.amount,
+          company.compensationType,
+          monthlyWorkHours
+        )
+        : null
 
       return {
         id: company.id,
@@ -670,6 +680,8 @@ export function buildPersonalPathCompanyTableRows(
         roleDisplayName: company.roleDisplayName,
         startDate: company.startDate,
         endDate: company.endDate,
+        monthlyAverageSalary,
+        annualSalary: monthlyAverageSalary !== null ? monthlyAverageSalary * 12 : null,
         compensationType: company.compensationType,
         currency: company.currency,
         score: company.score,

@@ -243,6 +243,11 @@ export const esDictionary = {
       events: "Eventos",
       details: "Detalles",
     },
+    order: {
+      label: "Orden cronológico",
+      newestFirst: "Más recientes primero",
+      oldestFirst: "Más antiguas primero",
+    },
     actions: {
       addCompany: "Agregar empresa",
       addEvent: "Agregar evento",
@@ -401,6 +406,8 @@ export const esDictionary = {
         roleDisplayName: "Rol",
         startDate: "Fecha inicio",
         endDate: "Fecha fin",
+        monthlyAverageSalary: "Salario mensual promedio",
+        annualSalary: "Salario anual",
         compensationType: "Tipo compensación",
         currency: "Moneda",
         score: "Puntaje",
@@ -415,6 +422,12 @@ export const esDictionary = {
         latestEventDate: "Última fecha evento",
         latestEventAmount: "Último monto evento",
       },
+    },
+    drawer: {
+      detailsTitle: "Detalles de la empresa",
+      eventsTitle: "Eventos de la empresa",
+      close: "Cerrar panel",
+      noEvents: "Esta empresa aún no tiene eventos.",
     },
   },
   profile: {

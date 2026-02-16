@@ -242,6 +242,11 @@ export const enDictionary = {
       events: "Events",
       details: "Details",
     },
+    order: {
+      label: "Chronological order",
+      newestFirst: "Newest first",
+      oldestFirst: "Oldest first",
+    },
     actions: {
       addCompany: "Add company",
       addEvent: "Add event",
@@ -400,6 +405,8 @@ export const enDictionary = {
         roleDisplayName: "Role",
         startDate: "Start date",
         endDate: "End date",
+        monthlyAverageSalary: "Monthly average salary",
+        annualSalary: "Annual salary",
         compensationType: "Compensation type",
         currency: "Currency",
         score: "Score",
@@ -414,6 +421,12 @@ export const enDictionary = {
         latestEventDate: "Latest event date",
         latestEventAmount: "Latest event amount",
       },
+    },
+    drawer: {
+      detailsTitle: "Company details",
+      eventsTitle: "Company events",
+      close: "Close panel",
+      noEvents: "This company has no events yet.",
     },
   },
   profile: {

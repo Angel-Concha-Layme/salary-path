@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CompaniesDrawer } from "@/components/personal-path/companies-drawer"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   SalaryHistoryChartWrapper,
@@ -116,6 +117,7 @@ export function PersonalPathWorkspace() {
   const [range, setRange] = useState<PersonalPathRangePreset>("all")
   const [rateBasis, setRateBasis] = useState<PersonalPathRateBasis>("monthly")
   const [companyIds, setCompanyIds] = useState<string[]>([])
+  const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null)
 
   const filters = useMemo<PersonalPathChartFilters>(
     () => ({
@@ -172,6 +174,23 @@ export function PersonalPathWorkspace() {
       : formatCount(dictionary.personalPath.chart.selectedCompaniesCount, selectedCompanyIds.length)
 
   const eventTypeLabels = dictionary.companies.eventTypes
+  const tableRowsById = useMemo(
+    () => new Map(dashboard.tableRows.map((row) => [row.id, row])),
+    [dashboard.tableRows]
+  )
+  const eventsByCompanyId = useMemo(() => {
+    const map = new Map<string, typeof dashboard.events>()
+
+    dashboard.events.forEach((event) => {
+      const current = map.get(event.pathCompanyId) ?? []
+      current.push(event)
+      map.set(event.pathCompanyId, current)
+    })
+
+    return map
+  }, [dashboard.events])
+  const activeCompanyRow = activeCompanyId ? tableRowsById.get(activeCompanyId) ?? null : null
+  const activeCompanyEvents = activeCompanyId ? eventsByCompanyId.get(activeCompanyId) ?? [] : []
 
   function renderTooltip(payload: SalaryHistoryTooltipPayload<PersonalPathChartPointMeta>) {
     if (view === "rate") {
@@ -251,9 +270,9 @@ export function PersonalPathWorkspace() {
 
   if (dashboard.isLoading) {
     return (
-      <Card className="rounded-xl border border-border">
+      <Card className="rounded-xl border border-border/80 bg-card shadow-sm">
         <CardHeader>
-          <CardTitle>{dictionary.personalPath.title}</CardTitle>
+          <CardTitle className="text-primary">{dictionary.personalPath.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
@@ -264,9 +283,9 @@ export function PersonalPathWorkspace() {
 
   if (dashboard.isError) {
     return (
-      <Card className="rounded-xl border border-border">
+      <Card className="rounded-xl border border-border/80 bg-card shadow-sm">
         <CardHeader>
-          <CardTitle>{dictionary.personalPath.title}</CardTitle>
+          <CardTitle className="text-primary">{dictionary.personalPath.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-sm font-medium text-destructive">{dictionary.personalPath.error.title}</p>
@@ -280,9 +299,9 @@ export function PersonalPathWorkspace() {
 
   if (dashboard.companies.length === 0) {
     return (
-      <Card className="rounded-xl border border-border">
+      <Card className="rounded-xl border border-border/80 bg-card shadow-sm">
         <CardHeader>
-          <CardTitle>{dictionary.personalPath.title}</CardTitle>
+          <CardTitle className="text-primary">{dictionary.personalPath.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">{dictionary.personalPath.empty.description}</p>
@@ -296,15 +315,15 @@ export function PersonalPathWorkspace() {
 
   return (
     <div className="space-y-5">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{dictionary.personalPath.title}</h1>
+      <header className="space-y-1 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-primary">{dictionary.personalPath.title}</h1>
         <p className="text-sm text-muted-foreground">{dictionary.personalPath.subtitle}</p>
       </header>
 
-      <section className="space-y-4 rounded-xl border border-border bg-card p-4 text-card-foreground">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,180px)_minmax(0,180px)_minmax(0,180px)_minmax(0,1fr)]">
+      <section className="space-y-4 rounded-xl border border-primary/20 bg-primary/[0.03] p-4 text-card-foreground shadow-sm">
+        <div className="grid gap-3 rounded-lg border border-border/70 bg-background/80 p-3 lg:grid-cols-[minmax(0,180px)_minmax(0,180px)_minmax(0,180px)_minmax(0,1fr)]">
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.viewLabel}
             </p>
             <Select
@@ -313,7 +332,7 @@ export function PersonalPathWorkspace() {
                 setView(nextValue as PersonalPathChartView)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -326,7 +345,7 @@ export function PersonalPathWorkspace() {
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.rangeLabel}
             </p>
             <Select
@@ -335,7 +354,7 @@ export function PersonalPathWorkspace() {
                 setRange(nextValue as PersonalPathRangePreset)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -349,7 +368,7 @@ export function PersonalPathWorkspace() {
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.rateBasisLabel}
             </p>
             <Select
@@ -358,7 +377,7 @@ export function PersonalPathWorkspace() {
                 setRateBasis(nextValue as PersonalPathRateBasis)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -369,17 +388,17 @@ export function PersonalPathWorkspace() {
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
               {dictionary.personalPath.chart.companiesLabel}
             </p>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
+                <Button variant="outline" className="w-full justify-between bg-background hover:bg-primary/5">
                   <span className="truncate">{selectedCompaniesLabel}</span>
                   <ChevronDownIcon className="size-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-72">
+              <DropdownMenuContent align="start" className="w-72 border-border/80">
                 <DropdownMenuLabel>{dictionary.personalPath.chart.companiesLabel}</DropdownMenuLabel>
                 <DropdownMenuItem
                   onSelect={(event) => {
@@ -435,7 +454,9 @@ export function PersonalPathWorkspace() {
           height={320}
           legend={{
             title: dictionary.personalPath.chart.legendTitle,
+            className: "rounded-lg border border-border/70 bg-primary/5 p-3",
           }}
+          className="border-border/80 bg-card"
           emptyState={dictionary.personalPath.chart.emptyState}
           formatters={{
             date: (dateKey) => formatDateKey(dateKey, locale),
@@ -458,15 +479,15 @@ export function PersonalPathWorkspace() {
         />
       </section>
 
-      <section className="rounded-xl border border-border bg-card text-card-foreground">
-        <header className="border-b border-border px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+      <section className="rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm">
+        <header className="border-b border-border/70 bg-primary/5 px-4 py-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-primary/80">
             {dictionary.personalPath.table.title}
           </h2>
         </header>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1900px] text-left text-sm">
-            <thead className="bg-muted/40 text-xs uppercase tracking-[0.08em] text-muted-foreground">
+          <table className="w-full min-w-[860px] text-left text-sm">
+            <thead className="bg-primary/8 text-xs uppercase tracking-[0.08em] text-primary/85">
               <tr>
                 <th className="whitespace-nowrap px-3 py-2 font-medium">
                   {dictionary.personalPath.table.columns.displayName}
@@ -481,107 +502,75 @@ export function PersonalPathWorkspace() {
                   {dictionary.personalPath.table.columns.endDate}
                 </th>
                 <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.compensationType}
+                  {dictionary.personalPath.table.columns.monthlyAverageSalary}
                 </th>
                 <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.currency}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.score}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.review}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.color}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.companyCatalogId}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.roleCatalogId}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.createdAt}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.updatedAt}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.eventCount}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.latestEventType}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.latestEventDate}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.latestEventAmount}
+                  {dictionary.personalPath.table.columns.annualSalary}
                 </th>
               </tr>
             </thead>
             <tbody>
-              {dashboard.tableRows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-t border-border align-top text-sm text-foreground"
-                >
-                  <td className="whitespace-nowrap px-3 py-2 font-medium">{row.displayName}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{row.roleDisplayName}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{formatDateValue(row.startDate, locale)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{formatDateValue(row.endDate, locale)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    {row.compensationType === "hourly"
-                      ? dictionary.companies.options.compensationHourly
-                      : dictionary.companies.options.compensationMonthly}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">{row.currency}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{row.score}</td>
-                  <td className="max-w-[360px] px-3 py-2 text-muted-foreground">
-                    <span className={cn("line-clamp-2", row.review.trim().length === 0 && "italic")}>
-                      {row.review.trim().length > 0
-                        ? row.review
+              {dashboard.tableRows.map((row) => {
+                const isSelected = row.id === activeCompanyId
+
+                return (
+                  <tr
+                    key={row.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActiveCompanyId(row.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        setActiveCompanyId(row.id)
+                      }
+                    }}
+                    className={cn(
+                      "cursor-pointer border-t border-border/70 align-top text-sm text-foreground transition-colors hover:bg-primary/5",
+                      isSelected && "bg-primary/10"
+                    )}
+                    aria-label={`${dictionary.personalPath.table.columns.displayName}: ${row.displayName}`}
+                  >
+                    <td className={cn("whitespace-nowrap px-3 py-2 font-medium", isSelected && "text-primary")}>
+                      {row.displayName}
+                    </td>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/85")}>
+                      {row.roleDisplayName}
+                    </td>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                      {formatDateValue(row.startDate, locale)}
+                    </td>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                      {formatDateValue(row.endDate, locale)}
+                    </td>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                      {row.monthlyAverageSalary !== null
+                        ? formatAmount(locale, row.currency, row.monthlyAverageSalary, 2)
                         : dictionary.personalPath.table.notAvailable}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    <span className="inline-flex items-center gap-2">
-                      <span
-                        className="size-2.5 rounded-full border border-border/80"
-                        style={{ backgroundColor: row.color }}
-                      />
-                      {row.color}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">
-                    {row.companyCatalogId ?? dictionary.personalPath.table.notAvailable}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">
-                    {row.roleCatalogId ?? dictionary.personalPath.table.notAvailable}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">{formatDateValue(row.createdAt, locale)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{formatDateValue(row.updatedAt, locale)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{row.eventCount}</td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    {row.latestEventType
-                      ? eventTypeLabels[row.latestEventType]
-                      : dictionary.personalPath.table.notAvailable}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    {formatDateValue(row.latestEventDate, locale)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    {row.latestEventAmount !== null
-                      ? formatAmount(locale, row.currency, row.latestEventAmount, 2)
-                      : dictionary.personalPath.table.notAvailable}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                      {row.annualSalary !== null
+                        ? formatAmount(locale, row.currency, row.annualSalary, 0)
+                        : dictionary.personalPath.table.notAvailable}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       </section>
+
+      <CompaniesDrawer
+        open={Boolean(activeCompanyRow)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveCompanyId(null)
+          }
+        }}
+        company={activeCompanyRow}
+        events={activeCompanyEvents}
+      />
     </div>
   )
 }

@@ -231,7 +231,19 @@ describe("personal path chart model", () => {
     expect(firstRow?.eventCount).toBe(2)
     expect(firstRow?.latestEventType).toBe("promotion")
     expect(firstRow?.latestEventAmount).toBe(4000)
+    expect(firstRow?.monthlyAverageSalary).toBe(4000)
+    expect(firstRow?.annualSalary).toBe(48000)
     expect(euroRow?.latestEventType).toBe("start_rate")
+    expect(euroRow?.monthlyAverageSalary).toBe(2500)
+    expect(euroRow?.annualSalary).toBe(30000)
+  })
+
+  it("calculates monthly and annual salary using configured monthly work hours", () => {
+    const rows = buildPersonalPathCompanyTableRows(companiesFixture, eventsFixture, 160)
+    const hourlyRow = rows.find((row) => row.id === "company-b")
+
+    expect(hourlyRow?.monthlyAverageSalary).toBe(1600)
+    expect(hourlyRow?.annualSalary).toBe(19200)
   })
 
   it("normalizes hourly rate to monthly amount", () => {
