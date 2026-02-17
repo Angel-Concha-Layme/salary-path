@@ -10,6 +10,10 @@ import { useCompanyCatalogListQuery } from "@/app/hooks/companies/use-company-ca
 import { useRoleCatalogListQuery } from "@/app/hooks/roles/use-role-catalog"
 import { useCompleteOnboardingMutation } from "@/app/hooks/onboarding/use-onboarding"
 import {
+  CompensationType,
+  isCompensationType,
+} from "@/app/lib/models/common/domain-enums"
+import {
   currencyOptions,
   getCompensationRateStep,
   onboardingDefaultValues,
@@ -404,7 +408,13 @@ export function OnboardingWizard() {
                           <Select
                             name={field.name}
                             value={field.state.value}
-                            onValueChange={(v) => field.handleChange(v as "hourly" | "monthly")}
+                            onValueChange={(value) => {
+                              if (!isCompensationType(value)) {
+                                return
+                              }
+
+                              field.handleChange(value)
+                            }}
                           >
                             <SelectTrigger
                               id="onboarding-compensation-type"
@@ -414,10 +424,10 @@ export function OnboardingWizard() {
                               <SelectValue placeholder={dictionary.onboarding.fields.compensationType} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="hourly">
+                              <SelectItem value={CompensationType.HOURLY}>
                                 {dictionary.onboarding.options.compensationHourly}
                               </SelectItem>
-                              <SelectItem value="monthly">
+                              <SelectItem value={CompensationType.MONTHLY}>
                                 {dictionary.onboarding.options.compensationMonthly}
                               </SelectItem>
                             </SelectContent>
@@ -437,18 +447,49 @@ export function OnboardingWizard() {
                           <FieldLabel htmlFor="onboarding-currency">
                             {dictionary.onboarding.fields.currency}
                           </FieldLabel>
-                          <Select name={field.name} value={field.state.value} onValueChange={field.handleChange}>
-                            <SelectTrigger id="onboarding-currency" aria-invalid={isInvalid} className="h-10 bg-background">
-                              <SelectValue placeholder={dictionary.onboarding.placeholders.selectCurrency} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {currencyOptions.map((currency) => (
-                                <SelectItem key={currency} value={currency}>
-                                  {currency}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Combobox
+                            items={currencyOptions}
+                            value={field.state.value || null}
+                            inputValue={field.state.value}
+                            onInputValueChange={(value, eventDetails) => {
+                              if (eventDetails.reason !== "input-change") {
+                                return
+                              }
+
+                              field.handleChange(value.toUpperCase())
+                            }}
+                            onValueChange={(value) => {
+                              if (typeof value !== "string") {
+                                return
+                              }
+
+                              field.handleChange(value)
+                            }}
+                          >
+                            <ComboboxInput
+                              id="onboarding-currency"
+                              name={field.name}
+                              onBlur={field.handleBlur}
+                              onKeyDown={(event) => {
+                                const expanded = event.currentTarget.getAttribute("aria-expanded") === "true"
+                                if (event.key === "Enter" && !expanded) {
+                                  event.preventDefault()
+                                }
+                              }}
+                              aria-invalid={isInvalid}
+                              placeholder={dictionary.onboarding.placeholders.selectCurrency}
+                              className="h-10 bg-background"
+                            />
+                            <ComboboxContent>
+                              <ComboboxList>
+                                {(currency) => (
+                                  <ComboboxItem key={currency} value={currency}>
+                                    {currency}
+                                  </ComboboxItem>
+                                )}
+                              </ComboboxList>
+                            </ComboboxContent>
+                          </Combobox>
                           {isInvalid && <FieldError errors={field.state.meta.errors} />}
                         </Field>
                       )

@@ -10,6 +10,14 @@ import {
   user,
   userFinanceSettings,
 } from "@/app/lib/db/schema"
+import {
+  PathCompanyEventType,
+  compensationTypeSchema,
+  currencyCodeSchema,
+  normalizeCompensationType,
+  normalizeCurrencyCode,
+  normalizePathCompanyEventType,
+} from "@/app/lib/models/common/domain-enums"
 import type {
   OnboardingCompleteInput,
   OnboardingCompleteResponse,
@@ -31,8 +39,8 @@ const completeSchema = z
     roleName: z.string().trim().min(1).max(120),
     startDate: z.coerce.date(),
     endDate: z.coerce.date().nullable().optional(),
-    compensationType: z.enum(["hourly", "monthly"]),
-    currency: z.string().trim().min(1).max(10),
+    compensationType: compensationTypeSchema,
+    currency: currencyCodeSchema,
     initialRate: z.number().min(0),
     currentRate: z.number().min(0),
     monthlyWorkHours: z.number().int().positive().max(744).optional(),
@@ -53,8 +61,8 @@ function mapPathCompanyEntity(row: typeof pathCompanies.$inferSelect): PathCompa
     color: row.color,
     displayName: row.displayName,
     roleDisplayName: row.roleDisplayName,
-    compensationType: row.compensationType as "hourly" | "monthly",
-    currency: row.currency,
+    compensationType: normalizeCompensationType(row.compensationType),
+    currency: normalizeCurrencyCode(row.currency),
     score: row.score,
     review: row.review,
     startDate: toIso(row.startDate) ?? new Date(0).toISOString(),
@@ -72,7 +80,7 @@ function mapPathCompanyEventEntity(
     id: row.id,
     ownerUserId: row.ownerUserId,
     pathCompanyId: row.pathCompanyId,
-    eventType: row.eventType as PathCompanyEventsEntity["eventType"],
+    eventType: normalizePathCompanyEventType(row.eventType),
     effectiveDate: toIso(row.effectiveDate) ?? new Date(0).toISOString(),
     amount: row.amount,
     notes: row.notes,
@@ -88,7 +96,7 @@ function mapUserFinanceSettingsEntity(
   return {
     id: row.id,
     ownerUserId: row.ownerUserId,
-    currency: row.currency,
+    currency: normalizeCurrencyCode(row.currency),
     locale: row.locale,
     monthlyWorkHours: row.monthlyWorkHours,
     workDaysPerYear: row.workDaysPerYear,
@@ -304,7 +312,7 @@ export async function completeOnboarding(
         id: crypto.randomUUID(),
         ownerUserId,
         pathCompanyId: pathCompany.id,
-        eventType: "start_rate",
+        eventType: PathCompanyEventType.START_RATE,
         effectiveDate: payload.startDate,
         amount: payload.initialRate,
         notes: null,
@@ -328,7 +336,7 @@ export async function completeOnboarding(
           id: crypto.randomUUID(),
           ownerUserId,
           pathCompanyId: pathCompany.id,
-          eventType: "rate_increase",
+          eventType: PathCompanyEventType.RATE_INCREASE,
           effectiveDate: payload.endDate ?? now,
           amount: payload.currentRate,
           notes: null,
@@ -361,7 +369,7 @@ export async function completeOnboarding(
           and(
             eq(pathCompanyEvents.ownerUserId, ownerUserId),
             eq(pathCompanyEvents.pathCompanyId, pathCompany.id),
-            eq(pathCompanyEvents.eventType, "end_of_employment"),
+            eq(pathCompanyEvents.eventType, PathCompanyEventType.END_OF_EMPLOYMENT),
             isNull(pathCompanyEvents.deletedAt)
           )
         )

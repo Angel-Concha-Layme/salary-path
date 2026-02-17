@@ -28,29 +28,51 @@ export interface DeleteUserFinanceSettingsOptions {
   signal?: AbortSignal
 }
 
+function hydrateUserFinanceSettingsEntity(entity: UserFinanceSettingsEntity): UserFinanceSettingsEntity {
+  return {
+    ...entity,
+    deletedAt: entity.deletedAt ?? null,
+  }
+}
+
+function hydrateUserFinanceSettingsListResponse(
+  response: UserFinanceSettingsListResponse
+): UserFinanceSettingsListResponse {
+  return {
+    ...response,
+    items: response.items.map(hydrateUserFinanceSettingsEntity),
+  }
+}
+
 async function listUserFinanceSettings(options: ListUserFinanceSettingsOptions = {}) {
-  return apiClient.get<UserFinanceSettingsListResponse>("/settings/finance", {
+  const response = await apiClient.get<UserFinanceSettingsListResponse>("/settings/finance", {
     query: {
       limit: options.limit ?? 50,
     },
     signal: options.signal,
   })
+
+  return hydrateUserFinanceSettingsListResponse(response)
 }
 
 async function getUserFinanceSettings(id: string, options: GetUserFinanceSettingsOptions = {}) {
-  return apiClient.get<UserFinanceSettingsEntity>(`/settings/finance/${id}`, {
+  const response = await apiClient.get<UserFinanceSettingsEntity>(`/settings/finance/${id}`, {
     signal: options.signal,
   })
+
+  return hydrateUserFinanceSettingsEntity(response)
 }
 
 async function createUserFinanceSettings(
   input: UserFinanceSettingsCreateInput,
   options: CreateUserFinanceSettingsOptions = {}
 ) {
-  return apiClient.post<UserFinanceSettingsEntity>("/settings/finance", {
+  const response = await apiClient.post<UserFinanceSettingsEntity>("/settings/finance", {
     json: input,
     signal: options.signal,
   })
+
+  return hydrateUserFinanceSettingsEntity(response)
 }
 
 async function updateUserFinanceSettings(
@@ -58,10 +80,12 @@ async function updateUserFinanceSettings(
   input: UserFinanceSettingsUpdateInput,
   options: UpdateUserFinanceSettingsOptions = {}
 ) {
-  return apiClient.patch<UserFinanceSettingsEntity>(`/settings/finance/${id}`, {
+  const response = await apiClient.patch<UserFinanceSettingsEntity>(`/settings/finance/${id}`, {
     json: input,
     signal: options.signal,
   })
+
+  return hydrateUserFinanceSettingsEntity(response)
 }
 
 async function deleteUserFinanceSettings(

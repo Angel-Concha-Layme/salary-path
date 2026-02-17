@@ -6,6 +6,10 @@ import { useStore } from "@tanstack/react-store"
 import { z } from "zod"
 
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
+import {
+  isPathCompanyEventType,
+  type CompensationTypeValue,
+} from "@/app/lib/models/common/domain-enums"
 import { getCompensationRateStep } from "@/app/lib/models/onboarding/onboarding-form.model"
 import {
   pathCompanyEventTypeOptions,
@@ -32,7 +36,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 interface EventDetailsFormProps {
   event: PathCompanyEventsEntity
-  compensationType: "hourly" | "monthly"
+  compensationType: CompensationTypeValue
   currency: string
   onSubmit: (input: PathCompanyEventsUpdateInput) => Promise<void>
   onDelete: () => Promise<void>
@@ -138,9 +142,13 @@ export function EventDetailsForm({
                 <Select
                   name={field.name}
                   value={field.state.value}
-                  onValueChange={(value) =>
-                    field.handleChange(value as PathCompanyEventsEntity["eventType"])
-                  }
+                  onValueChange={(value) => {
+                    if (!isPathCompanyEventType(value)) {
+                      return
+                    }
+
+                    field.handleChange(value)
+                  }}
                   disabled={isSaving || isDeleting}
                 >
                   <SelectTrigger id={`event-details-type-${event.id}`} aria-invalid={isInvalid}>

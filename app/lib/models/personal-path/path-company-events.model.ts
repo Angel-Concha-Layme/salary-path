@@ -1,13 +1,11 @@
-export const pathCompanyEventTypeOptions = [
-  "start_rate",
-  "rate_increase",
-  "annual_increase",
-  "mid_year_increase",
-  "promotion",
-  "end_of_employment",
-] as const
+import {
+  pathCompanyEventTypeOptions,
+  type PathCompanyEventTypeValue,
+} from "@/app/lib/models/common/domain-enums"
 
-export type PathCompanyEventType = (typeof pathCompanyEventTypeOptions)[number]
+export { pathCompanyEventTypeOptions }
+
+export type PathCompanyEventType = PathCompanyEventTypeValue
 
 export interface PathCompanyEventsEntity {
   id: string

@@ -1,4 +1,4 @@
-import { jsonError, jsonOk } from "@/app/lib/server/api-response"
+import { jsonError, jsonOkWithoutNulls } from "@/app/lib/server/api-response"
 import {
   deleteUserFinanceSettings,
   getUserFinanceSettingsById,
@@ -21,7 +21,7 @@ export async function GET(
     const { id } = await context.params
     const result = await getUserFinanceSettingsById(session.user.id, id)
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }
@@ -39,7 +39,7 @@ export async function PATCH(
     const payload = await request.json()
     const result = await updateUserFinanceSettings(session.user.id, id, payload)
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }
@@ -56,7 +56,7 @@ export async function DELETE(
     const { id } = await context.params
     const result = await deleteUserFinanceSettings(session.user.id, id)
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }

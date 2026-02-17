@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { ApiError } from "@/app/lib/server/api-error"
+import { omitNullValuesDeep } from "@/app/lib/server/omit-null"
 
 export interface ApiSuccess<T> {
   success: true
@@ -25,6 +26,10 @@ export function jsonOk<T>(data: T, init?: ResponseInit) {
     },
     init
   )
+}
+
+export function jsonOkWithoutNulls<T>(data: T, init?: ResponseInit) {
+  return jsonOk(omitNullValuesDeep(data), init)
 }
 
 export function jsonError(error: unknown) {

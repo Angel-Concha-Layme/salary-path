@@ -92,7 +92,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     protectedRoute: true,
     adminOnly: false,
     showInNavigation: true,
-    mobilePrimary: false,
+    mobilePrimary: true,
     icon: "chart",
   },
   {
@@ -112,7 +112,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     protectedRoute: true,
     adminOnly: false,
     showInNavigation: true,
-    mobilePrimary: true,
+    mobilePrimary: false,
     icon: "settings",
   },
   {

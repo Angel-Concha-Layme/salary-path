@@ -3,6 +3,7 @@ import { z } from "zod"
 
 import { db } from "@/app/lib/db/client"
 import { userFinanceSettings } from "@/app/lib/db/schema"
+import { currencyCodeSchema, normalizeCurrencyCode } from "@/app/lib/models/common/domain-enums"
 import type {
   UserFinanceSettingsCreateInput,
   UserFinanceSettingsEntity,
@@ -14,7 +15,7 @@ import { ApiError } from "@/app/lib/server/api-error"
 import { clampLimit, requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
 
 const createSchema = z.object({
-  currency: z.string().trim().min(1).max(10),
+  currency: currencyCodeSchema,
   locale: z.string().trim().min(2).max(20),
   monthlyWorkHours: z.number().int().positive().max(744).optional(),
   workDaysPerYear: z.number().int().min(1).max(366).optional(),
@@ -26,7 +27,7 @@ function mapEntity(row: typeof userFinanceSettings.$inferSelect): UserFinanceSet
   return {
     id: row.id,
     ownerUserId: row.ownerUserId,
-    currency: row.currency,
+    currency: normalizeCurrencyCode(row.currency),
     locale: row.locale,
     monthlyWorkHours: row.monthlyWorkHours,
     workDaysPerYear: row.workDaysPerYear,

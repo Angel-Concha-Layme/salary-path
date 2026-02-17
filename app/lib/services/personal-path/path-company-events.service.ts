@@ -33,11 +33,28 @@ export interface DeletePathCompanyEventOptions {
   signal?: AbortSignal
 }
 
+function hydratePathCompanyEventEntity(entity: PathCompanyEventsEntity): PathCompanyEventsEntity {
+  return {
+    ...entity,
+    notes: entity.notes ?? null,
+    deletedAt: entity.deletedAt ?? null,
+  }
+}
+
+function hydratePathCompanyEventsListResponse(
+  response: PathCompanyEventsListResponse
+): PathCompanyEventsListResponse {
+  return {
+    ...response,
+    items: response.items.map(hydratePathCompanyEventEntity),
+  }
+}
+
 async function listPathCompanyEvents(
   pathCompanyId: string,
   options: ListPathCompanyEventsOptions = {}
 ) {
-  return apiClient.get<PathCompanyEventsListResponse>(
+  const response = await apiClient.get<PathCompanyEventsListResponse>(
     `/personal-path/companies/${pathCompanyId}/events`,
     {
       query: {
@@ -46,17 +63,21 @@ async function listPathCompanyEvents(
       signal: options.signal,
     }
   )
+
+  return hydratePathCompanyEventsListResponse(response)
 }
 
 async function listPathCompanyEventsByOwner(
   options: ListPathCompanyEventsByOwnerOptions = {}
 ) {
-  return apiClient.get<PathCompanyEventsListResponse>("/personal-path/company-events", {
+  const response = await apiClient.get<PathCompanyEventsListResponse>("/personal-path/company-events", {
     query: {
       limit: options.limit ?? 100,
     },
     signal: options.signal,
   })
+
+  return hydratePathCompanyEventsListResponse(response)
 }
 
 async function getPathCompanyEvent(
@@ -64,12 +85,14 @@ async function getPathCompanyEvent(
   eventId: string,
   options: GetPathCompanyEventOptions = {}
 ) {
-  return apiClient.get<PathCompanyEventsEntity>(
+  const response = await apiClient.get<PathCompanyEventsEntity>(
     `/personal-path/companies/${pathCompanyId}/events/${eventId}`,
     {
       signal: options.signal,
     }
   )
+
+  return hydratePathCompanyEventEntity(response)
 }
 
 async function createPathCompanyEvent(
@@ -77,10 +100,12 @@ async function createPathCompanyEvent(
   input: PathCompanyEventsCreateInput,
   options: CreatePathCompanyEventOptions = {}
 ) {
-  return apiClient.post<PathCompanyEventsEntity>(`/personal-path/companies/${pathCompanyId}/events`, {
+  const response = await apiClient.post<PathCompanyEventsEntity>(`/personal-path/companies/${pathCompanyId}/events`, {
     json: input,
     signal: options.signal,
   })
+
+  return hydratePathCompanyEventEntity(response)
 }
 
 async function updatePathCompanyEvent(
@@ -89,13 +114,15 @@ async function updatePathCompanyEvent(
   input: PathCompanyEventsUpdateInput,
   options: UpdatePathCompanyEventOptions = {}
 ) {
-  return apiClient.patch<PathCompanyEventsEntity>(
+  const response = await apiClient.patch<PathCompanyEventsEntity>(
     `/personal-path/companies/${pathCompanyId}/events/${eventId}`,
     {
       json: input,
       signal: options.signal,
     }
   )
+
+  return hydratePathCompanyEventEntity(response)
 }
 
 async function deletePathCompanyEvent(

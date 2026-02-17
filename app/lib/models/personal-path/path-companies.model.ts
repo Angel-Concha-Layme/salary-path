@@ -1,3 +1,8 @@
+import type {
+  CompensationTypeValue,
+  CurrencyCodeValue,
+} from "@/app/lib/models/common/domain-enums"
+
 export interface PathCompaniesEntity {
   id: string
   ownerUserId: string
@@ -6,8 +11,8 @@ export interface PathCompaniesEntity {
   color: string
   displayName: string
   roleDisplayName: string
-  compensationType: "hourly" | "monthly"
-  currency: string
+  compensationType: CompensationTypeValue
+  currency: CurrencyCodeValue
   score: number
   review: string
   startDate: string
@@ -25,7 +30,7 @@ export interface PathCompaniesCreateInput {
   displayName?: string
   roleDisplayName?: string
   color?: string
-  compensationType?: "hourly" | "monthly"
+  compensationType?: CompensationTypeValue
   currency?: string
   score?: number
   review?: string
@@ -41,7 +46,7 @@ export interface PathCompaniesUpdateInput {
   displayName?: string
   roleDisplayName?: string
   color?: string
-  compensationType?: "hourly" | "monthly"
+  compensationType?: CompensationTypeValue
   currency?: string
   score?: number
   review?: string

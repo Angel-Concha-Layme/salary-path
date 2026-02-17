@@ -50,6 +50,13 @@
       "when": 1764200000000,
       "tag": "0006_path_company_end_of_employment",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1764300000000,
+      "tag": "0007_currency_enum_enforcement",
+      "breakpoints": true
     }
   ]
 }

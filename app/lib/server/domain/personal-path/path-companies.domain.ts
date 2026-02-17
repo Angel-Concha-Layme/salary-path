@@ -4,6 +4,14 @@ import { z } from "zod"
 import { db } from "@/app/lib/db/client"
 import { companyCatalog, pathCompanies, pathCompanyEvents, roleCatalog } from "@/app/lib/db/schema"
 import {
+  CompensationType,
+  CurrencyCode,
+  compensationTypeSchema,
+  currencyCodeSchema,
+  normalizeCompensationType,
+  normalizeCurrencyCode,
+} from "@/app/lib/models/common/domain-enums"
+import {
   coerceCompanyColor,
   getRandomCompanyColor,
   isValidCompanyColor,
@@ -40,8 +48,8 @@ const baseSchema = z.object({
   displayName: z.string().trim().min(1).max(160).optional(),
   roleDisplayName: z.string().trim().min(1).max(160).optional(),
   color: colorSchema.optional(),
-  compensationType: z.enum(["hourly", "monthly"]).optional(),
-  currency: z.string().trim().min(1).max(10).optional(),
+  compensationType: compensationTypeSchema.optional(),
+  currency: currencyCodeSchema.optional(),
   score: z.number().int().min(1).max(10).optional(),
   review: z.string().trim().max(1000).optional(),
   startDate: z.coerce.date().optional(),
@@ -88,8 +96,8 @@ function mapEntity(row: typeof pathCompanies.$inferSelect): PathCompaniesEntity 
     color: coerceCompanyColor(row.color),
     displayName: row.displayName,
     roleDisplayName: row.roleDisplayName,
-    compensationType: row.compensationType as "hourly" | "monthly",
-    currency: row.currency,
+    compensationType: normalizeCompensationType(row.compensationType),
+    currency: normalizeCurrencyCode(row.currency),
     score: row.score,
     review: row.review,
     startDate: toIso(row.startDate) ?? new Date(0).toISOString(),
@@ -276,8 +284,8 @@ export async function createPathCompany(
         color: payload.color ?? getRandomCompanyColor(),
         displayName: companyReference.displayName,
         roleDisplayName: roleReference.roleDisplayName,
-        compensationType: payload.compensationType ?? "monthly",
-        currency: payload.currency ?? "USD",
+        compensationType: payload.compensationType ?? CompensationType.MONTHLY,
+        currency: payload.currency ?? CurrencyCode.USD,
         score: payload.score ?? 5,
         review: payload.review ?? "",
         startDate: payload.startDate,
@@ -351,11 +359,11 @@ export async function updatePathCompany(
   }
 
   if (payload.compensationType) {
-    nextValues.compensationType = payload.compensationType
+    nextValues.compensationType = normalizeCompensationType(payload.compensationType)
   }
 
   if (payload.currency) {
-    nextValues.currency = payload.currency
+    nextValues.currency = normalizeCurrencyCode(payload.currency)
   }
 
   if (payload.score !== undefined) {

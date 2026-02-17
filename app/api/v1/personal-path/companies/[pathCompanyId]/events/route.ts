@@ -1,4 +1,4 @@
-import { jsonError, jsonOk } from "@/app/lib/server/api-response"
+import { jsonError, jsonOkWithoutNulls } from "@/app/lib/server/api-response"
 import {
   createPathCompanyEvent,
   listPathCompanyEvents,
@@ -25,7 +25,7 @@ export async function GET(
       limit: requestedLimit,
     })
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }
@@ -43,7 +43,7 @@ export async function POST(
     const payload = await request.json()
     const result = await createPathCompanyEvent(session.user.id, pathCompanyId, payload)
 
-    return jsonOk(result, { status: 201 })
+    return jsonOkWithoutNulls(result, { status: 201 })
   } catch (error) {
     return jsonError(error)
   }

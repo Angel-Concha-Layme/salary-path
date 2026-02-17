@@ -13,6 +13,26 @@ import { user } from "@/app/lib/db/schema/auth"
 
 const timestampNow = sql`(unixepoch() * 1000)`
 
+export const currencyCatalog = sqliteTable(
+  "currency_catalog",
+  {
+    code: text("code").primaryKey(),
+    minorUnits: integer("minor_units").notNull().default(2),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+  },
+  (table) => [
+    check(
+      "currency_catalog_minor_units_range",
+      sql`${table.minorUnits} BETWEEN 0 AND 3`
+    ),
+  ]
+)
+
 export const userFinanceSettings = sqliteTable(
   "user_finance_settings",
   {

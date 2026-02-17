@@ -1,3 +1,6 @@
+import type {
+  CompensationTypeValue,
+} from "@/app/lib/models/common/domain-enums"
 import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-companies.model"
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
 import type { UserFinanceSettingsEntity } from "@/app/lib/models/settings/user-finance-settings.model"
@@ -12,7 +15,7 @@ export interface OnboardingCompleteInput {
   roleName: string
   startDate: string
   endDate?: string | null
-  compensationType: "hourly" | "monthly"
+  compensationType: CompensationTypeValue
   currency: string
   initialRate: number
   currentRate: number

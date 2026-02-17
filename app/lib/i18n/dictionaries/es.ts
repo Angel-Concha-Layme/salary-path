@@ -47,6 +47,7 @@ export const esDictionary = {
     adminUsers: "Usuarios Admin",
     language: "Idioma",
     theme: "Tema",
+    menu: "Menú",
     collapse: "Contraer",
     expand: "Expandir",
   },

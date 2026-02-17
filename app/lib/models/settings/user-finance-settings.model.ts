@@ -1,7 +1,9 @@
+import type { CurrencyCodeValue } from "@/app/lib/models/common/domain-enums"
+
 export interface UserFinanceSettingsEntity {
   id: string
   ownerUserId: string
-  currency: string
+  currency: CurrencyCodeValue
   locale: string
   monthlyWorkHours: number
   workDaysPerYear: number

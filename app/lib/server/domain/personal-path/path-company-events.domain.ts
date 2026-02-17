@@ -3,6 +3,10 @@ import { z } from "zod"
 
 import { db } from "@/app/lib/db/client"
 import { pathCompanyEvents } from "@/app/lib/db/schema"
+import {
+  normalizePathCompanyEventType,
+  pathCompanyEventTypeSchema,
+} from "@/app/lib/models/common/domain-enums"
 import type {
   PathCompanyEventsCreateInput,
   PathCompanyEventsEntity,
@@ -10,14 +14,13 @@ import type {
   PathCompanyEventsListResponse,
   PathCompanyEventsUpdateInput,
 } from "@/app/lib/models/personal-path/path-company-events.model"
-import { pathCompanyEventTypeOptions } from "@/app/lib/models/personal-path/path-company-events.model"
 import { ApiError } from "@/app/lib/server/api-error"
 import { clampLimit, requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
 import { syncEndOfEmploymentEventForCompany } from "@/app/lib/server/domain/personal-path/end-of-employment-event-sync"
 import { assertPathCompanyOwnership } from "@/app/lib/server/domain/personal-path/path-companies.domain"
 
 const createSchema = z.object({
-  eventType: z.enum(pathCompanyEventTypeOptions),
+  eventType: pathCompanyEventTypeSchema,
   effectiveDate: z.coerce.date(),
   amount: z.number().min(0),
   notes: z.string().trim().max(1000).nullable().optional(),
@@ -30,7 +33,7 @@ function mapEntity(row: typeof pathCompanyEvents.$inferSelect): PathCompanyEvent
     id: row.id,
     ownerUserId: row.ownerUserId,
     pathCompanyId: row.pathCompanyId,
-    eventType: row.eventType as PathCompanyEventsEntity["eventType"],
+    eventType: normalizePathCompanyEventType(row.eventType),
     effectiveDate: toIso(row.effectiveDate) ?? new Date(0).toISOString(),
     amount: row.amount,
     notes: row.notes,

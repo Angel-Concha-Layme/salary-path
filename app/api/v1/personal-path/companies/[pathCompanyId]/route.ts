@@ -1,4 +1,4 @@
-import { jsonError, jsonOk } from "@/app/lib/server/api-response"
+import { jsonError, jsonOkWithoutNulls } from "@/app/lib/server/api-response"
 import {
   deletePathCompany,
   getPathCompanyById,
@@ -21,7 +21,7 @@ export async function GET(
     const { pathCompanyId } = await context.params
     const result = await getPathCompanyById(session.user.id, pathCompanyId)
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }
@@ -39,7 +39,7 @@ export async function PATCH(
     const payload = await request.json()
     const result = await updatePathCompany(session.user.id, pathCompanyId, payload)
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }
@@ -56,7 +56,7 @@ export async function DELETE(
     const { pathCompanyId } = await context.params
     const result = await deletePathCompany(session.user.id, pathCompanyId)
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }

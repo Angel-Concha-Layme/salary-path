@@ -47,6 +47,7 @@ export const enDictionary = {
     adminUsers: "Admin Users",
     language: "Language",
     theme: "Theme",
+    menu: "Menu",
     collapse: "Collapse",
     expand: "Expand",
   },

@@ -9,6 +9,13 @@ import { z } from "zod"
 import { useCompanyCatalogListQuery } from "@/app/hooks/companies/use-company-catalog"
 import { useRoleCatalogListQuery } from "@/app/hooks/roles/use-role-catalog"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
+import {
+  CompensationType,
+  compensationTypeSchema,
+  currencyCodeSchema,
+  isCompensationType,
+  type CompensationTypeValue,
+} from "@/app/lib/models/common/domain-enums"
 import type {
   PathCompaniesEntity,
   PathCompaniesUpdateInput,
@@ -55,7 +62,7 @@ interface CompanyDetailsFormValues {
   roleName: string
   startDate: Date | null
   endDate: Date | null
-  compensationType: "hourly" | "monthly"
+  compensationType: CompensationTypeValue
   currency: string
   score: number
   color: string
@@ -85,8 +92,8 @@ export function CompanyDetailsForm({
           roleName: z.string().trim().min(1, dictionary.companies.validations.roleName),
           startDate: z.date().nullable(),
           endDate: z.date().nullable(),
-          compensationType: z.enum(["hourly", "monthly"]),
-          currency: z.string().trim().min(1),
+          compensationType: compensationTypeSchema,
+          currency: currencyCodeSchema,
           score: z.number().int().min(1, dictionary.companies.validations.score).max(10, dictionary.companies.validations.score),
           review: z.string().trim().max(1000, dictionary.companies.validations.review),
           color: z
@@ -389,15 +396,25 @@ export function CompanyDetailsForm({
                   <Select
                     name={field.name}
                     value={field.state.value}
-                    onValueChange={(value) => field.handleChange(value as "hourly" | "monthly")}
+                    onValueChange={(value) => {
+                      if (!isCompensationType(value)) {
+                        return
+                      }
+
+                      field.handleChange(value)
+                    }}
                     disabled={isSaving || isDeleting}
                   >
                     <SelectTrigger id={`company-details-compensation-${company.id}`} aria-invalid={isInvalid}>
                       <SelectValue placeholder={dictionary.companies.labels.compensationType} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="hourly">{dictionary.companies.options.compensationHourly}</SelectItem>
-                      <SelectItem value="monthly">{dictionary.companies.options.compensationMonthly}</SelectItem>
+                      <SelectItem value={CompensationType.HOURLY}>
+                        {dictionary.companies.options.compensationHourly}
+                      </SelectItem>
+                      <SelectItem value={CompensationType.MONTHLY}>
+                        {dictionary.companies.options.compensationMonthly}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
@@ -415,23 +432,49 @@ export function CompanyDetailsForm({
                   <FieldLabel htmlFor={`company-details-currency-${company.id}`}>
                     {dictionary.companies.labels.currency}
                   </FieldLabel>
-                  <Select
-                    name={field.name}
-                    value={field.state.value}
-                    onValueChange={field.handleChange}
-                    disabled={isSaving || isDeleting}
+                  <Combobox
+                    items={currencyOptions}
+                    value={field.state.value || null}
+                    inputValue={field.state.value}
+                    onInputValueChange={(value, eventDetails) => {
+                      if (eventDetails.reason !== "input-change") {
+                        return
+                      }
+
+                      field.handleChange(value.toUpperCase())
+                    }}
+                    onValueChange={(value) => {
+                      if (typeof value !== "string") {
+                        return
+                      }
+
+                      field.handleChange(value)
+                    }}
                   >
-                    <SelectTrigger id={`company-details-currency-${company.id}`} aria-invalid={isInvalid}>
-                      <SelectValue placeholder={dictionary.companies.placeholders.selectCurrency} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencyOptions.map((currency) => (
-                        <SelectItem key={currency} value={currency}>
-                          {currency}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <ComboboxInput
+                      id={`company-details-currency-${company.id}`}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onKeyDown={(event) => {
+                        const expanded = event.currentTarget.getAttribute("aria-expanded") === "true"
+                        if (event.key === "Enter" && !expanded) {
+                          event.preventDefault()
+                        }
+                      }}
+                      aria-invalid={isInvalid}
+                      placeholder={dictionary.companies.placeholders.selectCurrency}
+                      disabled={isSaving || isDeleting}
+                    />
+                    <ComboboxContent>
+                      <ComboboxList>
+                        {(currency) => (
+                          <ComboboxItem key={currency} value={currency}>
+                            {currency}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                   {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                 </Field>
               )

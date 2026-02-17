@@ -28,29 +28,54 @@ export interface DeletePathCompanyOptions {
   signal?: AbortSignal
 }
 
+function hydratePathCompanyEntity(entity: PathCompaniesEntity): PathCompaniesEntity {
+  return {
+    ...entity,
+    companyCatalogId: entity.companyCatalogId ?? null,
+    roleCatalogId: entity.roleCatalogId ?? null,
+    endDate: entity.endDate ?? null,
+    deletedAt: entity.deletedAt ?? null,
+  }
+}
+
+function hydratePathCompaniesListResponse(
+  response: PathCompaniesListResponse
+): PathCompaniesListResponse {
+  return {
+    ...response,
+    items: response.items.map(hydratePathCompanyEntity),
+  }
+}
+
 async function listPathCompanies(options: ListPathCompaniesOptions = {}) {
-  return apiClient.get<PathCompaniesListResponse>("/personal-path/companies", {
+  const response = await apiClient.get<PathCompaniesListResponse>("/personal-path/companies", {
     query: {
       limit: options.limit ?? 50,
     },
     signal: options.signal,
   })
+
+  return hydratePathCompaniesListResponse(response)
 }
 
 async function getPathCompany(pathCompanyId: string, options: GetPathCompanyOptions = {}) {
-  return apiClient.get<PathCompaniesEntity>(`/personal-path/companies/${pathCompanyId}`, {
+  const response = await apiClient.get<PathCompaniesEntity>(`/personal-path/companies/${pathCompanyId}`, {
     signal: options.signal,
   })
+
+  return hydratePathCompanyEntity(response)
 }
 
 async function createPathCompany(
   input: PathCompaniesCreateInput,
   options: CreatePathCompanyOptions = {}
 ) {
-  return apiClient.post<PathCompaniesEntity>("/personal-path/companies", {
+  const response = await apiClient.post<PathCompaniesEntity>("/personal-path/companies", {
     json: input,
     signal: options.signal,
   })
+
+  return hydratePathCompanyEntity(response)
 }
 
 async function updatePathCompany(
@@ -58,10 +83,12 @@ async function updatePathCompany(
   input: PathCompaniesUpdateInput,
   options: UpdatePathCompanyOptions = {}
 ) {
-  return apiClient.patch<PathCompaniesEntity>(`/personal-path/companies/${pathCompanyId}`, {
+  const response = await apiClient.patch<PathCompaniesEntity>(`/personal-path/companies/${pathCompanyId}`, {
     json: input,
     signal: options.signal,
   })
+
+  return hydratePathCompanyEntity(response)
 }
 
 async function deletePathCompany(

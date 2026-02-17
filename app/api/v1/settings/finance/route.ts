@@ -1,4 +1,4 @@
-import { jsonError, jsonOk } from "@/app/lib/server/api-response"
+import { jsonError, jsonOkWithoutNulls } from "@/app/lib/server/api-response"
 import {
   createUserFinanceSettings,
   listUserFinanceSettings,
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
       limit: requestedLimit,
     })
 
-    return jsonOk(result)
+    return jsonOkWithoutNulls(result)
   } catch (error) {
     return jsonError(error)
   }
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const payload = await request.json()
     const result = await createUserFinanceSettings(session.user.id, payload)
 
-    return jsonOk(result, { status: 201 })
+    return jsonOkWithoutNulls(result, { status: 201 })
   } catch (error) {
     return jsonError(error)
   }

@@ -10,6 +10,13 @@ import { useCompanyCatalogListQuery } from "@/app/hooks/companies/use-company-ca
 import { useRoleCatalogListQuery } from "@/app/hooks/roles/use-role-catalog"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import {
+  CompensationType,
+  compensationTypeSchema,
+  currencyCodeSchema,
+  isCompensationType,
+  type CompensationTypeValue,
+} from "@/app/lib/models/common/domain-enums"
+import {
   currencyOptions,
   getCompensationRateStep,
 } from "@/app/lib/models/onboarding/onboarding-form.model"
@@ -47,7 +54,7 @@ interface CreateCompanyFormValues {
   roleName: string
   startDate: Date | null
   endDate: Date | null
-  compensationType: "hourly" | "monthly"
+  compensationType: CompensationTypeValue
   currency: string
   initialRate: number
   finalRate: string
@@ -60,7 +67,7 @@ function buildDefaultValues(): CreateCompanyFormValues {
     roleName: "",
     startDate: null,
     endDate: null,
-    compensationType: "monthly",
+    compensationType: CompensationType.MONTHLY,
     currency: "USD",
     initialRate: 0,
     finalRate: "",
@@ -119,8 +126,8 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
           roleName: z.string().trim().min(1, dictionary.companies.validations.roleName),
           startDate: z.date().nullable(),
           endDate: z.date().nullable(),
-          compensationType: z.enum(["hourly", "monthly"]),
-          currency: z.string().trim().min(1),
+          compensationType: compensationTypeSchema,
+          currency: currencyCodeSchema,
           initialRate: z.number().min(0, dictionary.companies.validations.initialRate),
           finalRate: z
             .string()
@@ -471,15 +478,25 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
                       <Select
                         name={field.name}
                         value={field.state.value}
-                        onValueChange={(value) => field.handleChange(value as "hourly" | "monthly")}
+                        onValueChange={(value) => {
+                          if (!isCompensationType(value)) {
+                            return
+                          }
+
+                          field.handleChange(value)
+                        }}
                         disabled={isPending}
                       >
                         <SelectTrigger id="create-company-compensation" aria-invalid={isInvalid}>
                           <SelectValue placeholder={dictionary.companies.labels.compensationType} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="hourly">{dictionary.companies.options.compensationHourly}</SelectItem>
-                          <SelectItem value="monthly">{dictionary.companies.options.compensationMonthly}</SelectItem>
+                          <SelectItem value={CompensationType.HOURLY}>
+                            {dictionary.companies.options.compensationHourly}
+                          </SelectItem>
+                          <SelectItem value={CompensationType.MONTHLY}>
+                            {dictionary.companies.options.compensationMonthly}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
@@ -495,23 +512,49 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
                   return (
                     <Field data-invalid={isInvalid}>
                       <FieldLabel htmlFor="create-company-currency">{dictionary.companies.labels.currency}</FieldLabel>
-                      <Select
-                        name={field.name}
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                        disabled={isPending}
+                      <Combobox
+                        items={currencyOptions}
+                        value={field.state.value || null}
+                        inputValue={field.state.value}
+                        onInputValueChange={(value, eventDetails) => {
+                          if (eventDetails.reason !== "input-change") {
+                            return
+                          }
+
+                          field.handleChange(value.toUpperCase())
+                        }}
+                        onValueChange={(value) => {
+                          if (typeof value !== "string") {
+                            return
+                          }
+
+                          field.handleChange(value)
+                        }}
                       >
-                        <SelectTrigger id="create-company-currency" aria-invalid={isInvalid}>
-                          <SelectValue placeholder={dictionary.companies.placeholders.selectCurrency} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {currencyOptions.map((currency) => (
-                            <SelectItem key={currency} value={currency}>
-                              {currency}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <ComboboxInput
+                          id="create-company-currency"
+                          name={field.name}
+                          onBlur={field.handleBlur}
+                          onKeyDown={(eventKeyDown) => {
+                            const expanded = eventKeyDown.currentTarget.getAttribute("aria-expanded") === "true"
+                            if (eventKeyDown.key === "Enter" && !expanded) {
+                              eventKeyDown.preventDefault()
+                            }
+                          }}
+                          aria-invalid={isInvalid}
+                          placeholder={dictionary.companies.placeholders.selectCurrency}
+                          disabled={isPending}
+                        />
+                        <ComboboxContent portalContainer={dialogContentRef}>
+                          <ComboboxList>
+                            {(currency) => (
+                              <ComboboxItem key={currency} value={currency}>
+                                {currency}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
                       {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                     </Field>
                   )

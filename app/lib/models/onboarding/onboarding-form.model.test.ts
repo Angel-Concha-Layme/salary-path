@@ -12,6 +12,19 @@ import {
 } from "@/app/lib/models/onboarding/onboarding-form.model"
 
 describe("onboarding form schema", () => {
+  const legacyStepCurrencies = [
+    "USD",
+    "PEN",
+    "EUR",
+    "GBP",
+    "MXN",
+    "COP",
+    "CLP",
+    "ARS",
+    "BRL",
+    "CAD",
+  ] as const
+
   it("provides expected defaults", () => {
     expect(onboardingDefaultValues.monthlyWorkHours).toBe(174)
     expect(onboardingDefaultValues.workDaysPerYear).toBe(261)
@@ -38,10 +51,22 @@ describe("onboarding form schema", () => {
   })
 
   it("always uses smaller hourly steps than monthly steps", () => {
-    for (const currency of currencyOptions) {
+    for (const currency of legacyStepCurrencies) {
       const config = compensationStepByCurrency[currency]
+      expect(config).toBeDefined()
+      if (!config) {
+        throw new Error("Missing compensation step config for legacy currency")
+      }
+
       expect(config.hourly).toBeLessThan(config.monthly)
     }
+  })
+
+  it("derives fallback steps from ISO minor units", () => {
+    expect(getCompensationRateStep("hourly", "JPY")).toBe(1)
+    expect(getCompensationRateStep("monthly", "JPY")).toBe(100)
+    expect(getCompensationRateStep("hourly", "BHD")).toBe(0.001)
+    expect(getCompensationRateStep("monthly", "BHD")).toBe(0.1)
   })
 
   it("fails step 1 when company or role is missing", () => {

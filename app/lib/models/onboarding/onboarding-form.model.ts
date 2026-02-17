@@ -1,55 +1,35 @@
 import { z } from "zod"
 
-export const currencyOptions = [
-  "USD",
-  "PEN",
-  "EUR",
-  "GBP",
-  "MXN",
-  "COP",
-  "CLP",
-  "ARS",
-  "BRL",
-  "CAD",
-] as const
+import {
+  CompensationType,
+  compensationStepOverrides,
+  compensationTypeOptions,
+  currencyCodeSchema,
+  currencyOptions,
+  getCompensationRateStep,
+  type CompensationTypeValue,
+  type CurrencyCodeValue,
+} from "@/app/lib/models/common/domain-enums"
 
-export const compensationTypeOptions = ["hourly", "monthly"] as const
-export type CompensationTypeOption = (typeof compensationTypeOptions)[number]
-export type CurrencyOption = (typeof currencyOptions)[number]
+export { currencyOptions, compensationTypeOptions, getCompensationRateStep }
+
+export type CompensationTypeOption = CompensationTypeValue
+export type CurrencyOption = CurrencyCodeValue
 
 interface CompensationStepConfig {
   hourly: number
   monthly: number
 }
 
-export const compensationStepByCurrency: Record<CurrencyOption, CompensationStepConfig> = {
-  USD: { hourly: 0.5, monthly: 100 },
-  PEN: { hourly: 0.5, monthly: 100 },
-  EUR: { hourly: 0.5, monthly: 100 },
-  GBP: { hourly: 0.5, monthly: 100 },
-  MXN: { hourly: 5, monthly: 500 },
-  COP: { hourly: 1000, monthly: 100000 },
-  CLP: { hourly: 500, monthly: 50000 },
-  ARS: { hourly: 1000, monthly: 100000 },
-  BRL: { hourly: 1, monthly: 100 },
-  CAD: { hourly: 0.5, monthly: 100 },
-}
-
-export function getCompensationRateStep(
-  compensationType: CompensationTypeOption,
-  currency: string
-): number {
-  const normalizedCurrency = currency.trim().toUpperCase()
-  const config = compensationStepByCurrency[normalizedCurrency as CurrencyOption] ?? compensationStepByCurrency.USD
-  return config[compensationType]
-}
+export const compensationStepByCurrency: Partial<Record<CurrencyOption, CompensationStepConfig>> =
+  compensationStepOverrides
 
 const onboardingFormBaseSchema = z.object({
   companyName: z.string().trim().min(1),
   roleName: z.string().trim().min(1),
   startDate: z.date().nullable(),
   compensationType: z.enum(compensationTypeOptions),
-  currency: z.string().trim().min(1).max(10),
+  currency: currencyCodeSchema,
   initialRate: z.number().min(0),
   currentRate: z.number().min(0),
   monthlyWorkHours: z.number().int().positive().max(744),
@@ -96,7 +76,7 @@ export const onboardingDefaultValues: OnboardingFormValues = {
   companyName: "",
   roleName: "",
   startDate: null,
-  compensationType: "monthly",
+  compensationType: CompensationType.MONTHLY,
   currency: "USD",
   initialRate: 0,
   currentRate: 0,

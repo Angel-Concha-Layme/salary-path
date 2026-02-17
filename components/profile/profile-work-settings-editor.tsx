@@ -9,6 +9,7 @@ import {
   useUserFinanceSettingsListQuery,
 } from "@/app/hooks/settings/use-user-finance-settings"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
+import type { CurrencyCodeValue } from "@/app/lib/models/common/domain-enums"
 import { ApiClientError } from "@/app/types/api"
 import { NumberStepperInput } from "@/components/onboarding/number-stepper-input"
 import { Button } from "@/components/ui/button"
@@ -28,7 +29,7 @@ type WorkPresetId =
   | "flexible"
 
 interface ProfileWorkSettingsEditorProps {
-  currency: string
+  currency: CurrencyCodeValue
   locale: string
   monthlyWorkHours: number
   workDaysPerYear: number

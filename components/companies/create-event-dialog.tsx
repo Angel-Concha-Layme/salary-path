@@ -6,6 +6,10 @@ import { useStore } from "@tanstack/react-store"
 import { z } from "zod"
 
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
+import {
+  isPathCompanyEventType,
+  type CompensationTypeValue,
+} from "@/app/lib/models/common/domain-enums"
 import { getCompensationRateStep } from "@/app/lib/models/onboarding/onboarding-form.model"
 import type {
   PathCompanyEventsCreateInput,
@@ -22,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 interface CreateEventDialogProps {
   canCreate: boolean
-  compensationType: "hourly" | "monthly"
+  compensationType: CompensationTypeValue
   currency: string
   onCreate: (input: PathCompanyEventsCreateInput) => Promise<void>
   isPending?: boolean
@@ -141,9 +145,13 @@ export function CreateEventDialog({
                     <Select
                       name={field.name}
                       value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(value as PathCompanyEventsEntity["eventType"])
-                      }
+                      onValueChange={(value) => {
+                        if (!isPathCompanyEventType(value)) {
+                          return
+                        }
+
+                        field.handleChange(value)
+                      }}
                       disabled={isPending}
                     >
                       <SelectTrigger id="create-event-type" aria-invalid={isInvalid}>

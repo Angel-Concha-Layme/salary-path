@@ -1,3 +1,4 @@
+import type { CurrencyCodeValue } from "@/app/lib/models/common/domain-enums"
 import type { PathCompanyEventType } from "@/app/lib/models/personal-path/path-company-events.model"
 import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-companies.model"
 
@@ -16,7 +17,7 @@ export interface ProfileOverviewUser {
 }
 
 export interface ProfileOverviewFinanceSettings {
-  currency: string
+  currency: CurrencyCodeValue
   locale: string
   monthlyWorkHours: number
   workDaysPerYear: number
@@ -28,7 +29,7 @@ export interface ProfileSalaryByCompany {
   displayName: string
   roleDisplayName: string
   color: string
-  currency: string
+  currency: CurrencyCodeValue
   compensationType: PathCompaniesEntity["compensationType"]
   currentRate: number | null
   currentRateDate: string | null
@@ -39,7 +40,7 @@ export interface ProfileSalaryByCompany {
 }
 
 export interface ProfileSalarySummary {
-  baseCurrency: string
+  baseCurrency: CurrencyCodeValue
   annualAverage: number | null
   annualAverageCompanyCount: number
   excludedFromAverageCount: number
@@ -60,7 +61,7 @@ export interface ProfileCareerEventsByCompany {
   displayName: string
   roleDisplayName: string
   color: string
-  currency: string
+  currency: CurrencyCodeValue
   compensationType: PathCompaniesEntity["compensationType"]
   events: ProfileCareerEvent[]
 }
@@ -75,7 +76,7 @@ export interface ProfileUsefulInfo {
   yearsTracked: number | null
   monthlyWorkHours: number
   workDaysPerYear: number
-  preferredCurrency: string
+  preferredCurrency: CurrencyCodeValue
   preferredLocale: string
 }
 

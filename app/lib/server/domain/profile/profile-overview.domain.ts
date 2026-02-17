@@ -2,6 +2,13 @@ import { and, desc, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/app/lib/db/client"
 import {
+  normalizeCompensationType,
+  normalizeCurrencyCode,
+  normalizePathCompanyEventType,
+  type CompensationTypeValue,
+  type CurrencyCodeValue,
+} from "@/app/lib/models/common/domain-enums"
+import {
   pathCompanies,
   pathCompanyEvents,
   user,
@@ -14,14 +21,12 @@ import type {
   ProfileOverviewResponse,
   ProfileSalaryByCompany,
 } from "@/app/lib/models/profile/profile-overview.model"
-import type { PathCompanyEventType } from "@/app/lib/models/personal-path/path-company-events.model"
 import { normalizeAmountToMonthly } from "@/app/lib/models/personal-path/personal-path-chart.model"
 import { ApiError } from "@/app/lib/server/api-error"
 import { toIso } from "@/app/lib/server/domain/common"
 
 const DEFAULT_MONTHLY_WORK_HOURS = 174
 const DEFAULT_WORK_DAYS_PER_YEAR = 261
-const DEFAULT_CURRENCY = "USD"
 const DEFAULT_LOCALE = "es"
 const MS_PER_YEAR = 1000 * 60 * 60 * 24 * 365.25
 
@@ -30,30 +35,17 @@ interface CompanyAccumulator {
   displayName: string
   roleDisplayName: string
   color: string
-  currency: string
-  compensationType: "hourly" | "monthly"
+  currency: CurrencyCodeValue
+  compensationType: CompensationTypeValue
   startDate: string
   endDate: string | null
   score: number
   events: ProfileCareerEvent[]
 }
 
-function normalizeCurrency(value: string | null | undefined): string {
-  const normalized = value?.trim().toUpperCase()
-  return normalized && normalized.length > 0 ? normalized : DEFAULT_CURRENCY
-}
-
 function normalizeLocale(value: string | null | undefined): string {
   const normalized = value?.trim()
   return normalized && normalized.length > 0 ? normalized : DEFAULT_LOCALE
-}
-
-function normalizeCompensationType(value: string | null): "hourly" | "monthly" {
-  return value === "hourly" ? "hourly" : "monthly"
-}
-
-function normalizeEventType(value: string): PathCompanyEventType {
-  return value as PathCompanyEventType
 }
 
 function round(value: number, decimals = 2): number {
@@ -78,7 +70,7 @@ function buildUsefulInfo(
   companies: CompanyAccumulator[],
   monthlyWorkHours: number,
   workDaysPerYear: number,
-  preferredCurrency: string,
+  preferredCurrency: CurrencyCodeValue,
   preferredLocale: string
 ) {
   const totalCompanies = companies.length
@@ -242,7 +234,7 @@ export async function getProfileOverview(
 
   const financeSettings: ProfileOverviewFinanceSettings | null = firstRow.settingsId
     ? {
-      currency: normalizeCurrency(firstRow.settingsCurrency),
+      currency: normalizeCurrencyCode(firstRow.settingsCurrency),
       locale: normalizeLocale(firstRow.settingsLocale),
       monthlyWorkHours: firstRow.settingsMonthlyWorkHours ?? DEFAULT_MONTHLY_WORK_HOURS,
       workDaysPerYear: firstRow.settingsWorkDaysPerYear ?? DEFAULT_WORK_DAYS_PER_YEAR,
@@ -265,7 +257,7 @@ export async function getProfileOverview(
         displayName: row.pathCompanyDisplayName ?? "",
         roleDisplayName: row.pathCompanyRoleDisplayName ?? "",
         color: row.pathCompanyColor ?? "#0F766E",
-        currency: normalizeCurrency(row.pathCompanyCurrency),
+        currency: normalizeCurrencyCode(row.pathCompanyCurrency),
         compensationType: normalizeCompensationType(row.pathCompanyCompensationType),
         score: row.pathCompanyScore ?? 0,
         startDate: toIso(row.pathCompanyStartDate) ?? new Date(0).toISOString(),
@@ -286,7 +278,7 @@ export async function getProfileOverview(
 
     target.events.push({
       id: row.eventId,
-      eventType: normalizeEventType(row.eventType),
+      eventType: normalizePathCompanyEventType(row.eventType),
       effectiveDate: toIso(row.eventEffectiveDate) ?? new Date(0).toISOString(),
       amount: row.eventAmount,
       notes: row.eventNotes,
@@ -314,7 +306,7 @@ export async function getProfileOverview(
 
   const monthlyWorkHours =
     financeSettings?.monthlyWorkHours ?? DEFAULT_MONTHLY_WORK_HOURS
-  const preferredCurrency = financeSettings?.currency ?? normalizeCurrency(companies[0]?.currency)
+  const preferredCurrency = financeSettings?.currency ?? normalizeCurrencyCode(companies[0]?.currency)
   const preferredLocale = financeSettings?.locale ?? DEFAULT_LOCALE
 
   const salaryByCompany: ProfileSalaryByCompany[] = companies.map((company) => {
@@ -347,7 +339,7 @@ export async function getProfileOverview(
   const annualAverageCandidates = salaryByCompany.filter(
     (salary) =>
       salary.annualizedSalary !== null &&
-      normalizeCurrency(salary.currency) === preferredCurrency
+      normalizeCurrencyCode(salary.currency) === preferredCurrency
   )
   const annualAverage =
     annualAverageCandidates.length > 0
@@ -363,7 +355,7 @@ export async function getProfileOverview(
   const excludedFromAverageCount = salaryByCompany.filter(
     (salary) =>
       salary.annualizedSalary !== null &&
-      normalizeCurrency(salary.currency) !== preferredCurrency
+      normalizeCurrencyCode(salary.currency) !== preferredCurrency
   ).length
 
   const careerEventsByCompany: ProfileCareerEventsByCompany[] = companies.map((company) => ({
