@@ -108,13 +108,8 @@ export async function proxy(request: NextRequest) {
 
   const callbackUrl = encodeURIComponent(`${pathname}${search}`)
 
-  if (pathname === "/sign-in" && hasSession) {
-    return withLocaleCookie(
-      request,
-      buildRedirect(request, "/personal-path"),
-      locale
-    )
-  }
+  // Do not redirect /sign-in using cookie presence alone.
+  // A stale session token cookie (deleted DB session) would cause a redirect loop.
 
   if (isProtectedSegment(pathname) && !hasSession) {
     return withLocaleCookie(
