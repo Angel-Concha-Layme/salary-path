@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm"
 import { betterAuth } from "better-auth"
+import { createAuthMiddleware } from "better-auth/api"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { admin } from "better-auth/plugins/admin"
 import { jwt } from "better-auth/plugins/jwt"
@@ -8,6 +9,14 @@ import { headers } from "next/headers"
 import { db } from "@/app/lib/db/client"
 import * as schema from "@/app/lib/db/schema"
 import { ensureAdminRole, hasAdminRole } from "@/app/lib/auth/roles"
+import {
+  AUTH_NAME_REQUIRED_MESSAGE,
+  AUTH_PASSWORD_MAX_LENGTH,
+  AUTH_PASSWORD_MIN_LENGTH,
+  normalizeName,
+  signUpNameSchema,
+  signUpSchema,
+} from "@/app/lib/models/auth/email-signup-validation.model"
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name]
@@ -21,6 +30,41 @@ function getRequiredEnv(name: string): string {
 
 function getOptionalEnv(name: string): string | undefined {
   return process.env[name]?.trim() || undefined
+}
+
+function getFirstIssueMessage(error: { issues: Array<{ message?: string }> }, fallback: string): string {
+  return error.issues[0]?.message ?? fallback
+}
+
+function throwNameValidationError(
+  context: { error: (status: "BAD_REQUEST", options: { message: string }) => Error } | null,
+  message: string
+): never {
+  if (context) {
+    throw context.error("BAD_REQUEST", { message })
+  }
+
+  throw new Error(message)
+}
+
+function parseNameOrThrow(
+  value: unknown,
+  context: { error: (status: "BAD_REQUEST", options: { message: string }) => Error } | null
+): string {
+  if (typeof value !== "string") {
+    throwNameValidationError(context, AUTH_NAME_REQUIRED_MESSAGE)
+  }
+
+  const parsed = signUpNameSchema.safeParse(normalizeName(value))
+
+  if (!parsed.success) {
+    throwNameValidationError(
+      context,
+      getFirstIssueMessage(parsed.error, AUTH_NAME_REQUIRED_MESSAGE)
+    )
+  }
+
+  return parsed.data
 }
 
 const trustedOrigins =
@@ -63,6 +107,28 @@ if (googleProviderEnabled && googleClientId && googleClientSecret) {
   }
 }
 
+const signUpValidationPlugin = {
+  id: "salary-path-sign-up-validation",
+  hooks: {
+    before: [
+      {
+        matcher(ctx: { path?: string }) {
+          return ctx.path === "/sign-up/email"
+        },
+        handler: createAuthMiddleware(async (ctx) => {
+          const parsed = signUpSchema.safeParse(ctx.body)
+
+          if (!parsed.success) {
+            throw ctx.error("BAD_REQUEST", {
+              message: getFirstIssueMessage(parsed.error, "Invalid sign-up payload"),
+            })
+          }
+        }),
+      },
+    ],
+  },
+}
+
 export const auth = betterAuth({
   appName: "Salary Path",
   baseURL: getRequiredEnv("BETTER_AUTH_URL"),
@@ -74,6 +140,40 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: AUTH_PASSWORD_MIN_LENGTH,
+    maxPasswordLength: AUTH_PASSWORD_MAX_LENGTH,
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user, context) => {
+          const name = parseNameOrThrow(user.name, context)
+
+          return {
+            data: {
+              ...user,
+              name,
+            },
+          }
+        },
+      },
+      update: {
+        before: async (user, context) => {
+          if (!Object.prototype.hasOwnProperty.call(user, "name")) {
+            return
+          }
+
+          const name = parseNameOrThrow(user.name, context)
+
+          return {
+            data: {
+              ...user,
+              name,
+            },
+          }
+        },
+      },
+    },
   },
   session: {
     cookieCache: {
@@ -83,6 +183,7 @@ export const auth = betterAuth({
   },
   socialProviders,
   plugins: [
+    signUpValidationPlugin,
     admin({
       defaultRole: "user",
       adminRoles: ["admin"],
