@@ -57,6 +57,13 @@
       "when": 1764300000000,
       "tag": "0007_currency_enum_enforcement",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1764400000000,
+      "tag": "0008_route_access_email_otp",
+      "breakpoints": true
     }
   ]
 }
