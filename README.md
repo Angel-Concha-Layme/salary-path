@@ -7,6 +7,7 @@ Web application for modeling professional salary progression, with authenticatio
 Implemented today:
 - Authentication with Better Auth (email/password, GitHub, and Google).
 - Session management in frontend and backend (cookie and JWT bearer for API).
+- Step-up verification for `/comparison` using email OTP (Resend).
 - Initial onboarding (`/onboarding`).
 - Companies and salary events module (`/companies`).
 - User profile (`/profile`).
@@ -17,7 +18,7 @@ Implemented today:
 Pending or visual placeholder:
 - `/explore`
 - `/personal-path`
-- `/comparison`
+- `/comparison` (feature content remains placeholder, access is OTP-protected)
 - `/settings`
 - `/admin/users/[userId]`
 
@@ -94,6 +95,9 @@ Defined in `.env.example`:
 - `GOOGLE_CLIENT_SECRET`
 - `GITHUB_CLIENT_ID`
 - `GITHUB_CLIENT_SECRET`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_REPLY_TO` (optional)
 - `ADMIN_EMAILS`
 - `TURSO_DATABASE_URL`
 - `TURSO_AUTH_TOKEN`
@@ -125,6 +129,10 @@ Admin:
 - Auth API:
   - Better Auth session cookie.
   - Or `Authorization: Bearer <jwt>` for external consumers.
+- Route access step-up API:
+  - `GET /route-access/status?routeKey=comparison`
+  - `POST /route-access/email-otp/send`
+  - `POST /route-access/email-otp/verify`
 
 Endpoint details: see [`/docs/api-v1.md`](docs/api-v1.md).
 
