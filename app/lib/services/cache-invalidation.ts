@@ -9,6 +9,7 @@ export type CacheDomain =
   | "profile"
   | "companies"
   | "roles"
+  | "security"
   | "comparison"
   | "personalPath"
   | "onboarding"
@@ -22,6 +23,7 @@ const domainInvalidationMap: Record<CacheDomain, readonly QueryKeyFactory[]> = {
   profile: [queryKeys.profile.root, queryKeys.me.root],
   companies: [queryKeys.companies.root, queryKeys.personalPath.root],
   roles: [queryKeys.roles.root],
+  security: [queryKeys.security.root],
   comparison: [queryKeys.comparison.root],
   personalPath: [
     queryKeys.personalPath.root,

@@ -59,6 +59,17 @@ describe("invalidateDomain", () => {
     expect(invalidateSpy).toHaveBeenNthCalledWith(1, { queryKey: queryKeys.roles.root() })
   })
 
+  it("invalidates security keys for security domain", async () => {
+    const invalidateSpy = vi
+      .spyOn(queryClient, "invalidateQueries")
+      .mockResolvedValue(undefined)
+
+    await invalidateDomain(queryClient, "security")
+
+    expect(invalidateSpy).toHaveBeenCalledTimes(1)
+    expect(invalidateSpy).toHaveBeenNthCalledWith(1, { queryKey: queryKeys.security.root() })
+  })
+
   it("invalidates personal path, profile, companies and roles for personalPath domain", async () => {
     const invalidateSpy = vi
       .spyOn(queryClient, "invalidateQueries")

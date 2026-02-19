@@ -1,3 +1,5 @@
+import type { RouteStepUpKey } from "@/app/lib/security/route-protection-config"
+
 export interface AdminUsersListParams {
   limit?: number
 }
@@ -60,6 +62,14 @@ export const queryKeys = {
   onboarding: {
     root: () => ["onboarding"] as const,
     status: () => ["onboarding", "status"] as const,
+  },
+  security: {
+    root: () => ["security"] as const,
+    routeAccess: {
+      root: () => ["security", "route-access"] as const,
+      status: (routeKey: RouteStepUpKey) =>
+        ["security", "route-access", "status", routeKey] as const,
+    },
   },
   comparison: {
     root: () => ["comparison"] as const,

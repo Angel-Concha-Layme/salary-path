@@ -4,7 +4,7 @@ import {
   getPersonaBonusRuleMonthById,
   updatePersonaBonusRuleMonth,
 } from "@/app/lib/server/domain/comparison/persona-bonus-rule-months.domain"
-import { requireApiSession } from "@/app/lib/server/require-api-session"
+import { requireApiRouteAccess } from "@/app/lib/server/require-api-route-access"
 
 interface RouteParams {
   personaId: string
@@ -19,7 +19,7 @@ export async function GET(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId, monthId } = await context.params
     const result = await getPersonaBonusRuleMonthById(session.user.id, personaId, ruleId, monthId)
 
@@ -36,7 +36,7 @@ export async function PATCH(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId, monthId } = await context.params
     const payload = await request.json()
     const result = await updatePersonaBonusRuleMonth(
@@ -60,7 +60,7 @@ export async function DELETE(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId, monthId } = await context.params
     const result = await deletePersonaBonusRuleMonth(session.user.id, personaId, ruleId, monthId)
 

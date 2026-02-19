@@ -28,6 +28,7 @@ describe("queryKeys", () => {
     expect(queryKeys.companies.root()).toEqual(["companies"])
     expect(queryKeys.roles.root()).toEqual(["roles"])
     expect(queryKeys.onboarding.root()).toEqual(["onboarding"])
+    expect(queryKeys.security.root()).toEqual(["security"])
     expect(queryKeys.comparison.root()).toEqual(["comparison"])
     expect(queryKeys.personalPath.root()).toEqual(["personal-path"])
   })
@@ -111,5 +112,14 @@ describe("queryKeys", () => {
       "role-1",
     ])
     expect(queryKeys.onboarding.status()).toEqual(["onboarding", "status"])
+  })
+
+  it("builds security route-access keys", () => {
+    expect(queryKeys.security.routeAccess.status("comparison")).toEqual([
+      "security",
+      "route-access",
+      "status",
+      "comparison",
+    ])
   })
 })

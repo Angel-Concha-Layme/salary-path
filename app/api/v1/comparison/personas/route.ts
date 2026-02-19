@@ -3,11 +3,11 @@ import {
   createComparisonPersona,
   listComparisonPersonas,
 } from "@/app/lib/server/domain/comparison/comparison-personas.domain"
-import { requireApiSession } from "@/app/lib/server/require-api-session"
+import { requireApiRouteAccess } from "@/app/lib/server/require-api-route-access"
 
 export async function GET(request: Request) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const searchParams = new URL(request.url).searchParams
     const requestedLimit = Number(searchParams.get("limit") ?? 50)
 
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const payload = await request.json()
     const result = await createComparisonPersona(session.user.id, payload)
 

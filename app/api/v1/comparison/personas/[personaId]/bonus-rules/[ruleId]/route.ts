@@ -4,7 +4,7 @@ import {
   getPersonaBonusRuleById,
   updatePersonaBonusRule,
 } from "@/app/lib/server/domain/comparison/persona-bonus-rules.domain"
-import { requireApiSession } from "@/app/lib/server/require-api-session"
+import { requireApiRouteAccess } from "@/app/lib/server/require-api-route-access"
 
 interface RouteParams {
   personaId: string
@@ -18,7 +18,7 @@ export async function GET(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId } = await context.params
     const result = await getPersonaBonusRuleById(session.user.id, personaId, ruleId)
 
@@ -35,7 +35,7 @@ export async function PATCH(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId } = await context.params
     const payload = await request.json()
     const result = await updatePersonaBonusRule(session.user.id, personaId, ruleId, payload)
@@ -53,7 +53,7 @@ export async function DELETE(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId } = await context.params
     const result = await deletePersonaBonusRule(session.user.id, personaId, ruleId)
 

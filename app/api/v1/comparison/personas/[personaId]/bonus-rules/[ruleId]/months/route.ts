@@ -3,7 +3,7 @@ import {
   createPersonaBonusRuleMonth,
   listPersonaBonusRuleMonths,
 } from "@/app/lib/server/domain/comparison/persona-bonus-rule-months.domain"
-import { requireApiSession } from "@/app/lib/server/require-api-session"
+import { requireApiRouteAccess } from "@/app/lib/server/require-api-route-access"
 
 interface RouteParams {
   personaId: string
@@ -17,7 +17,7 @@ export async function GET(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId } = await context.params
     const searchParams = new URL(request.url).searchParams
     const requestedLimit = Number(searchParams.get("limit") ?? 50)
@@ -39,7 +39,7 @@ export async function POST(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    const session = await requireApiRouteAccess(request, "comparison")
     const { personaId, ruleId } = await context.params
     const payload = await request.json()
     const result = await createPersonaBonusRuleMonth(session.user.id, personaId, ruleId, payload)
