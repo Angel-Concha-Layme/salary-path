@@ -149,7 +149,13 @@ class InMemoryRouteEmailOtpRepository implements RouteEmailOtpRepository {
     row.updatedAt = consumedAt
   }
 
-  async getActiveGrant(ownerUserId: string, routeKey: RouteStepUpKey, nowAt: Date) {
+  async getActiveGrant(
+    ownerUserId: string,
+    routeKey: RouteStepUpKey,
+    nowAt: Date,
+    options: { ignoreExpiry?: boolean } = {}
+  ) {
+    const { ignoreExpiry = false } = options
     const rows = this.grants
       .filter(
         (row) =>
@@ -157,7 +163,7 @@ class InMemoryRouteEmailOtpRepository implements RouteEmailOtpRepository {
           row.routeKey === routeKey &&
           row.method === "email_otp" &&
           row.revokedAt === null &&
-          row.expiresAt > nowAt
+          (ignoreExpiry || row.expiresAt > nowAt)
       )
       .sort((left, right) => right.verifiedAt.getTime() - left.verifiedAt.getTime())
 
@@ -243,7 +249,7 @@ describe("route email otp domain", () => {
     expect(sendEmail).toHaveBeenCalledTimes(1)
     expect(sendEmail.mock.calls[0]?.[0].code).toMatch(/^\d{6}$/)
     expect(response.routeKey).toBe(routeKey)
-    expect(response.remainingSends24h).toBe(2)
+    expect(response.remainingSends24h).toBe(4)
   })
 
   it("invalidates the previous challenge when sending a new OTP", async () => {
@@ -304,7 +310,7 @@ describe("route email otp domain", () => {
     })
   })
 
-  it("enforces daily send limit (3 per sliding 24h)", async () => {
+  it("enforces daily send limit (5 per sliding 24h)", async () => {
     const repository = new InMemoryRouteEmailOtpRepository()
     const clock = createClock("2026-02-19T20:00:00.000Z")
     const domain = createRouteEmailOtpDomain({
@@ -313,7 +319,7 @@ describe("route email otp domain", () => {
       now: clock.now,
     })
 
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 5; index += 1) {
       await domain.sendRouteEmailOtpForUser({
         ownerUserId,
         email,
@@ -334,7 +340,7 @@ describe("route email otp domain", () => {
     })
   })
 
-  it("verifies a valid code and creates account-level grant for 5 hours", async () => {
+  it("verifies a valid code and creates a non-expiring grant when configured", async () => {
     const repository = new InMemoryRouteEmailOtpRepository()
     const clock = createClock("2026-02-19T20:00:00.000Z")
     const sendEmail = vi.fn().mockResolvedValue(undefined)
@@ -363,6 +369,7 @@ describe("route email otp domain", () => {
     })
 
     expect(verification.verified).toBe(true)
+    expect(verification.verificationExpiresAt).toBe("9999-12-31T23:59:59.999Z")
     expect(repository.grants).toHaveLength(1)
     expect(repository.challenges[0]?.consumedAt).not.toBeNull()
   })
@@ -542,7 +549,7 @@ describe("route access guard assertions", () => {
     await expect(domain.assertRouteAccessForUser(ownerUserId, routeKey)).resolves.toBeUndefined()
   })
 
-  it("throws ROUTE_VERIFICATION_REQUIRED when grant is expired", async () => {
+  it("allows access even when grant expiry is in the past if route is configured as non-expiring", async () => {
     const repository = new InMemoryRouteEmailOtpRepository()
     const clock = createClock("2026-02-19T20:00:00.000Z")
     const domain = createRouteEmailOtpDomain({
@@ -563,11 +570,6 @@ describe("route access guard assertions", () => {
       updatedAt: new Date("2026-02-19T13:00:00.000Z"),
     })
 
-    await expect(domain.assertRouteAccessForUser(ownerUserId, routeKey)).rejects.toSatisfy(
-      (error: unknown) => {
-        expectApiErrorCode(error, "ROUTE_VERIFICATION_REQUIRED")
-        return true
-      }
-    )
+    await expect(domain.assertRouteAccessForUser(ownerUserId, routeKey)).resolves.toBeUndefined()
   })
 })

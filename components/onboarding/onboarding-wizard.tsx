@@ -103,7 +103,7 @@ export function OnboardingWizard() {
         }
 
         toast.success(dictionary.onboarding.toasts.success)
-        router.push("/personal-path")
+        router.push("/career-path/salary-tracking")
         router.refresh()
       } catch (error) {
         setIsShowingCompletionAnimation(false)

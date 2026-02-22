@@ -18,7 +18,7 @@ export default async function ForbiddenPage() {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">{dictionary.errors.forbiddenBody}</p>
           <Button asChild>
-            <Link href="/personal-path">{dictionary.errors.goHome}</Link>
+            <Link href="/career-path/salary-tracking">{dictionary.errors.goHome}</Link>
           </Button>
         </CardContent>
       </Card>

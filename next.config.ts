@@ -2,10 +2,10 @@ import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Keep dynamic App Router segments in the client Router Cache briefly
+    // Keep dynamic App Router segments in the client Router Cache
     // so back-and-forth navigation between protected tabs stays instant.
     staleTimes: {
-      dynamic: 120,
+      dynamic: 1800,
     },
   },
 }

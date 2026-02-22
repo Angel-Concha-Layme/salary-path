@@ -52,15 +52,9 @@ export function useVerifyRouteEmailOtpMutation(routeKey: RouteStepUpKey) {
     domain: "security",
     mutationFn: (code: string) => routeAccessService.verifyRouteEmailOtp(routeKey, code),
     async onSuccess() {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.security.routeAccess.status(routeKey),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.comparison.root(),
-        }),
-      ])
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.security.routeAccess.status(routeKey),
+      })
     },
   })
 }
-

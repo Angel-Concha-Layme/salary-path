@@ -28,6 +28,7 @@ import { CompanyDetailsForm } from "@/components/companies/company-details-form"
 import { CreateCompanyDialog } from "@/components/companies/create-company-dialog"
 import { CreateEventDialog } from "@/components/companies/create-event-dialog"
 import { EventDetailsForm } from "@/components/companies/event-details-form"
+import { RouteScreen } from "@/components/layout/route-screen"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -78,12 +79,12 @@ function ColumnPanel({ title, action, className, children }: ColumnPanelProps) {
   return (
     <section
       className={cn(
-        "flex min-h-[500px] flex-col rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm",
+        "flex min-h-[500px] flex-col rounded-xl border border-border/80 bg-background text-card-foreground",
         className
       )}
     >
-      <header className="flex min-h-[60px] items-center justify-between gap-3 border-b border-border/70 bg-primary/5 px-4 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-primary/80">{title}</h2>
+      <header className="flex min-h-[60px] items-center justify-between gap-3 border-b border-border/70 bg-background px-4 py-3">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">{title}</h2>
         {action}
       </header>
       <div className="min-h-0 flex-1 p-3">{children}</div>
@@ -349,7 +350,7 @@ export function CompaniesWorkspace() {
 
   function renderEmptyState(message: string) {
     return (
-      <div className="rounded-lg border border-dashed border-primary/35 bg-primary/5 px-3 py-4">
+      <div className="rounded-lg border border-dashed border-border/70 bg-background px-3 py-4">
         <p className="text-sm text-muted-foreground">{message}</p>
       </div>
     )
@@ -389,21 +390,21 @@ export function CompaniesWorkspace() {
                 setActiveMobileTab("events")
               }}
               className={cn(
-                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-primary/5",
+                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-border/80 hover:bg-accent/30",
                 isSelected
-                  ? "border-primary/40 bg-primary/10 shadow-xs"
+                  ? "border-foreground/30 bg-background"
                   : "border-border/80 bg-background"
               )}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className={cn("truncate text-sm font-medium", isSelected && "text-primary")}>
+                  <p className={cn("truncate text-sm font-medium", isSelected && "text-foreground")}>
                     {company.displayName}
                   </p>
                   <p
                     className={cn(
                       "truncate text-xs text-muted-foreground",
-                      isSelected && "text-primary/75"
+                      isSelected && "text-foreground/75"
                     )}
                   >
                     {company.roleDisplayName}
@@ -414,7 +415,7 @@ export function CompaniesWorkspace() {
                   style={{ backgroundColor: company.color }}
                 />
               </div>
-              <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-primary/70")}>
+              <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-foreground/70")}>
                 {endDate ? `${startDate} - ${endDate}` : startDate}
               </p>
             </button>
@@ -459,21 +460,21 @@ export function CompaniesWorkspace() {
                 setActiveMobileTab("details")
               }}
               className={cn(
-                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-primary/5",
+                "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-border/80 hover:bg-accent/30",
                 isSelected
-                  ? "border-primary/40 bg-primary/10 shadow-xs"
+                  ? "border-foreground/30 bg-background"
                   : "border-border/80 bg-background"
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <p className={cn("text-sm font-medium", isSelected && "text-primary")}>
+                <p className={cn("text-sm font-medium", isSelected && "text-foreground")}>
                   {dictionary.companies.eventTypes[event.eventType]}
                 </p>
-                <p className={cn("text-xs text-muted-foreground", isSelected && "text-primary/75")}>
+                <p className={cn("text-xs text-muted-foreground", isSelected && "text-foreground/75")}>
                   {formatAmount(locale, selectedCompany?.currency ?? "USD", event.amount)}
                 </p>
               </div>
-              <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-primary/70")}>
+              <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-foreground/70")}>
                 {dateFormatter.format(new Date(event.effectiveDate))}
               </p>
             </button>
@@ -520,12 +521,12 @@ export function CompaniesWorkspace() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="space-y-1 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-primary">{dictionary.companies.title}</h1>
-        <p className="text-sm text-muted-foreground">{dictionary.companies.subtitle}</p>
-        <div className="pt-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-primary/70">
+    <RouteScreen
+      title={dictionary.companies.title}
+      subtitle={dictionary.companies.subtitle}
+      headerActions={(
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             {dictionary.companies.order.label}
           </p>
           <Select value={companiesSortOrder} onValueChange={handleCompaniesSortOrderChange}>
@@ -538,14 +539,17 @@ export function CompaniesWorkspace() {
             </SelectContent>
           </Select>
         </div>
-      </header>
-
+      )}
+    >
       <div className="grid grid-cols-3 gap-2 rounded-xl border border-border/80 bg-card p-2 shadow-sm md:hidden">
         <Button
           type="button"
           variant={activeMobileTab === "companies" ? "default" : "outline"}
           size="sm"
-          className={cn(activeMobileTab === "companies" && "bg-primary text-primary-foreground hover:bg-primary/90")}
+          className={cn(
+            activeMobileTab === "companies" &&
+              "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+          )}
           onClick={() => setActiveMobileTab("companies")}
         >
           {dictionary.companies.tabs.companies}
@@ -554,7 +558,10 @@ export function CompaniesWorkspace() {
           type="button"
           variant={activeMobileTab === "events" ? "default" : "outline"}
           size="sm"
-          className={cn(activeMobileTab === "events" && "bg-primary text-primary-foreground hover:bg-primary/90")}
+          className={cn(
+            activeMobileTab === "events" &&
+              "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+          )}
           onClick={() => setActiveMobileTab("events")}
         >
           {dictionary.companies.tabs.events}
@@ -563,7 +570,10 @@ export function CompaniesWorkspace() {
           type="button"
           variant={activeMobileTab === "details" ? "default" : "outline"}
           size="sm"
-          className={cn(activeMobileTab === "details" && "bg-primary text-primary-foreground hover:bg-primary/90")}
+          className={cn(
+            activeMobileTab === "details" &&
+              "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+          )}
           onClick={() => setActiveMobileTab("details")}
         >
           {dictionary.companies.tabs.details}
@@ -608,6 +618,6 @@ export function CompaniesWorkspace() {
           {renderDetailsContent()}
         </ColumnPanel>
       </div>
-    </div>
+    </RouteScreen>
   )
 }

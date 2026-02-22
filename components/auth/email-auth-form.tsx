@@ -411,7 +411,7 @@ export function EmailAuthForm({
       const payload = {
         email: normalizeEmail(email),
         password,
-        callbackURL: callbackUrl ?? "/personal-path",
+        callbackURL: callbackUrl ?? "/career-path/salary-tracking",
       }
 
       let result: Awaited<ReturnType<typeof authClient.signIn.email>>
@@ -479,7 +479,7 @@ export function EmailAuthForm({
       }
 
       toast.success(mode === "sign-in" ? dictionary.auth.signIn : dictionary.auth.signUp)
-      router.push(callbackUrl ?? "/personal-path")
+      router.push(callbackUrl ?? "/career-path/salary-tracking")
       router.refresh()
     })
   }

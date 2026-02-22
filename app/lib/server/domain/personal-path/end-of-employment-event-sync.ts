@@ -8,23 +8,17 @@ const END_OF_EMPLOYMENT_EVENT_TYPE = "end_of_employment" as const
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 interface SyncEndOfEmploymentEventInput {
-  ownerUserId: string
   pathCompanyId: string
   endDate: Date
   now: Date
 }
 
 interface EndOfEmploymentEventIdentity {
-  ownerUserId: string
   pathCompanyId: string
   now: Date
 }
 
-async function findActiveEndOfEmploymentEvent(
-  tx: DbTx,
-  ownerUserId: string,
-  pathCompanyId: string
-) {
+async function findActiveEndOfEmploymentEvent(tx: DbTx, pathCompanyId: string) {
   const rows = await tx
     .select({
       id: pathCompanyEvents.id,
@@ -32,7 +26,6 @@ async function findActiveEndOfEmploymentEvent(
     .from(pathCompanyEvents)
     .where(
       and(
-        eq(pathCompanyEvents.ownerUserId, ownerUserId),
         eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
         eq(pathCompanyEvents.eventType, END_OF_EMPLOYMENT_EVENT_TYPE),
         isNull(pathCompanyEvents.deletedAt)
@@ -51,7 +44,6 @@ async function findActiveEndOfEmploymentEvent(
 
 async function resolveLatestRateAmount(
   tx: DbTx,
-  ownerUserId: string,
   pathCompanyId: string,
   endDate: Date
 ): Promise<number | null> {
@@ -62,7 +54,6 @@ async function resolveLatestRateAmount(
     .from(pathCompanyEvents)
     .where(
       and(
-        eq(pathCompanyEvents.ownerUserId, ownerUserId),
         eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
         ne(pathCompanyEvents.eventType, END_OF_EMPLOYMENT_EVENT_TYPE),
         isNull(pathCompanyEvents.deletedAt),
@@ -88,7 +79,6 @@ async function resolveLatestRateAmount(
     .from(pathCompanyEvents)
     .where(
       and(
-        eq(pathCompanyEvents.ownerUserId, ownerUserId),
         eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
         ne(pathCompanyEvents.eventType, END_OF_EMPLOYMENT_EVENT_TYPE),
         isNull(pathCompanyEvents.deletedAt)
@@ -105,10 +95,7 @@ async function resolveLatestRateAmount(
   return latestRows[0]?.amount ?? null
 }
 
-export async function clearEndOfEmploymentEvents(
-  tx: DbTx,
-  input: EndOfEmploymentEventIdentity
-) {
+export async function clearEndOfEmploymentEvents(tx: DbTx, input: EndOfEmploymentEventIdentity) {
   await tx
     .update(pathCompanyEvents)
     .set({
@@ -117,7 +104,6 @@ export async function clearEndOfEmploymentEvents(
     })
     .where(
       and(
-        eq(pathCompanyEvents.ownerUserId, input.ownerUserId),
         eq(pathCompanyEvents.pathCompanyId, input.pathCompanyId),
         eq(pathCompanyEvents.eventType, END_OF_EMPLOYMENT_EVENT_TYPE),
         isNull(pathCompanyEvents.deletedAt)
@@ -129,18 +115,9 @@ export async function syncEndOfEmploymentEvent(
   tx: DbTx,
   input: SyncEndOfEmploymentEventInput
 ) {
-  const latestAmount = await resolveLatestRateAmount(
-    tx,
-    input.ownerUserId,
-    input.pathCompanyId,
-    input.endDate
-  )
+  const latestAmount = await resolveLatestRateAmount(tx, input.pathCompanyId, input.endDate)
 
-  const existingEvent = await findActiveEndOfEmploymentEvent(
-    tx,
-    input.ownerUserId,
-    input.pathCompanyId
-  )
+  const existingEvent = await findActiveEndOfEmploymentEvent(tx, input.pathCompanyId)
 
   if (latestAmount === null) {
     if (existingEvent) {
@@ -153,7 +130,6 @@ export async function syncEndOfEmploymentEvent(
         .where(
           and(
             eq(pathCompanyEvents.id, existingEvent.id),
-            eq(pathCompanyEvents.ownerUserId, input.ownerUserId),
             eq(pathCompanyEvents.pathCompanyId, input.pathCompanyId),
             isNull(pathCompanyEvents.deletedAt)
           )
@@ -174,7 +150,6 @@ export async function syncEndOfEmploymentEvent(
       .where(
         and(
           eq(pathCompanyEvents.id, existingEvent.id),
-          eq(pathCompanyEvents.ownerUserId, input.ownerUserId),
           eq(pathCompanyEvents.pathCompanyId, input.pathCompanyId),
           isNull(pathCompanyEvents.deletedAt)
         )
@@ -185,7 +160,6 @@ export async function syncEndOfEmploymentEvent(
 
   await tx.insert(pathCompanyEvents).values({
     id: crypto.randomUUID(),
-    ownerUserId: input.ownerUserId,
     pathCompanyId: input.pathCompanyId,
     eventType: END_OF_EMPLOYMENT_EVENT_TYPE,
     effectiveDate: input.endDate,
@@ -206,13 +180,7 @@ export async function syncEndOfEmploymentEventForCompany(
       endDate: pathCompanies.endDate,
     })
     .from(pathCompanies)
-    .where(
-      and(
-        eq(pathCompanies.id, input.pathCompanyId),
-        eq(pathCompanies.ownerUserId, input.ownerUserId),
-        isNull(pathCompanies.deletedAt)
-      )
-    )
+    .where(and(eq(pathCompanies.id, input.pathCompanyId), isNull(pathCompanies.deletedAt)))
     .limit(1)
 
   const endDate = rows[0]?.endDate ?? null
@@ -222,7 +190,6 @@ export async function syncEndOfEmploymentEventForCompany(
   }
 
   await syncEndOfEmploymentEvent(tx, {
-    ownerUserId: input.ownerUserId,
     pathCompanyId: input.pathCompanyId,
     endDate,
     now: input.now,

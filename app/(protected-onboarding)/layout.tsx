@@ -12,7 +12,7 @@ export default async function ProtectedOnboardingLayout({
   const onboardingStatus = await getOnboardingStatus(session.user.id)
 
   if (onboardingStatus.completed) {
-    redirect("/personal-path")
+    redirect("/career-path/salary-tracking")
   }
 
   return <>{children}</>

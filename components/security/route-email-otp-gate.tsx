@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { RefreshCwIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -52,7 +52,6 @@ export function RouteEmailOtpGate({
   const [code, setCode] = useState("")
   const [formError, setFormError] = useState<string | null>(null)
   const [nowMs, setNowMs] = useState(() => Date.now())
-  const autoSendRef = useRef(false)
 
   const statusQuery = useRouteAccessStatusQuery(routeKey, {
     initialData: initialStatus,
@@ -72,6 +71,9 @@ export function RouteEmailOtpGate({
     return Math.max(0, Math.ceil((resendAvailableAtMs - nowMs) / 1000))
   }, [nowMs, resendAvailableAtMs])
   const canResend = status.remainingSends24h > 0 && resendCooldownSeconds === 0
+  const sendButtonLabel = status.challengeActive
+    ? dictionary.routeAccess.resendCode
+    : dictionary.routeAccess.sendCode
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -83,48 +85,7 @@ export function RouteEmailOtpGate({
     }
   }, [])
 
-  useEffect(() => {
-    if (autoSendRef.current || status.verified || status.remainingSends24h <= 0) {
-      return
-    }
-
-    if (resendCooldownSeconds > 0) {
-      return
-    }
-
-    autoSendRef.current = true
-    sendMutation.mutate(undefined, {
-      onError(error) {
-        if (error instanceof ApiClientError && error.code === "ROUTE_OTP_DAILY_LIMIT") {
-          setFormError(dictionary.routeAccess.dailyLimitError)
-          return
-        }
-
-        if (error instanceof ApiClientError && error.code === "ROUTE_OTP_COOLDOWN") {
-          setFormError(dictionary.routeAccess.cooldownError)
-          return
-        }
-
-        if (error instanceof ApiClientError && error.code === "EMAIL_PROVIDER_NOT_CONFIGURED") {
-          setFormError(dictionary.routeAccess.emailProviderNotConfigured)
-          return
-        }
-
-        setFormError(dictionary.routeAccess.sendError)
-      },
-    })
-  }, [
-    dictionary.routeAccess.cooldownError,
-    dictionary.routeAccess.dailyLimitError,
-    dictionary.routeAccess.emailProviderNotConfigured,
-    dictionary.routeAccess.sendError,
-    resendCooldownSeconds,
-    sendMutation,
-    status.remainingSends24h,
-    status.verified,
-  ])
-
-  function handleResend() {
+  function handleSendCode() {
     if (!canResend || sendMutation.isPending) {
       return
     }
@@ -201,11 +162,11 @@ export function RouteEmailOtpGate({
                   type="button"
                   variant="outline"
                   size="xs"
-                  onClick={handleResend}
+                  onClick={handleSendCode}
                   disabled={!canResend || sendMutation.isPending}
                 >
                   <RefreshCwIcon />
-                  {dictionary.routeAccess.resendCode}
+                  {sendButtonLabel}
                 </Button>
               </div>
               <InputOTP

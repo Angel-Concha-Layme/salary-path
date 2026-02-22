@@ -70,7 +70,6 @@ const companiesFixture: PathCompaniesEntity[] = [
 const eventsFixture: PathCompanyEventsEntity[] = [
   {
     id: "event-a-1",
-    ownerUserId: "user-1",
     pathCompanyId: "company-a",
     eventType: "start_rate",
     effectiveDate: "2024-01-01T00:00:00.000Z",
@@ -82,7 +81,6 @@ const eventsFixture: PathCompanyEventsEntity[] = [
   },
   {
     id: "event-a-2",
-    ownerUserId: "user-1",
     pathCompanyId: "company-a",
     eventType: "promotion",
     effectiveDate: "2024-02-01T00:00:00.000Z",
@@ -94,7 +92,6 @@ const eventsFixture: PathCompanyEventsEntity[] = [
   },
   {
     id: "event-b-1",
-    ownerUserId: "user-1",
     pathCompanyId: "company-b",
     eventType: "start_rate",
     effectiveDate: "2024-01-01T00:00:00.000Z",
@@ -106,7 +103,6 @@ const eventsFixture: PathCompanyEventsEntity[] = [
   },
   {
     id: "event-c-1",
-    ownerUserId: "user-1",
     pathCompanyId: "company-c",
     eventType: "start_rate",
     effectiveDate: "2024-01-01T00:00:00.000Z",

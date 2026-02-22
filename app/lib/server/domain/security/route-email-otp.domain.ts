@@ -47,6 +47,10 @@ interface UpsertGrantInput {
   updatedAt: Date
 }
 
+interface GetActiveGrantOptions {
+  ignoreExpiry?: boolean
+}
+
 export interface RouteEmailOtpRepository {
   withTransaction<T>(fn: (repository: RouteEmailOtpRepository) => Promise<T>): Promise<T>
   getLatestChallenge(
@@ -71,7 +75,8 @@ export interface RouteEmailOtpRepository {
   getActiveGrant(
     ownerUserId: string,
     routeKey: RouteStepUpKey,
-    nowAt: Date
+    nowAt: Date,
+    options?: GetActiveGrantOptions
   ): Promise<RouteAccessGrantRecord | null>
   upsertGrant(input: UpsertGrantInput): Promise<RouteAccessGrantRecord>
 }
@@ -218,19 +223,20 @@ function createDrizzleRouteEmailOtpRepository(
         .where(eq(routeEmailOtpChallenges.id, challengeId))
     },
 
-    async getActiveGrant(ownerUserId, routeKey, nowAt) {
+    async getActiveGrant(ownerUserId, routeKey, nowAt, options = {}) {
+      const { ignoreExpiry = false } = options
+      const conditions = [
+        eq(routeAccessGrants.ownerUserId, ownerUserId),
+        eq(routeAccessGrants.routeKey, routeKey),
+        eq(routeAccessGrants.method, "email_otp"),
+        isNull(routeAccessGrants.revokedAt),
+        ...(ignoreExpiry ? [] : [gt(routeAccessGrants.expiresAt, nowAt)]),
+      ]
+
       const rows = await executor
         .select()
         .from(routeAccessGrants)
-        .where(
-          and(
-            eq(routeAccessGrants.ownerUserId, ownerUserId),
-            eq(routeAccessGrants.routeKey, routeKey),
-            eq(routeAccessGrants.method, "email_otp"),
-            isNull(routeAccessGrants.revokedAt),
-            gt(routeAccessGrants.expiresAt, nowAt)
-          )
-        )
+        .where(and(...conditions))
         .orderBy(desc(routeAccessGrants.verifiedAt))
         .limit(1)
 
@@ -321,6 +327,10 @@ function add24Hours(baseDate: Date): Date {
   return new Date(baseDate.getTime() - 24 * 60 * 60 * 1000)
 }
 
+function createForeverExpiresAt(): Date {
+  return new Date("9999-12-31T23:59:59.999Z")
+}
+
 function equalsCodeHash(leftHex: string, rightHex: string): boolean {
   const left = Buffer.from(leftHex, "hex")
   const right = Buffer.from(rightHex, "hex")
@@ -347,7 +357,9 @@ export function createRouteEmailOtpDomain({
       const since = add24Hours(nowAt)
 
       const [activeGrant, activeChallenge, latestChallenge, sentInWindow] = await Promise.all([
-        repository.getActiveGrant(ownerUserId, routeKey, nowAt),
+        repository.getActiveGrant(ownerUserId, routeKey, nowAt, {
+          ignoreExpiry: Boolean(policy.grantNeverExpires),
+        }),
         repository.getLatestActiveChallenge(ownerUserId, routeKey, nowAt),
         repository.getLatestChallenge(ownerUserId, routeKey),
         repository.countChallengesSince(ownerUserId, routeKey, since),
@@ -505,7 +517,9 @@ export function createRouteEmailOtpDomain({
 
         await txRepository.consumeChallenge(challenge.id, nowAt)
 
-        const verificationExpiresAt = addHours(nowAt, policy.ttlHours)
+        const verificationExpiresAt = policy.grantNeverExpires
+          ? createForeverExpiresAt()
+          : addHours(nowAt, policy.grantTtlHours ?? policy.ttlHours)
 
         await txRepository.upsertGrant({
           id: randomUUID(),
@@ -526,8 +540,11 @@ export function createRouteEmailOtpDomain({
     },
 
     async assertRouteAccessForUser(ownerUserId: string, routeKey: RouteStepUpKey): Promise<void> {
+      const policy = getRoutePolicyOrThrow(routeKey)
       const nowAt = now()
-      const grant = await repository.getActiveGrant(ownerUserId, routeKey, nowAt)
+      const grant = await repository.getActiveGrant(ownerUserId, routeKey, nowAt, {
+        ignoreExpiry: Boolean(policy.grantNeverExpires),
+      })
 
       if (!grant) {
         throw new ApiError(

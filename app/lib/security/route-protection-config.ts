@@ -6,6 +6,8 @@ export interface RouteProtectionPolicy {
   enabled: boolean
   method: RouteStepUpMethod
   ttlHours: number
+  grantTtlHours?: number
+  grantNeverExpires?: boolean
   maxSendsPer24Hours: number
   resendCooldownSeconds: number
   maxAttempts: number
@@ -20,7 +22,8 @@ const ROUTE_PROTECTION_POLICIES: Record<RouteStepUpKey, RouteProtectionPolicy> =
     enabled: true,
     method: "email_otp",
     ttlHours: 5,
-    maxSendsPer24Hours: 3,
+    grantNeverExpires: true,
+    maxSendsPer24Hours: 5,
     resendCooldownSeconds: 60,
     maxAttempts: 5,
   },
@@ -43,4 +46,3 @@ export function getRouteProtectionPolicy(routeKey: RouteKey): RouteProtectionPol
 
   return policy
 }
-

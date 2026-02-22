@@ -19,7 +19,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     }
 
     const onboardingStatus = await getOnboardingStatus(session.user.id)
-    redirect(onboardingStatus.completed ? "/personal-path" : "/onboarding")
+    redirect(onboardingStatus.completed ? "/career-path/salary-tracking" : "/onboarding")
   }
 
   return <SignInCard callbackUrl={callbackUrl} />

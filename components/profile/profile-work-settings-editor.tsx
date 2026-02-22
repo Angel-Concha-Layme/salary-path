@@ -110,10 +110,10 @@ function WorkloadSquare({
   return (
     <span
       className={cn(
-        "pointer-events-none grid h-[82px] w-[104px] shrink-0 grid-rows-2 place-items-center rounded-md border p-1 shadow-sm",
+        "pointer-events-none grid h-[82px] w-[104px] shrink-0 grid-rows-2 place-items-center rounded-md border p-1",
         isActive
-          ? "border-primary-foreground/75 bg-primary-foreground text-primary"
-          : "border-primary/45 bg-primary/15 text-primary"
+          ? "border-black/35 bg-background text-foreground dark:border-white/40"
+          : "border-border/70 bg-background text-foreground"
       )}
     >
       <span className="grid w-full grid-cols-2 gap-1.5 leading-none">
@@ -284,7 +284,7 @@ export function ProfileWorkSettingsEditor({
   return (
     <section className="rounded-lg border border-border/80 bg-background p-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-primary/80">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-foreground">
           {dictionary.profile.workSettings.title}
         </h3>
         <p className="text-sm text-muted-foreground">
@@ -293,7 +293,7 @@ export function ProfileWorkSettingsEditor({
       </div>
 
       <div className="mt-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-primary/70">
+        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {dictionary.profile.workSettings.presetsLabel}
         </p>
         <div className="mt-2 grid gap-2 lg:grid-cols-2">
@@ -307,7 +307,7 @@ export function ProfileWorkSettingsEditor({
                 variant={isActive ? "default" : "outline"}
                 className={cn(
                   "h-auto w-full min-w-0 justify-start whitespace-normal px-3 py-2.5 text-left",
-                  isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
+                  isActive && "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                 )}
                 onClick={() => applyPreset(preset)}
               >
@@ -324,7 +324,7 @@ export function ProfileWorkSettingsEditor({
                       className={cn(
                       "min-w-0 break-words text-[0.74rem] leading-snug sm:text-xs",
                       isActive
-                        ? "text-primary-foreground/90"
+                        ? "text-white/90 dark:text-black/80"
                         : "text-muted-foreground"
                     )}
                   >

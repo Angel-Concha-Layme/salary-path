@@ -25,9 +25,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requireApiSession(request)
+    await requireApiSession(request)
     const payload = await request.json()
-    const result = await createRoleCatalog(session.user.id, payload)
+    const result = await createRoleCatalog(payload)
 
     return jsonOk(result, { status: 201 })
   } catch (error) {

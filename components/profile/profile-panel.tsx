@@ -7,6 +7,7 @@ import { UserCircle2Icon } from "lucide-react"
 import { useProfileOverviewQuery } from "@/app/hooks/profile/use-profile-overview"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import { ApiClientError } from "@/app/types/api"
+import { RouteScreen } from "@/components/layout/route-screen"
 import { CareerEventsTable } from "@/components/profile/career-events-table"
 import { ProfileWorkSettingsEditor } from "@/components/profile/profile-work-settings-editor"
 import { Badge } from "@/components/ui/badge"
@@ -92,9 +93,9 @@ function ProfileSection({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm">
+    <section className="rounded-xl border border-border/80 bg-background text-card-foreground">
       <header className="border-b border-border/70 px-4 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-primary/80">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
           {title}
         </h2>
       </header>
@@ -115,8 +116,8 @@ function FieldCard({
   mono?: boolean
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-background px-3 py-2 shadow-xs">
-      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-primary/75">{label}</p>
+    <div className="rounded-lg border border-border/80 bg-background px-3 py-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-foreground/80">{label}</p>
       <div className={cn("mt-1 text-sm", muted && "text-muted-foreground", mono && "font-mono text-xs")}>
         {value}
       </div>
@@ -200,12 +201,12 @@ export function ProfilePanel() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="space-y-1 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-primary">{dictionary.profile.title}</h1>
-        <p className="text-sm text-muted-foreground">{dictionary.profile.subtitle}</p>
-        <div className="pt-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-primary/70">
+    <RouteScreen
+      title={dictionary.profile.title}
+      subtitle={dictionary.profile.subtitle}
+      headerActions={(
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             {dictionary.profile.layout.label}
           </p>
           <Select value={layoutMode} onValueChange={handleLayoutModeChange}>
@@ -218,11 +219,11 @@ export function ProfilePanel() {
             </SelectContent>
           </Select>
         </div>
-      </header>
-
+      )}
+    >
       {layoutMode === "tabs" ? (
         <nav
-          className="rounded-xl border border-border/80 bg-card p-2 shadow-sm"
+          className="rounded-xl border border-border/80 bg-background p-2"
           aria-label={dictionary.profile.title}
         >
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
@@ -236,17 +237,17 @@ export function ProfilePanel() {
                   variant={selected ? "default" : "outline"}
                   className={cn(
                     "h-auto justify-start gap-2 px-3 py-2 text-left",
-                    selected && "bg-primary text-primary-foreground hover:bg-primary/90"
+                    selected && "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
                   )}
                   onClick={() => setActiveSection(section.key)}
                   aria-current={selected ? "page" : undefined}
                 >
                   <span
                     className={cn(
-                      "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-semibold",
+                      "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-semibold border border-border/70",
                       selected
-                        ? "bg-primary-foreground/20 text-primary-foreground"
-                        : "bg-primary/10 text-primary"
+                        ? "bg-white/20 text-white dark:bg-black/10 dark:text-black"
+                        : "bg-background text-foreground"
                     )}
                   >
                     {index + 1}
@@ -262,7 +263,7 @@ export function ProfilePanel() {
       {isSectionVisible("userInformation") ? (
         <ProfileSection title={dictionary.profile.sections.userInformation}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[352px_minmax(0,1fr)_minmax(0,1fr)] xl:grid-rows-3">
-            <div className="overflow-hidden rounded-lg border border-primary/20 bg-primary/5 md:col-span-2 xl:col-span-1 xl:row-span-3">
+            <div className="overflow-hidden rounded-lg border border-border/80 bg-background md:col-span-2 xl:col-span-1 xl:row-span-3">
               {profile.user.image ? (
                 <img
                   src={profile.user.image}
@@ -282,7 +283,7 @@ export function ProfilePanel() {
             <FieldCard
               label={dictionary.permissions.accessLabel}
               value={
-                <Badge variant="outline" className="border-primary/35 bg-primary/10 text-primary">
+                <Badge variant="outline" className="border-border/70 bg-background text-foreground">
                   {profile.user.role}
                 </Badge>
               }
@@ -290,7 +291,7 @@ export function ProfilePanel() {
             <FieldCard
               label={dictionary.profile.user.authSource}
               value={
-                <Badge variant="outline" className="border-primary/35 bg-primary/10 text-primary">
+                <Badge variant="outline" className="border-border/70 bg-background text-foreground">
                   {profile.source}
                 </Badge>
               }
@@ -347,15 +348,15 @@ export function ProfilePanel() {
 
           <div className="mt-4 overflow-x-auto">
             {profile.salary.byCompany.length === 0 ? (
-              <div className="space-y-3 rounded-lg border border-dashed border-primary/35 bg-primary/5 p-4">
+              <div className="space-y-3 rounded-lg border border-dashed border-border/70 bg-background p-4">
                 <p className="text-sm text-muted-foreground">{dictionary.profile.empty.salaries}</p>
                 <Button asChild size="sm">
-                  <Link href="/companies">{dictionary.personalPath.empty.cta}</Link>
+                  <Link href="/career-path/companies">{dictionary.personalPath.empty.cta}</Link>
                 </Button>
               </div>
             ) : (
               <table className="w-full min-w-[820px] text-left text-sm">
-                <thead className="bg-primary/8 text-xs uppercase tracking-[0.08em] text-primary/85">
+                <thead className="bg-background text-xs uppercase tracking-[0.08em] text-foreground">
                   <tr>
                     <th className="whitespace-nowrap px-3 py-2 font-medium">
                       {dictionary.personalPath.table.columns.displayName}
@@ -381,7 +382,7 @@ export function ProfilePanel() {
                   {profile.salary.byCompany.map((companySalary) => (
                     <tr
                       key={companySalary.pathCompanyId}
-                      className="border-t border-border/70 align-top text-foreground transition-colors hover:bg-primary/5"
+                      className="border-t border-border/70 align-top text-foreground transition-colors hover:bg-accent/40"
                     >
                       <td className="whitespace-nowrap px-3 py-2 font-medium">
                         <span className="inline-flex items-center gap-2">
@@ -425,10 +426,10 @@ export function ProfilePanel() {
       {isSectionVisible("careerEvents") ? (
         <ProfileSection title={dictionary.profile.sections.careerEvents}>
           {profile.careerEventsByCompany.length === 0 ? (
-            <div className="space-y-3 rounded-lg border border-dashed border-primary/35 bg-primary/5 p-4">
+            <div className="space-y-3 rounded-lg border border-dashed border-border/70 bg-background p-4">
               <p className="text-sm text-muted-foreground">{dictionary.profile.empty.events}</p>
               <Button asChild size="sm">
-                <Link href="/companies">{dictionary.personalPath.empty.cta}</Link>
+                <Link href="/career-path/companies">{dictionary.personalPath.empty.cta}</Link>
               </Button>
             </div>
           ) : (
@@ -438,14 +439,14 @@ export function ProfilePanel() {
                   key={companyGroup.pathCompanyId}
                   className="overflow-hidden rounded-lg border border-border/80"
                 >
-                  <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-primary/6 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-background px-3 py-2">
                     <span
                       className="size-2.5 rounded-full border border-border/80"
                       style={{ backgroundColor: companyGroup.color }}
                     />
                     <p className="text-sm font-medium">{companyGroup.displayName}</p>
                     <span className="text-xs text-muted-foreground">· {companyGroup.roleDisplayName}</span>
-                    <Badge variant="outline" className="ml-auto border-primary/35 bg-primary/10 text-primary">
+                    <Badge variant="outline" className="ml-auto border-border/70 bg-background text-foreground">
                       {formatNumber(locale, companyGroup.events.length, 0)} {dictionary.profile.events.countLabel}
                     </Badge>
                   </div>
@@ -537,6 +538,6 @@ export function ProfilePanel() {
           </div>
         </ProfileSection>
       ) : null}
-    </div>
+    </RouteScreen>
   )
 }

@@ -4,6 +4,7 @@ import {
   getCompanyCatalogById,
   updateCompanyCatalog,
 } from "@/app/lib/server/domain/companies/company-catalog.domain"
+import { requireApiAdminSession } from "@/app/lib/server/require-api-admin-session"
 import { requireApiSession } from "@/app/lib/server/require-api-session"
 
 interface RouteParams {
@@ -15,11 +16,11 @@ export async function GET(
   context: {
     params: Promise<RouteParams>
   }
-) {
+  ) {
   try {
-    const session = await requireApiSession(request)
+    await requireApiSession(request)
     const { companyId } = await context.params
-    const result = await getCompanyCatalogById(session.user.id, companyId)
+    const result = await getCompanyCatalogById(companyId)
 
     return jsonOk(result)
   } catch (error) {
@@ -34,10 +35,10 @@ export async function PATCH(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    await requireApiAdminSession(request)
     const { companyId } = await context.params
     const payload = await request.json()
-    const result = await updateCompanyCatalog(session.user.id, companyId, payload)
+    const result = await updateCompanyCatalog(companyId, payload)
 
     return jsonOk(result)
   } catch (error) {
@@ -52,9 +53,9 @@ export async function DELETE(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    await requireApiAdminSession(request)
     const { companyId } = await context.params
-    const result = await deleteCompanyCatalog(session.user.id, companyId)
+    const result = await deleteCompanyCatalog(companyId)
 
     return jsonOk(result)
   } catch (error) {

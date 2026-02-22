@@ -1,5 +1,5 @@
-import { CompaniesWorkspace } from "@/components/companies/companies-workspace"
+import { permanentRedirect } from "next/navigation"
 
 export default function CompaniesPage() {
-  return <CompaniesWorkspace />
+  permanentRedirect("/career-path/companies")
 }

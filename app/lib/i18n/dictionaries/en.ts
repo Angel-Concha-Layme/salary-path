@@ -3,11 +3,13 @@ export const enDictionary = {
     appName: "My Path",
     loading: "Loading...",
     unknownError: "An unexpected error occurred",
+    comingSoon: "Coming soon",
+    noResults: "No results",
   },
   auth: {
-    title: "Sign in to Salary Path",
+    title: "Sign in to Capital Path",
     subtitle:
-      "Use GitHub, Google, or email/password to access your routes and panels.",
+      "Use GitHub, Google, or email/password to access your modules and dashboards.",
     email: "Email",
     emailPlaceholder: "Enter your email address",
     password: "Password",
@@ -49,12 +51,12 @@ export const enDictionary = {
     validationPasswordHasLetter: "Password must include at least 1 letter.",
     validationPasswordHasNumber: "Password must include at least 1 number.",
     validationPasswordInvalid: "Enter a valid password.",
-    heroTitle: "Build your salary path with actionable insight.",
+    heroTitle: "Build your capital path from income intelligence.",
     heroBody:
-      "Compare compensation, spot gaps, and make better career decisions with confidence.",
-    heroCardTitle: "Your next leap starts with data.",
+      "Track your earning evolution, project growth, and make stronger financial decisions with confidence.",
+    heroCardTitle: "Every next step starts with reliable data.",
     heroCardBody:
-      "Track professional growth, set goals, and keep opportunities visible in one place.",
+      "Unify career, financial, and housing decisions with one profile and one engine.",
     chartSalaryLabel: "Salary",
     chartCompanyLabel: "Company",
     chartEventTypeLabel: "Event type",
@@ -63,19 +65,79 @@ export const enDictionary = {
     chartDateLabel: "Date",
   },
   navigation: {
+    home: "Home",
     explore: "Explore",
     onboarding: "Onboarding",
+    careerPath: "Career Path",
+    financialEngine: "Financial Engine",
+    homePath: "Home Path",
+    account: "Account",
+    salaryTracking: "Salary Tracking",
     personalPath: "Personal Path",
     companies: "Companies",
     comparison: "Comparison",
+    growthPrediction: "Growth Prediction",
+    taxesPeru: "Peru Taxes",
+    savingsProjection: "Savings Projection",
+    investmentSimulator: "Investment Simulator",
+    taxStrategies: "Tax Strategies",
+    mortgageEligibility: "Mortgage Eligibility",
+    installmentSimulator: "Installment Simulator",
+    projectsMap: "Projects Map",
+    financialMatching: "Financial Matching",
     profile: "Profile",
     settings: "Settings",
     adminUsers: "Admin Users",
     language: "Language",
     theme: "Theme",
+    notifications: "Notifications",
+    filters: "Filters",
+    search: "Search",
     menu: "Menu",
     collapse: "Collapse",
     expand: "Expand",
+    collapseSidebar: "Collapse sidebar",
+    expandSidebar: "Expand sidebar",
+  },
+  exploreLanding: {
+    badge: "Public Preview",
+    title: "Capital Path",
+    subtitle:
+      "One profile and one financial engine to connect career growth, financial planning, and housing decisions.",
+    modulesTitle: "Three connected modules",
+    ctaPrimary: "Explore product",
+    ctaSecondary: "Sign in",
+    modules: {
+      careerPath: {
+        title: "Career Path",
+        body: "Track your salary progression and benchmark your trajectory.",
+        items: {
+          salaryTracking: "Salary tracking",
+          comparison: "Anonymous comparison",
+          growthPrediction: "Growth prediction",
+        },
+      },
+      financialEngine: {
+        title: "Financial Engine",
+        body: "Convert income evolution into financial projections and strategy.",
+        items: {
+          taxesPeru: "Peru taxes",
+          savingsProjection: "Savings projection",
+          investmentSimulator: "Investment simulation",
+          taxStrategies: "Tax strategies",
+        },
+      },
+      homePath: {
+        title: "Home Path",
+        body: "Turn financial capacity into housing readiness and alternatives.",
+        items: {
+          mortgageEligibility: "Mortgage eligibility",
+          installmentSimulator: "Installment simulator",
+          projectsMap: "Projects map",
+          financialMatching: "Financial matching",
+        },
+      },
+    },
   },
   permissions: {
     public: "Public",
@@ -265,6 +327,7 @@ export const enDictionary = {
     title: "Verify your access",
     description: "Enter the verification code we sent to your email address:",
     codeLabel: "Verification code",
+    sendCode: "Send code",
     resendCode: "Resend Code",
     verifyAction: "Verify",
     verifying: "Verifying...",
@@ -481,6 +544,52 @@ export const enDictionary = {
       eventsTitle: "Company events",
       close: "Close panel",
       noEvents: "This company has no events yet.",
+    },
+  },
+  settingsPage: {
+    title: "Settings",
+    subtitle: "Configure your workspace behavior and quick preferences.",
+    tabs: {
+      sidebar: "Sidebar",
+      platform: "Platform",
+    },
+    sidebar: {
+      title: "Sidebar groups behavior",
+      description:
+        "Choose how module sections behave by default in the left sidebar.",
+      allCollapsed: "All collapsed",
+      allExpanded: "All expanded",
+      collapsedHint:
+        "Default: all sections collapsed except the current route section.",
+      expandedHint: "All sections stay expanded by default.",
+    },
+    platform: {
+      title: "Platform home",
+      description:
+        "Open the Home view to review modules, usage guidance, and useful platform links.",
+      goHome: "Open Home",
+    },
+  },
+  homePage: {
+    title: "Capital Path Home",
+    subtitle:
+      "A quick overview of the platform, what each module does, and where to start next.",
+    modulesTitle: "Modules overview",
+    quickStartTitle: "Quick start",
+    quickStartStepOne: "Track your current compensation in Salary Tracking.",
+    quickStartStepTwo: "Keep company and event history updated in Companies.",
+    quickStartStepThree:
+      "Use Financial Engine and Home Path tools based on your current income data.",
+    cards: {
+      careerPathTitle: "Career Path",
+      careerPathDescription:
+        "Model salary progression, company history, and growth opportunities.",
+      financialEngineTitle: "Financial Engine",
+      financialEngineDescription:
+        "Estimate taxes, savings, and investment outcomes from your income evolution.",
+      homePathTitle: "Home Path",
+      homePathDescription:
+        "Evaluate mortgage readiness and housing scenarios using your financial capacity.",
     },
   },
   profile: {

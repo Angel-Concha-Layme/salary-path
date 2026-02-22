@@ -2,7 +2,7 @@ import { and, desc, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 
 import { db } from "@/app/lib/db/client"
-import { pathCompanyEvents } from "@/app/lib/db/schema"
+import { pathCompanies, pathCompanyEvents } from "@/app/lib/db/schema"
 import {
   normalizePathCompanyEventType,
   pathCompanyEventTypeSchema,
@@ -31,7 +31,6 @@ const updateSchema = createSchema.partial()
 function mapEntity(row: typeof pathCompanyEvents.$inferSelect): PathCompanyEventsEntity {
   return {
     id: row.id,
-    ownerUserId: row.ownerUserId,
     pathCompanyId: row.pathCompanyId,
     eventType: normalizePathCompanyEventType(row.eventType),
     effectiveDate: toIso(row.effectiveDate) ?? new Date(0).toISOString(),
@@ -53,7 +52,6 @@ async function getRecordOrThrow(ownerUserId: string, pathCompanyId: string, even
       and(
         eq(pathCompanyEvents.id, eventId),
         eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
-        eq(pathCompanyEvents.ownerUserId, ownerUserId),
         isNull(pathCompanyEvents.deletedAt)
       )
     )
@@ -82,7 +80,6 @@ export async function listPathCompanyEvents(
     .from(pathCompanyEvents)
     .where(
       and(
-        eq(pathCompanyEvents.ownerUserId, ownerUserId),
         eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
         isNull(pathCompanyEvents.deletedAt)
       )
@@ -103,14 +100,31 @@ export async function listPathCompanyEventsByOwner(
   const limit = clampLimit(params.limit, 50, 100)
 
   const rows = await db
-    .select()
+    .select({
+      id: pathCompanyEvents.id,
+      pathCompanyId: pathCompanyEvents.pathCompanyId,
+      eventType: pathCompanyEvents.eventType,
+      effectiveDate: pathCompanyEvents.effectiveDate,
+      amount: pathCompanyEvents.amount,
+      notes: pathCompanyEvents.notes,
+      createdAt: pathCompanyEvents.createdAt,
+      updatedAt: pathCompanyEvents.updatedAt,
+      deletedAt: pathCompanyEvents.deletedAt,
+    })
     .from(pathCompanyEvents)
-    .where(and(eq(pathCompanyEvents.ownerUserId, ownerUserId), isNull(pathCompanyEvents.deletedAt)))
+    .innerJoin(pathCompanies, eq(pathCompanies.id, pathCompanyEvents.pathCompanyId))
+    .where(
+      and(
+        eq(pathCompanies.ownerUserId, ownerUserId),
+        isNull(pathCompanies.deletedAt),
+        isNull(pathCompanyEvents.deletedAt)
+      )
+    )
     .orderBy(desc(pathCompanyEvents.effectiveDate))
     .limit(limit)
 
   return {
-    items: rows.map(mapEntity),
+    items: rows.map((row) => mapEntity(row)),
     total: rows.length,
   }
 }
@@ -139,7 +153,6 @@ export async function createPathCompanyEvent(
       .insert(pathCompanyEvents)
       .values({
         id: crypto.randomUUID(),
-        ownerUserId,
         pathCompanyId,
         eventType: payload.eventType,
         effectiveDate: payload.effectiveDate,
@@ -157,7 +170,6 @@ export async function createPathCompanyEvent(
     }
 
     await syncEndOfEmploymentEventForCompany(tx, {
-      ownerUserId,
       pathCompanyId,
       now,
     })
@@ -190,7 +202,6 @@ export async function updatePathCompanyEvent(
         and(
           eq(pathCompanyEvents.id, eventId),
           eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
-          eq(pathCompanyEvents.ownerUserId, ownerUserId),
           isNull(pathCompanyEvents.deletedAt)
         )
       )
@@ -203,7 +214,6 @@ export async function updatePathCompanyEvent(
     }
 
     await syncEndOfEmploymentEventForCompany(tx, {
-      ownerUserId,
       pathCompanyId,
       now: updatedAt,
     })
@@ -238,7 +248,6 @@ export async function deletePathCompanyEvent(
         and(
           eq(pathCompanyEvents.id, eventId),
           eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
-          eq(pathCompanyEvents.ownerUserId, ownerUserId),
           isNull(pathCompanyEvents.deletedAt)
         )
       )
@@ -251,7 +260,6 @@ export async function deletePathCompanyEvent(
     }
 
     await syncEndOfEmploymentEventForCompany(tx, {
-      ownerUserId,
       pathCompanyId,
       now: deletedAt,
     })

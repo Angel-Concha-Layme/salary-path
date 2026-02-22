@@ -14,6 +14,7 @@ import {
   type PersonalPathChartView,
   type PersonalPathRangePreset,
 } from "@/app/lib/models/personal-path/personal-path-chart.model"
+import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -26,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CompaniesDrawer } from "@/components/personal-path/companies-drawer"
+import { RouteScreen } from "@/components/layout/route-screen"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   SalaryHistoryChartWrapper,
@@ -184,7 +186,7 @@ export function PersonalPathWorkspace() {
     [dashboard.tableRows]
   )
   const eventsByCompanyId = useMemo(() => {
-    const map = new Map<string, typeof dashboard.events>()
+    const map = new Map<string, PathCompanyEventsEntity[]>()
 
     dashboard.events.forEach((event) => {
       const current = map.get(event.pathCompanyId) ?? []
@@ -311,7 +313,7 @@ export function PersonalPathWorkspace() {
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">{dictionary.personalPath.empty.description}</p>
           <Button asChild>
-            <Link href="/companies">{dictionary.personalPath.empty.cta}</Link>
+            <Link href="/career-path/companies">{dictionary.personalPath.empty.cta}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -319,16 +321,14 @@ export function PersonalPathWorkspace() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="space-y-1 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-primary">{dictionary.personalPath.title}</h1>
-        <p className="text-sm text-muted-foreground">{dictionary.personalPath.subtitle}</p>
-      </header>
-
-      <section className="space-y-4 rounded-xl border border-primary/20 bg-primary/[0.03] p-4 text-card-foreground shadow-sm">
-        <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/80 p-3 lg:flex-row">
-          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
+    <RouteScreen
+      title={dictionary.personalPath.title}
+      subtitle={dictionary.personalPath.subtitle}
+    >
+      <section className="min-w-0 w-full max-w-full space-y-4 text-card-foreground">
+        <div className="flex flex-col gap-2 rounded-2xl bg-muted/30 p-2 ring-1 ring-border/60 lg:flex-row">
+          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               {dictionary.personalPath.chart.viewLabel}
             </p>
             <Select
@@ -337,7 +337,7 @@ export function PersonalPathWorkspace() {
                 setView(nextValue as PersonalPathChartView)
               }
             >
-              <SelectTrigger className="w-full bg-background">
+              <SelectTrigger className="mt-1 h-9 w-full border-border/60 bg-transparent shadow-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -349,8 +349,8 @@ export function PersonalPathWorkspace() {
             </Select>
           </div>
 
-          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
+          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               {dictionary.personalPath.chart.rangeLabel}
             </p>
             <Select
@@ -359,7 +359,7 @@ export function PersonalPathWorkspace() {
                 setRange(nextValue as PersonalPathRangePreset)
               }
             >
-              <SelectTrigger className="w-full bg-background">
+              <SelectTrigger className="mt-1 h-9 w-full border-border/60 bg-transparent shadow-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -372,8 +372,8 @@ export function PersonalPathWorkspace() {
             </Select>
           </div>
 
-          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
+          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               {dictionary.personalPath.chart.rateBasisLabel}
             </p>
             <Select
@@ -382,7 +382,7 @@ export function PersonalPathWorkspace() {
                 setRateBasis(nextValue as PersonalPathRateBasis)
               }
             >
-              <SelectTrigger className="w-full bg-background">
+              <SelectTrigger className="mt-1 h-9 w-full border-border/60 bg-transparent shadow-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -392,13 +392,16 @@ export function PersonalPathWorkspace() {
             </Select>
           </div>
 
-          <div className="min-w-0 space-y-1 lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/75">
+          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               {dictionary.personalPath.chart.companiesLabel}
             </p>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between bg-background hover:bg-primary/5">
+                <Button
+                  variant="outline"
+                  className="mt-1 h-9 w-full justify-between border-border/60 bg-transparent shadow-none hover:bg-accent/40"
+                >
                   <span className="truncate">{selectedCompaniesLabel}</span>
                   <ChevronDownIcon className="size-4 text-muted-foreground" />
                 </Button>
@@ -429,10 +432,7 @@ export function PersonalPathWorkspace() {
                     onSelect={(event) => event.preventDefault()}
                   >
                     <span className="inline-flex items-center gap-2">
-                      <span
-                        className="size-2 rounded-full"
-                        style={{ backgroundColor: company.color }}
-                      />
+                      <span className="size-2 rounded-full" style={{ backgroundColor: company.color }} />
                       <span>{company.displayName}</span>
                     </span>
                   </DropdownMenuCheckboxItem>
@@ -443,7 +443,7 @@ export function PersonalPathWorkspace() {
         </div>
 
         {dashboard.currencyMismatch ? (
-          <div className="flex flex-wrap items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+          <div className="flex flex-wrap items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-50/70 px-3 py-2 text-xs text-amber-950 dark:border-amber-300/35 dark:bg-amber-950/20 dark:text-amber-100">
             <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" />
             <p>
               {formatCount(
@@ -466,9 +466,10 @@ export function PersonalPathWorkspace() {
           height={320}
           legend={{
             title: dictionary.personalPath.chart.legendTitle,
-            className: "rounded-lg border border-border/70 bg-primary/5 p-3",
+            className: "mb-3 rounded-xl bg-muted/30 px-3 py-2 ring-1 ring-border/60",
           }}
-          className="border-border/80 bg-card"
+          className="rounded-2xl border-0 bg-transparent p-0 shadow-none"
+          chartClassName="rounded-2xl bg-background/70"
           emptyState={dictionary.personalPath.chart.emptyState}
           formatters={{
             date: (dateKey) => formatDateKey(dateKey, locale),
@@ -487,19 +488,20 @@ export function PersonalPathWorkspace() {
           }}
           tooltip={{
             render: renderTooltip,
+            className: "border-border/60 bg-background/95 shadow-lg supports-[backdrop-filter]:backdrop-blur-sm",
           }}
         />
       </section>
 
-      <section className="rounded-xl border border-border/80 bg-card text-card-foreground shadow-sm">
-        <header className="border-b border-border/70 bg-primary/5 px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-primary/80">
+      <section className="w-full max-w-full rounded-xl border border-border/80 bg-background text-card-foreground">
+        <header className="border-b border-border/70 bg-background px-4 py-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
             {dictionary.personalPath.table.title}
           </h2>
         </header>
-        <div className="overflow-x-auto">
+        <div className="w-full max-w-full overflow-x-auto">
           <table className="w-full min-w-[860px] text-left text-sm">
-            <thead className="bg-primary/8 text-xs uppercase tracking-[0.08em] text-primary/85">
+            <thead className="bg-background text-xs uppercase tracking-[0.08em] text-foreground">
               <tr>
                 <th className="whitespace-nowrap px-3 py-2 font-medium">
                   {dictionary.personalPath.table.columns.displayName}
@@ -538,29 +540,29 @@ export function PersonalPathWorkspace() {
                       }
                     }}
                     className={cn(
-                      "cursor-pointer border-t border-border/70 align-top text-sm text-foreground transition-colors hover:bg-primary/5",
-                      isSelected && "bg-primary/10"
+                      "cursor-pointer border-t border-border/70 align-top text-sm text-foreground transition-colors hover:bg-accent/40",
+                      isSelected && "bg-background"
                     )}
                     aria-label={`${dictionary.personalPath.table.columns.displayName}: ${row.displayName}`}
                   >
-                    <td className={cn("whitespace-nowrap px-3 py-2 font-medium", isSelected && "text-primary")}>
+                    <td className={cn("whitespace-nowrap px-3 py-2 font-medium", isSelected && "text-foreground")}>
                       {row.displayName}
                     </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/85")}>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
                       {row.roleDisplayName}
                     </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
                       {formatDateValue(row.startDate, locale)}
                     </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
                       {formatDateValue(row.endDate, locale)}
                     </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
                       {row.monthlyAverageSalary !== null
                         ? formatAmount(locale, row.currency, row.monthlyAverageSalary, 2)
                         : dictionary.personalPath.table.notAvailable}
                     </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-primary/80")}>
+                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
                       {row.annualSalary !== null
                         ? formatAmount(locale, row.currency, row.annualSalary, 0)
                         : dictionary.personalPath.table.notAvailable}
@@ -583,6 +585,6 @@ export function PersonalPathWorkspace() {
         company={activeCompanyRow}
         events={activeCompanyEvents}
       />
-    </div>
+    </RouteScreen>
   )
 }

@@ -1,11 +1,5 @@
-import { RoutePlaceholder } from "@/components/layout/route-placeholder"
+import { SettingsWorkspace } from "@/components/settings/settings-workspace"
 
 export default function SettingsPage() {
-  return (
-    <RoutePlaceholder
-      routeKey="settings"
-      access="protected"
-      protectedRoute
-    />
-  )
+  return <SettingsWorkspace />
 }

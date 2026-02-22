@@ -12,5 +12,5 @@ export default async function RootPage() {
 
   const onboardingStatus = await getOnboardingStatus(session.user.id)
 
-  redirect(onboardingStatus.completed ? "/personal-path" : "/onboarding")
+  redirect(onboardingStatus.completed ? "/career-path/salary-tracking" : "/onboarding")
 }

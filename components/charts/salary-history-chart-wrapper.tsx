@@ -194,10 +194,15 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
       return
     }
 
+    const widthHost = container.parentElement ?? container
+    const resolveChartWidth = () =>
+      Math.max(100, Math.floor(widthHost.clientWidth || container.clientWidth))
+    const resolveChartHeight = () => Math.max(180, Math.floor(container.clientHeight))
+
     const themeTokens = getThemeTokens(container)
     const chart = createChart(container, {
-      width: container.clientWidth,
-      height: container.clientHeight,
+      width: resolveChartWidth(),
+      height: resolveChartHeight(),
       layout: {
         background: {
           type: ColorType.Solid,
@@ -331,19 +336,21 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
 
     chart.subscribeCrosshairMove(handleCrosshairMove)
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0]
-
-      if (!entry) {
-        return
-      }
-
+    const resizeChart = () => {
       chart.applyOptions({
-        width: Math.max(100, Math.floor(entry.contentRect.width)),
-        height: Math.max(180, Math.floor(entry.contentRect.height)),
+        width: resolveChartWidth(),
+        height: resolveChartHeight(),
       })
+      chart.timeScale().fitContent()
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      resizeChart()
     })
     resizeObserver.observe(container)
+    if (widthHost !== container) {
+      resizeObserver.observe(widthHost)
+    }
 
     const root = document.documentElement
     const themeObserver = new MutationObserver(() => {
@@ -400,14 +407,14 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
   return (
     <div
       className={cn(
-        "relative rounded-2xl border border-border/80 bg-card p-3 text-card-foreground",
+        "relative min-w-0 w-full max-w-full overflow-hidden rounded-2xl border border-border/80 bg-background p-3 text-card-foreground",
         className
       )}
     >
       {legend ? (
         <div className={cn("mb-3 space-y-2", legend.className)}>
           {legend.title ? (
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary/80">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-foreground">
               {legend.title}
             </p>
           ) : null}
@@ -419,7 +426,7 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
               {legendItems.map((entry) => (
                 <span
                   key={entry.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-primary/5 px-2 py-1"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background px-2 py-1"
                 >
                   <span
                     className="size-2 rounded-full"
@@ -436,12 +443,12 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
       {hasRenderableData ? (
         <div
           ref={chartContainerRef}
-          className={cn("w-full", chartClassName)}
+          className={cn("min-w-0 w-full max-w-full", chartClassName)}
           style={{ height: `${height}px` }}
         />
       ) : (
         <div
-          className="flex items-center justify-center rounded-lg border border-dashed border-primary/35 bg-primary/5 p-5 text-sm text-muted-foreground"
+          className="flex items-center justify-center rounded-lg border border-dashed border-border/70 bg-background p-5 text-sm text-muted-foreground"
           style={{ height: `${height}px` }}
         >
           {emptyState ?? "No data to display yet."}
@@ -451,7 +458,7 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
       {tooltipState ? (
         <div
           className={cn(
-            "pointer-events-none absolute z-20 min-w-[220px] rounded-lg border border-border/80 bg-card/95 px-3 py-2 text-xs text-foreground shadow-lg backdrop-blur",
+            "pointer-events-none absolute z-20 min-w-[220px] rounded-lg border border-border/80 bg-background px-3 py-2 text-xs text-foreground",
             tooltip?.className
           )}
           style={{ left: tooltipState.x, top: tooltipState.y }}

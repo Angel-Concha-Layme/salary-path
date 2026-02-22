@@ -4,6 +4,7 @@ import {
   getRoleCatalogById,
   updateRoleCatalog,
 } from "@/app/lib/server/domain/roles/role-catalog.domain"
+import { requireApiAdminSession } from "@/app/lib/server/require-api-admin-session"
 import { requireApiSession } from "@/app/lib/server/require-api-session"
 
 interface RouteParams {
@@ -17,9 +18,9 @@ export async function GET(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    await requireApiSession(request)
     const { roleId } = await context.params
-    const result = await getRoleCatalogById(session.user.id, roleId)
+    const result = await getRoleCatalogById(roleId)
 
     return jsonOk(result)
   } catch (error) {
@@ -34,10 +35,10 @@ export async function PATCH(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    await requireApiAdminSession(request)
     const { roleId } = await context.params
     const payload = await request.json()
-    const result = await updateRoleCatalog(session.user.id, roleId, payload)
+    const result = await updateRoleCatalog(roleId, payload)
 
     return jsonOk(result)
   } catch (error) {
@@ -52,9 +53,9 @@ export async function DELETE(
   }
 ) {
   try {
-    const session = await requireApiSession(request)
+    await requireApiAdminSession(request)
     const { roleId } = await context.params
-    const result = await deleteRoleCatalog(session.user.id, roleId)
+    const result = await deleteRoleCatalog(roleId)
 
     return jsonOk(result)
   } catch (error) {

@@ -78,7 +78,6 @@ function mapPathCompanyEventEntity(
 ): PathCompanyEventsEntity {
   return {
     id: row.id,
-    ownerUserId: row.ownerUserId,
     pathCompanyId: row.pathCompanyId,
     eventType: normalizePathCompanyEventType(row.eventType),
     effectiveDate: toIso(row.effectiveDate) ?? new Date(0).toISOString(),
@@ -108,7 +107,6 @@ function mapUserFinanceSettingsEntity(
 
 async function resolveCompanyCatalog(
   tx: DbTx,
-  ownerUserId: string,
   companyName: string,
   now: Date
 ) {
@@ -160,7 +158,6 @@ async function resolveCompanyCatalog(
     .insert(companyCatalog)
     .values({
       id: crypto.randomUUID(),
-      ownerUserId,
       name: companyName,
       nameNormalized: normalizedName,
       slug,
@@ -181,7 +178,6 @@ async function resolveCompanyCatalog(
 
 async function resolveRoleCatalog(
   tx: DbTx,
-  ownerUserId: string,
   roleName: string,
   now: Date
 ) {
@@ -228,7 +224,6 @@ async function resolveRoleCatalog(
     .insert(roleCatalog)
     .values({
       id: crypto.randomUUID(),
-      ownerUserId,
       name: roleName,
       nameNormalized: normalizedName,
       slug,
@@ -276,8 +271,8 @@ export async function completeOnboarding(
   return db.transaction(async (tx) => {
     const now = new Date()
 
-    const company = await resolveCompanyCatalog(tx, ownerUserId, payload.companyName, now)
-    const role = await resolveRoleCatalog(tx, ownerUserId, payload.roleName, now)
+    const company = await resolveCompanyCatalog(tx, payload.companyName, now)
+    const role = await resolveRoleCatalog(tx, payload.roleName, now)
 
     const pathCompanyRows = await tx
       .insert(pathCompanies)
@@ -310,7 +305,6 @@ export async function completeOnboarding(
       .insert(pathCompanyEvents)
       .values({
         id: crypto.randomUUID(),
-        ownerUserId,
         pathCompanyId: pathCompany.id,
         eventType: PathCompanyEventType.START_RATE,
         effectiveDate: payload.startDate,
@@ -334,7 +328,6 @@ export async function completeOnboarding(
         .insert(pathCompanyEvents)
         .values({
           id: crypto.randomUUID(),
-          ownerUserId,
           pathCompanyId: pathCompany.id,
           eventType: PathCompanyEventType.RATE_INCREASE,
           effectiveDate: payload.endDate ?? now,
@@ -356,7 +349,6 @@ export async function completeOnboarding(
 
     if (payload.endDate) {
       await syncEndOfEmploymentEvent(tx, {
-        ownerUserId,
         pathCompanyId: pathCompany.id,
         endDate: payload.endDate,
         now,
@@ -367,7 +359,6 @@ export async function completeOnboarding(
         .from(pathCompanyEvents)
         .where(
           and(
-            eq(pathCompanyEvents.ownerUserId, ownerUserId),
             eq(pathCompanyEvents.pathCompanyId, pathCompany.id),
             eq(pathCompanyEvents.eventType, PathCompanyEventType.END_OF_EMPLOYMENT),
             isNull(pathCompanyEvents.deletedAt)

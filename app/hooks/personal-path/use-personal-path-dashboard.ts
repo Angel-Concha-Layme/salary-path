@@ -53,7 +53,7 @@ function readErrorMessage(error: unknown): string | null {
 export function usePersonalPathDashboard({
   filters,
 }: UsePersonalPathDashboardOptions): PersonalPathDashboardResult {
-  const companiesQuery = usePathCompaniesListQuery({ limit: 200 })
+  const companiesQuery = usePathCompaniesListQuery({ limit: 100 })
   const eventsQuery = usePathCompanyEventsByOwnerListQuery({ limit: 100 })
   const financeSettingsQuery = useUserFinanceSettingsListQuery({ limit: 1 })
 

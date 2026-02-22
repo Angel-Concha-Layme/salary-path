@@ -1,6 +1,5 @@
 export interface RoleCatalogEntity {
   id: string
-  ownerUserId: string
   name: string
   nameNormalized: string
   slug: string

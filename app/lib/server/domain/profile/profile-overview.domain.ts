@@ -215,7 +215,6 @@ export async function getProfileOverview(
       pathCompanyEvents,
       and(
         eq(pathCompanyEvents.pathCompanyId, pathCompanies.id),
-        eq(pathCompanyEvents.ownerUserId, user.id),
         isNull(pathCompanyEvents.deletedAt)
       )
     )

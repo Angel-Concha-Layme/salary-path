@@ -128,7 +128,7 @@ export function CareerEventsTable({
           <col className="w-[19%]" />
           <col className="w-[20%]" />
         </colgroup>
-        <thead className="bg-primary/8 text-xs uppercase tracking-[0.08em] text-primary/85">
+        <thead className="bg-background text-xs uppercase tracking-[0.08em] text-foreground">
           <tr>
             <th className="whitespace-nowrap px-3 py-2 font-medium">{labels.effectiveDate}</th>
             <th className="whitespace-nowrap px-3 py-2 font-medium">{labels.eventType}</th>
@@ -149,7 +149,7 @@ export function CareerEventsTable({
             return (
               <tr
                 key={event.id}
-                className="border-t border-border/70 align-top transition-colors hover:bg-primary/5"
+                className="border-t border-border/70 align-top transition-colors hover:bg-accent/40"
               >
                 <td className="whitespace-nowrap px-3 py-2">
                   {formatDateValue(event.effectiveDate, locale)}

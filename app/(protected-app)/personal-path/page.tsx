@@ -1,5 +1,5 @@
-import { PersonalPathWorkspace } from "@/components/personal-path/personal-path-workspace"
+import { permanentRedirect } from "next/navigation"
 
 export default function PersonalPathPage() {
-  return <PersonalPathWorkspace />
+  permanentRedirect("/career-path/salary-tracking")
 }

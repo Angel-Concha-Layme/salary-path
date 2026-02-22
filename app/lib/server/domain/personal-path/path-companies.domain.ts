@@ -145,18 +145,15 @@ async function getRoleCatalogByIdOrThrow(roleId: string) {
   return row
 }
 
-async function resolveCompanyReference(
-  ownerUserId: string,
-  input: {
+async function resolveCompanyReference(input: {
     companyName?: string
     displayName?: string
     companyCatalogId?: string | null
-  }
-) {
+  }) {
   const name = resolveName(input.companyName, input.displayName)
 
   if (name) {
-    const resolved = await resolveCompanyCatalogByName(ownerUserId, name)
+    const resolved = await resolveCompanyCatalogByName(name)
     return {
       companyCatalogId: resolved.id,
       displayName: resolved.name,
@@ -174,18 +171,15 @@ async function resolveCompanyReference(
   return null
 }
 
-async function resolveRoleReference(
-  ownerUserId: string,
-  input: {
+async function resolveRoleReference(input: {
     roleName?: string
     roleDisplayName?: string
     roleCatalogId?: string | null
-  }
-) {
+  }) {
   const name = resolveName(input.roleName, input.roleDisplayName)
 
   if (name) {
-    const resolved = await resolveRoleCatalogByName(ownerUserId, name)
+    const resolved = await resolveRoleCatalogByName(name)
     return {
       roleCatalogId: resolved.id,
       roleDisplayName: resolved.name,
@@ -262,8 +256,8 @@ export async function createPathCompany(
 ): Promise<PathCompaniesEntity> {
   const payload = createSchema.parse(input)
   const now = new Date()
-  const companyReference = await resolveCompanyReference(ownerUserId, payload)
-  const roleReference = await resolveRoleReference(ownerUserId, payload)
+  const companyReference = await resolveCompanyReference(payload)
+  const roleReference = await resolveRoleReference(payload)
 
   if (!companyReference) {
     throw new ApiError(400, "VALIDATION_ERROR", "companyName is required")
@@ -303,7 +297,6 @@ export async function createPathCompany(
 
     if (inserted.endDate) {
       await syncEndOfEmploymentEvent(tx, {
-        ownerUserId,
         pathCompanyId: inserted.id,
         endDate: inserted.endDate,
         now,
@@ -337,7 +330,7 @@ export async function updatePathCompany(
   const nextValues: Partial<typeof pathCompanies.$inferInsert> = {}
 
   if (payload.companyName || payload.displayName || Object.prototype.hasOwnProperty.call(payload, "companyCatalogId")) {
-    const companyReference = await resolveCompanyReference(ownerUserId, payload)
+    const companyReference = await resolveCompanyReference(payload)
 
     if (companyReference) {
       nextValues.companyCatalogId = companyReference.companyCatalogId
@@ -348,7 +341,7 @@ export async function updatePathCompany(
   }
 
   if (payload.roleName || payload.roleDisplayName || Object.prototype.hasOwnProperty.call(payload, "roleCatalogId")) {
-    const roleReference = await resolveRoleReference(ownerUserId, payload)
+    const roleReference = await resolveRoleReference(payload)
 
     if (roleReference) {
       nextValues.roleCatalogId = roleReference.roleCatalogId
@@ -412,14 +405,12 @@ export async function updatePathCompany(
 
     if (hasEndDateChange && nextEndDate) {
       await syncEndOfEmploymentEvent(tx, {
-        ownerUserId,
         pathCompanyId,
         endDate: nextEndDate,
         now: updatedAt,
       })
     } else if (hasEndDateChange) {
       await clearEndOfEmploymentEvents(tx, {
-        ownerUserId,
         pathCompanyId,
         now: updatedAt,
       })
@@ -448,7 +439,6 @@ export async function deletePathCompany(ownerUserId: string, pathCompanyId: stri
       .where(
         and(
           eq(pathCompanyEvents.pathCompanyId, pathCompanyId),
-          eq(pathCompanyEvents.ownerUserId, ownerUserId),
           isNull(pathCompanyEvents.deletedAt)
         )
       )

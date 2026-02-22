@@ -1,4 +1,4 @@
-export const OAUTH_POPUP_COMPLETE_MESSAGE = "salary-path:oauth-popup-complete" as const
+export const OAUTH_POPUP_COMPLETE_MESSAGE = "capital-path:oauth-popup-complete" as const
 
 export type OAuthPopupCompleteMessage = {
   type: typeof OAUTH_POPUP_COMPLETE_MESSAGE
@@ -7,7 +7,7 @@ export type OAuthPopupCompleteMessage = {
 
 export function getSafeInternalTarget(
   target: string | null | undefined,
-  fallback = "/personal-path"
+  fallback = "/career-path/salary-tracking"
 ): string {
   if (!target) {
     return fallback

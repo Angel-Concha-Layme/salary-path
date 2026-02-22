@@ -1,5 +1,5 @@
-import { ComparisonOnboardingWizard } from "@/components/comparison/comparison-onboarding-wizard"
+import { permanentRedirect } from "next/navigation"
 
 export default function ComparisonPage() {
-  return <ComparisonOnboardingWizard />
+  permanentRedirect("/career-path/comparison")
 }

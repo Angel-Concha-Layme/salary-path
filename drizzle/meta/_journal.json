@@ -64,6 +64,34 @@
       "when": 1764400000000,
       "tag": "0008_route_access_email_otp",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1764500000000,
+      "tag": "0009_cleanup_comparison_and_legacy_backups",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1764600000000,
+      "tag": "0010_normalize_global_catalogs",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1764700000000,
+      "tag": "0011_remove_owner_from_path_company_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1764800000000,
+      "tag": "0012_align_constraints_indexes",
+      "breakpoints": true
     }
   ]
 }

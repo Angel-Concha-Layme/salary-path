@@ -9,7 +9,6 @@ export type PathCompanyEventType = PathCompanyEventTypeValue
 
 export interface PathCompanyEventsEntity {
   id: string
-  ownerUserId: string
   pathCompanyId: string
   eventType: PathCompanyEventType
   effectiveDate: string

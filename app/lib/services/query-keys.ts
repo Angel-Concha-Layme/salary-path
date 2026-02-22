@@ -71,69 +71,6 @@ export const queryKeys = {
         ["security", "route-access", "status", routeKey] as const,
     },
   },
-  comparison: {
-    root: () => ["comparison"] as const,
-    personas: {
-      root: () => ["comparison", "personas"] as const,
-      list: (params: PaginationParams = {}) =>
-        ["comparison", "personas", "list", { limit: params.limit ?? 50 }] as const,
-      detail: (personaId: string) => ["comparison", "personas", "detail", personaId] as const,
-      careerEvents: {
-        root: (personaId: string) => ["comparison", "personas", personaId, "career-events"] as const,
-        list: (personaId: string, params: PaginationParams = {}) =>
-          [
-            "comparison",
-            "personas",
-            personaId,
-            "career-events",
-            "list",
-            { limit: params.limit ?? 50 },
-          ] as const,
-        detail: (personaId: string, eventId: string) =>
-          ["comparison", "personas", personaId, "career-events", "detail", eventId] as const,
-      },
-      bonusRules: {
-        root: (personaId: string) => ["comparison", "personas", personaId, "bonus-rules"] as const,
-        list: (personaId: string, params: PaginationParams = {}) =>
-          [
-            "comparison",
-            "personas",
-            personaId,
-            "bonus-rules",
-            "list",
-            { limit: params.limit ?? 50 },
-          ] as const,
-        detail: (personaId: string, ruleId: string) =>
-          ["comparison", "personas", personaId, "bonus-rules", "detail", ruleId] as const,
-        months: {
-          root: (personaId: string, ruleId: string) =>
-            ["comparison", "personas", personaId, "bonus-rules", ruleId, "months"] as const,
-          list: (personaId: string, ruleId: string, params: PaginationParams = {}) =>
-            [
-              "comparison",
-              "personas",
-              personaId,
-              "bonus-rules",
-              ruleId,
-              "months",
-              "list",
-              { limit: params.limit ?? 50 },
-            ] as const,
-          detail: (personaId: string, ruleId: string, monthId: string) =>
-            [
-              "comparison",
-              "personas",
-              personaId,
-              "bonus-rules",
-              ruleId,
-              "months",
-              "detail",
-              monthId,
-            ] as const,
-        },
-      },
-    },
-  },
   personalPath: {
     root: () => ["personal-path"] as const,
     companyEvents: {

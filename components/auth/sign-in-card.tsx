@@ -152,7 +152,7 @@ export function SignInCard({
       "scrollbars=yes",
     ].join(",")
 
-    const popup = window.open(url, "salary-path-oauth-popup", features)
+    const popup = window.open(url, "capital-path-oauth-popup", features)
 
     if (!popup) {
       return null
@@ -228,9 +228,9 @@ export function SignInCard({
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
               <span className="inline-flex size-6 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary">
-                SP
+                CP
               </span>
-              Salary Path
+              Capital Path
             </div>
 
             <div className="space-y-2">
@@ -309,7 +309,7 @@ export function SignInCard({
 
           <div className="relative space-y-4">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-300">
-              Salary Path
+              Capital Path
             </p>
             <h2 className="max-w-2xl text-4xl leading-tight font-semibold xl:text-5xl">
               {dictionary.auth.heroTitle}

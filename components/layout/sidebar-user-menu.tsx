@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
   ChevronsUpDownIcon,
   LogOutIcon,
@@ -49,13 +49,8 @@ function SidebarAvatar({
   sizeClassName: string
   iconClassName: string
 }) {
-  const [imageFailed, setImageFailed] = useState(false)
-
-  useEffect(() => {
-    setImageFailed(false)
-  }, [userImage])
-
-  const showImage = Boolean(userImage && !imageFailed)
+  const [failedImageSrc, setFailedImageSrc] = useState<string | null>(null)
+  const showImage = Boolean(userImage && failedImageSrc !== userImage)
 
   return (
     <span
@@ -71,7 +66,7 @@ function SidebarAvatar({
           className="size-full object-cover"
           loading="lazy"
           referrerPolicy="no-referrer"
-          onError={() => setImageFailed(true)}
+          onError={() => setFailedImageSrc(userImage)}
         />
       ) : (
         <UserCircle2Icon className={iconClassName} />
@@ -115,13 +110,16 @@ export function SidebarUserMenu({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant={entrypointActive ? "default" : "outline"}
+            variant="outline"
             className={cn(
               "w-full rounded-xl",
               collapsed ? "h-9 justify-center px-0" : "h-10 justify-start px-2",
-              !entrypointActive && "border-sidebar-border",
-              entrypointActive &&
-                "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+              [
+                "border-0 bg-transparent shadow-none",
+                !entrypointActive && "text-sidebar-foreground hover:bg-sidebar-accent/40",
+                entrypointActive &&
+                  "bg-white text-black hover:bg-white/95 dark:bg-white dark:text-black dark:hover:bg-white/95",
+              ],
             )}
           >
             <SidebarAvatar
@@ -140,7 +138,7 @@ export function SidebarUserMenu({
                   className={cn(
                     "size-3.5",
                     entrypointActive
-                      ? "text-sidebar-primary-foreground"
+                      ? "text-black dark:text-black"
                       : "text-muted-foreground"
                   )}
                 />

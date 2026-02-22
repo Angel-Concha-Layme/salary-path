@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, like } from "drizzle-orm"
+import { and, desc, eq, isNull, like, ne } from "drizzle-orm"
 import { z } from "zod"
 
 import { db } from "@/app/lib/db/client"
@@ -30,7 +30,6 @@ const updateSchema = createSchema.partial()
 function mapEntity(row: typeof companyCatalog.$inferSelect): CompanyCatalogEntity {
   return {
     id: row.id,
-    ownerUserId: row.ownerUserId,
     name: row.name,
     nameNormalized: row.nameNormalized,
     slug: row.slug,
@@ -38,6 +37,27 @@ function mapEntity(row: typeof companyCatalog.$inferSelect): CompanyCatalogEntit
     createdAt: toIso(row.createdAt) ?? new Date(0).toISOString(),
     updatedAt: toIso(row.updatedAt) ?? new Date(0).toISOString(),
     deletedAt: toIso(row.deletedAt),
+  }
+}
+
+async function resolveAvailableSlug(slugInput: string, excludeId?: string): Promise<string> {
+  const baseSlug = toSlug(slugInput) || `company-${crypto.randomUUID().slice(0, 8)}`
+  let slug = baseSlug
+  let suffix = 2
+
+  while (true) {
+    const rows = await db
+      .select({ id: companyCatalog.id })
+      .from(companyCatalog)
+      .where(eq(companyCatalog.slug, slug))
+      .limit(1)
+
+    if (!rows[0] || rows[0].id === excludeId) {
+      return slug
+    }
+
+    slug = `${baseSlug}-${suffix}`
+    suffix += 1
   }
 }
 
@@ -67,19 +87,11 @@ export async function listCompanyCatalog(
   }
 }
 
-export async function getCompanyCatalogById(
-  _ownerUserId: string,
-  companyId: string
-): Promise<CompanyCatalogEntity> {
+export async function getCompanyCatalogById(companyId: string): Promise<CompanyCatalogEntity> {
   const rows = await db
     .select()
     .from(companyCatalog)
-    .where(
-      and(
-        eq(companyCatalog.id, companyId),
-        isNull(companyCatalog.deletedAt)
-      )
-    )
+    .where(and(eq(companyCatalog.id, companyId), isNull(companyCatalog.deletedAt)))
     .limit(1)
 
   const row = rows[0]
@@ -92,19 +104,35 @@ export async function getCompanyCatalogById(
 }
 
 export async function createCompanyCatalog(
-  ownerUserId: string,
   input: CompanyCatalogCreateInput
 ): Promise<CompanyCatalogEntity> {
   const payload = createSchema.parse(input)
   const nameNormalized = normalizeSearchText(payload.name)
-  const slug = payload.slug ? toSlug(payload.slug) : toSlug(payload.name)
 
+  const existingByNameRows = await db
+    .select()
+    .from(companyCatalog)
+    .where(
+      and(
+        eq(companyCatalog.nameNormalized, nameNormalized),
+        isNull(companyCatalog.deletedAt)
+      )
+    )
+    .limit(1)
+
+  const existingByName = existingByNameRows[0]
+
+  if (existingByName) {
+    return mapEntity(existingByName)
+  }
+
+  const slug = await resolveAvailableSlug(payload.slug ?? payload.name)
   const now = new Date()
+
   const rows = await db
     .insert(companyCatalog)
     .values({
       id: crypto.randomUUID(),
-      ownerUserId,
       name: payload.name,
       nameNormalized,
       slug,
@@ -124,15 +152,34 @@ export async function createCompanyCatalog(
 }
 
 export async function updateCompanyCatalog(
-  ownerUserId: string,
   companyId: string,
   input: CompanyCatalogUpdateInput
 ): Promise<CompanyCatalogEntity> {
   const parsed = requirePatchPayload(updateSchema.parse(input))
+  const nextNameNormalized = parsed.name ? normalizeSearchText(parsed.name) : undefined
+
+  if (nextNameNormalized) {
+    const conflictingRows = await db
+      .select({ id: companyCatalog.id })
+      .from(companyCatalog)
+      .where(
+        and(
+          eq(companyCatalog.nameNormalized, nextNameNormalized),
+          isNull(companyCatalog.deletedAt),
+          ne(companyCatalog.id, companyId)
+        )
+      )
+      .limit(1)
+
+    if (conflictingRows[0]) {
+      throw new ApiError(409, "CONFLICT", "Company name already exists")
+    }
+  }
+
   const payload = {
     ...parsed,
-    ...(parsed.name ? { nameNormalized: normalizeSearchText(parsed.name) } : {}),
-    ...(parsed.slug ? { slug: toSlug(parsed.slug) } : {}),
+    ...(nextNameNormalized ? { nameNormalized: nextNameNormalized } : {}),
+    ...(parsed.slug ? { slug: await resolveAvailableSlug(parsed.slug, companyId) } : {}),
   }
 
   const rows = await db
@@ -141,13 +188,7 @@ export async function updateCompanyCatalog(
       ...payload,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(companyCatalog.id, companyId),
-        eq(companyCatalog.ownerUserId, ownerUserId),
-        isNull(companyCatalog.deletedAt)
-      )
-    )
+    .where(and(eq(companyCatalog.id, companyId), isNull(companyCatalog.deletedAt)))
     .returning()
 
   const row = rows[0]
@@ -159,7 +200,7 @@ export async function updateCompanyCatalog(
   return mapEntity(row)
 }
 
-export async function deleteCompanyCatalog(ownerUserId: string, companyId: string) {
+export async function deleteCompanyCatalog(companyId: string) {
   const deletedAt = new Date()
 
   const rows = await db
@@ -168,13 +209,7 @@ export async function deleteCompanyCatalog(ownerUserId: string, companyId: strin
       deletedAt,
       updatedAt: deletedAt,
     })
-    .where(
-      and(
-        eq(companyCatalog.id, companyId),
-        eq(companyCatalog.ownerUserId, ownerUserId),
-        isNull(companyCatalog.deletedAt)
-      )
-    )
+    .where(and(eq(companyCatalog.id, companyId), isNull(companyCatalog.deletedAt)))
     .returning({ id: companyCatalog.id, deletedAt: companyCatalog.deletedAt })
 
   const row = rows[0]
@@ -195,32 +230,22 @@ export async function findCompanyCatalogByName(name: string): Promise<CompanyCat
   const rows = await db
     .select()
     .from(companyCatalog)
-    .where(
-      and(
-        eq(companyCatalog.nameNormalized, normalizedName),
-        isNull(companyCatalog.deletedAt)
-      )
-    )
+    .where(and(eq(companyCatalog.nameNormalized, normalizedName), isNull(companyCatalog.deletedAt)))
     .limit(1)
 
   const row = rows[0]
   return row ? mapEntity(row) : null
 }
 
-export async function resolveCompanyCatalogByName(
-  ownerUserId: string,
-  name: string
-): Promise<CompanyCatalogEntity> {
+export async function resolveCompanyCatalogByName(name: string): Promise<CompanyCatalogEntity> {
   const existing = await findCompanyCatalogByName(name)
 
   if (existing) {
     return existing
   }
 
-  const created = await createCompanyCatalog(ownerUserId, {
+  return createCompanyCatalog({
     name,
     slug: toSlug(name),
   })
-
-  return created
 }

@@ -29,7 +29,6 @@ describe("queryKeys", () => {
     expect(queryKeys.roles.root()).toEqual(["roles"])
     expect(queryKeys.onboarding.root()).toEqual(["onboarding"])
     expect(queryKeys.security.root()).toEqual(["security"])
-    expect(queryKeys.comparison.root()).toEqual(["comparison"])
     expect(queryKeys.personalPath.root()).toEqual(["personal-path"])
   })
 
@@ -45,33 +44,6 @@ describe("queryKeys", () => {
       "finance",
       "detail",
       "setting-1",
-    ])
-  })
-
-  it("builds nested comparison keys", () => {
-    expect(queryKeys.comparison.personas.careerEvents.list("persona-1")).toEqual([
-      "comparison",
-      "personas",
-      "persona-1",
-      "career-events",
-      "list",
-      { limit: 50 },
-    ])
-    expect(
-      queryKeys.comparison.personas.bonusRules.months.detail(
-        "persona-1",
-        "rule-1",
-        "month-1"
-      )
-    ).toEqual([
-      "comparison",
-      "personas",
-      "persona-1",
-      "bonus-rules",
-      "rule-1",
-      "months",
-      "detail",
-      "month-1",
     ])
   })
 

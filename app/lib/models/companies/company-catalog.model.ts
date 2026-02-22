@@ -1,6 +1,5 @@
 export interface CompanyCatalogEntity {
   id: string
-  ownerUserId: string
   name: string
   nameNormalized: string
   slug: string
