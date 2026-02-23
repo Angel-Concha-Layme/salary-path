@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useMemo, useState } from "react"
 import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
 
+import { useBreakpointData } from "@/app/hooks/use-breakpoint-data"
 import { usePersonalPathDashboard } from "@/app/hooks/personal-path/use-personal-path-dashboard"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import {
@@ -27,6 +28,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CompaniesDrawer } from "@/app/(protected-app)/career-path/salary-tracking/_components/companies-drawer"
+import {
+  PersonalPathCompaniesTableDesktopLayout,
+  PersonalPathCompaniesTableMobileLayout,
+} from "@/app/(protected-app)/career-path/salary-tracking/_components/personal-path-companies-table-layouts"
 import { RouteScreen } from "@/components/layout/route-screen"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -58,24 +63,6 @@ function formatDateKey(dateKey: string, locale: string): string {
     day: "2-digit",
     year: "numeric",
     timeZone: "UTC",
-  }).format(parsed)
-}
-
-function formatDateValue(value: string | null, locale: string): string {
-  if (!value) {
-    return "—"
-  }
-
-  const parsed = new Date(value)
-
-  if (Number.isNaN(parsed.getTime())) {
-    return value
-  }
-
-  return new Intl.DateTimeFormat(locale, {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
   }).format(parsed)
 }
 
@@ -116,6 +103,15 @@ function formatCount(template: string, value: number): string {
 
 export function PersonalPathScreen() {
   const { dictionary, locale } = useDictionary()
+  const breakpoint = useBreakpointData()
+  const rateViewFilterLabel =
+    !breakpoint.isDesktop && locale.startsWith("es")
+      ? "Compensación"
+      : dictionary.personalPath.chart.views.rate
+  const rateBasisFilterLabel =
+    !breakpoint.isDesktop && locale.startsWith("es")
+      ? "Compansación"
+      : dictionary.personalPath.chart.rateBasisLabel
   const [view, setView] = useState<PersonalPathChartView>("rate")
   const [range, setRange] = useState<PersonalPathRangePreset>("all")
   const [rateBasis, setRateBasis] = useState<PersonalPathRateBasis>("monthly")
@@ -328,7 +324,7 @@ export function PersonalPathScreen() {
       subtitle={dictionary.personalPath.subtitle}
     >
       <section className="min-w-0 w-full max-w-full text-card-foreground">
-        <div className="overflow-hidden rounded-2xl border border-border/80 bg-background">
+        <div className="bg-background md:overflow-hidden md:rounded-2xl md:border md:border-border/80">
           <div className="grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
             <div className="order-2 space-y-3 p-4 xl:order-1 xl:p-5">
               {dashboard.currencyMismatch ? (
@@ -353,11 +349,15 @@ export function PersonalPathScreen() {
                 }}
                 series={dashboard.series}
                 height={320}
-                legend={{
-                  title: dictionary.personalPath.chart.legendTitle,
-                  className: "mb-3 space-y-2 border-b border-border/70 pb-2",
-                  itemClassName: "border-border/70 bg-transparent",
-                }}
+                legend={breakpoint.isDesktop
+                  ? {
+                    title: dictionary.personalPath.chart.legendTitle,
+                    className: cn(
+                      "mb-3 space-y-2 pb-2 border-b border-border/70"
+                    ),
+                    itemClassName: "border-border/70 bg-transparent",
+                  }
+                  : undefined}
                 className="rounded-none border-0 bg-transparent p-0 shadow-none"
                 chartClassName="min-w-0 w-full max-w-full"
                 emptyState={dictionary.personalPath.chart.emptyState}
@@ -383,9 +383,15 @@ export function PersonalPathScreen() {
               />
             </div>
 
-            <aside className="order-1 border-b border-border/70 p-4 xl:order-2 xl:border-b-0 xl:border-l xl:p-5">
-              <div className="space-y-4 xl:sticky xl:top-24">
-                <div className="space-y-1.5">
+            <aside className="order-1 p-4 md:border-b md:border-border/70 xl:order-2 xl:border-b-0 xl:border-l xl:p-5">
+              <div className="xl:sticky xl:top-24">
+                <div
+                  className={cn(
+                    "grid gap-3",
+                    breakpoint.isDesktop ? "grid-cols-1" : "grid-cols-2"
+                  )}
+                >
+                  <div className="min-w-0 space-y-1.5">
                   <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                     {dictionary.personalPath.chart.viewLabel}
                   </p>
@@ -395,11 +401,11 @@ export function PersonalPathScreen() {
                       setView(nextValue as PersonalPathChartView)
                     }
                   >
-                    <SelectTrigger className="h-10 w-full border-border/70 bg-background shadow-none">
+                    <SelectTrigger className="h-8 w-full border-border/70 bg-background shadow-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="rate">{dictionary.personalPath.chart.views.rate}</SelectItem>
+                      <SelectItem value="rate">{rateViewFilterLabel}</SelectItem>
                       <SelectItem value="cumulativeIncome">
                         {dictionary.personalPath.chart.views.cumulativeIncome}
                       </SelectItem>
@@ -407,7 +413,12 @@ export function PersonalPathScreen() {
                   </Select>
                 </div>
 
-                <div className="space-y-1.5 border-t border-border/60 pt-3">
+                <div
+                  className={cn(
+                    "min-w-0 space-y-1.5",
+                    breakpoint.isDesktop && "pt-3 md:border-t md:border-border/60"
+                  )}
+                >
                   <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                     {dictionary.personalPath.chart.rangeLabel}
                   </p>
@@ -417,7 +428,7 @@ export function PersonalPathScreen() {
                       setRange(nextValue as PersonalPathRangePreset)
                     }
                   >
-                    <SelectTrigger className="h-10 w-full border-border/70 bg-background shadow-none">
+                    <SelectTrigger className="h-8 w-full border-border/70 bg-background shadow-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -430,9 +441,14 @@ export function PersonalPathScreen() {
                   </Select>
                 </div>
 
-                <div className="space-y-1.5 border-t border-border/60 pt-3">
+                <div
+                  className={cn(
+                    "min-w-0 space-y-1.5",
+                    breakpoint.isDesktop && "pt-3 md:border-t md:border-border/60"
+                  )}
+                >
                   <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    {dictionary.personalPath.chart.rateBasisLabel}
+                    {rateBasisFilterLabel}
                   </p>
                   <Select
                     value={rateBasis}
@@ -440,7 +456,7 @@ export function PersonalPathScreen() {
                       setRateBasis(nextValue as PersonalPathRateBasis)
                     }
                   >
-                    <SelectTrigger className="h-10 w-full border-border/70 bg-background shadow-none">
+                    <SelectTrigger className="h-8 w-full border-border/70 bg-background shadow-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -450,7 +466,12 @@ export function PersonalPathScreen() {
                   </Select>
                 </div>
 
-                <div className="space-y-1.5 border-t border-border/60 pt-3">
+                <div
+                  className={cn(
+                    "min-w-0 space-y-1.5",
+                    breakpoint.isDesktop && "pt-3 md:border-t md:border-border/60"
+                  )}
+                >
                   <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                     {dictionary.personalPath.chart.companiesLabel}
                   </p>
@@ -458,7 +479,7 @@ export function PersonalPathScreen() {
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-10 w-full justify-between border-border/70 bg-background shadow-none hover:bg-accent/40"
+                        className="h-8 w-full justify-between border-border/70 bg-background font-normal shadow-none hover:bg-accent/40"
                       >
                         <span className="truncate">{selectedCompaniesLabel}</span>
                         <ChevronDownIcon className="size-4 text-muted-foreground" />
@@ -499,103 +520,67 @@ export function PersonalPathScreen() {
                   </DropdownMenu>
                 </div>
               </div>
+              </div>
             </aside>
           </div>
         </div>
       </section>
 
-      <section className="w-full max-w-full rounded-xl border border-border/80 bg-background text-card-foreground">
-        <header className="border-b border-border/70 bg-background px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
-            {dictionary.personalPath.table.title}
+      <section
+        className={cn(
+          "w-full max-w-full text-card-foreground",
+          breakpoint.isDesktop && "rounded-xl border border-border/80 bg-background"
+        )}
+      >
+        <header
+          className={cn(
+            breakpoint.isDesktop
+              ? "border-b border-border/70 bg-background px-4 py-3"
+              : "px-1 pb-2 pt-1"
+          )}
+        >
+          <h2 className={cn(
+            "text-sm font-semibold uppercase tracking-[0.12em] text-foreground",
+            !breakpoint.isDesktop && "text-xs text-muted-foreground"
+          )}>
+            {dictionary.personalPath.chart.companiesLabel}
           </h2>
         </header>
-        <div className="w-full max-w-full overflow-x-auto">
-          <table className="w-full min-w-[860px] text-left text-sm">
-            <thead className="bg-background text-xs uppercase tracking-[0.08em] text-foreground">
-              <tr>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.displayName}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.roleDisplayName}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.startDate}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.endDate}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.monthlyAverageSalary}
-                </th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">
-                  {dictionary.personalPath.table.columns.annualSalary}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {dashboard.tableRows.map((row) => {
-                const isSelected = row.id === activeCompanyId
-
-                return (
-                  <tr
-                    key={row.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveCompanyId(row.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault()
-                        setActiveCompanyId(row.id)
-                      }
-                    }}
-                    className={cn(
-                      "cursor-pointer border-t border-border/70 align-top text-sm text-foreground transition-colors hover:bg-accent/40",
-                      isSelected && "bg-background"
-                    )}
-                    aria-label={`${dictionary.personalPath.table.columns.displayName}: ${row.displayName}`}
-                  >
-                    <td className={cn("whitespace-nowrap px-3 py-2 font-medium", isSelected && "text-foreground")}>
-                      {row.displayName}
-                    </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
-                      {row.roleDisplayName}
-                    </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
-                      {formatDateValue(row.startDate, locale)}
-                    </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
-                      {formatDateValue(row.endDate, locale)}
-                    </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
-                      {row.monthlyAverageSalary !== null
-                        ? formatAmount(locale, row.currency, row.monthlyAverageSalary, 2)
-                        : dictionary.personalPath.table.notAvailable}
-                    </td>
-                    <td className={cn("whitespace-nowrap px-3 py-2", isSelected && "text-foreground")}>
-                      {row.annualSalary !== null
-                        ? formatAmount(locale, row.currency, row.annualSalary, 0)
-                        : dictionary.personalPath.table.notAvailable}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        {breakpoint.isDesktop ? (
+          <PersonalPathCompaniesTableDesktopLayout
+            rows={dashboard.tableRows}
+            activeCompanyId={activeCompanyId}
+            locale={locale}
+            labels={dictionary.personalPath.table.columns}
+            notAvailableLabel={dictionary.personalPath.table.notAvailable}
+            onSelectCompany={setActiveCompanyId}
+          />
+        ) : (
+          <PersonalPathCompaniesTableMobileLayout
+            rows={dashboard.tableRows}
+            locale={locale}
+            labels={dictionary.personalPath.table.columns}
+            notAvailableLabel={dictionary.personalPath.table.notAvailable}
+            eventsByCompanyId={eventsByCompanyId}
+            eventTypeLabels={eventTypeLabels}
+            eventsTitle={dictionary.personalPath.drawer.eventsTitle}
+            noEventsLabel={dictionary.personalPath.drawer.noEvents}
+          />
+        )}
       </section>
 
-      <CompaniesDrawer
-        open={Boolean(activeCompanyRow)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setActiveCompanyId(null)
-          }
-        }}
-        company={activeCompanyRow}
-        events={activeCompanyEvents}
-      />
+      {breakpoint.isDesktop ? (
+        <CompaniesDrawer
+          open={Boolean(activeCompanyRow)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setActiveCompanyId(null)
+            }
+          }}
+          company={activeCompanyRow}
+          events={activeCompanyEvents}
+        />
+      ) : null}
     </RouteScreen>
   )
 }

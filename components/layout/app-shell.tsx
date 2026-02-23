@@ -31,16 +31,55 @@ interface AppShellProps {
   children: React.ReactNode
 }
 
-const APP_SHELL_GLOW_BASE_CLASS_NAME = "absolute rounded-full ui-theme-glow-base"
+const APP_SHELL_GLOW_BASE_CLASS_NAME = "h-full w-full rounded-full ui-theme-glow-base"
 
-const APP_SHELL_LEFT_GLOW_DETAIL_CLASS_NAMES = [
-  "-left-44 top-[-4%] h-[62%] w-[44%] blur-[140px] opacity-[0.24] dark:opacity-[0.34]",
-  "-left-20 top-[36%] h-[48%] w-[34%] blur-[130px] opacity-[0.16] dark:opacity-[0.24]",
-  "left-[12%] top-[16%] h-[34%] w-[24%] blur-[110px] opacity-[0.12] dark:opacity-[0.18]",
+interface AppShellGlowPoint {
+  id: string
+  visibilityClassName: string
+  frameClassName: string
+  glowClassName: string
+}
+
+const APP_SHELL_MOBILE_GLOW_POINTS: readonly AppShellGlowPoint[] = [
+  {
+    id: "mobile-top-center",
+    visibilityClassName: "lg:hidden",
+    frameClassName: "left-1/2 top-[-18%] h-[44%] w-[82%] -translate-x-1/2",
+    glowClassName: "blur-[120px] opacity-[0.38] dark:opacity-[0.50]",
+  },
+  {
+    id: "mobile-bottom-center",
+    visibilityClassName: "lg:hidden",
+    frameClassName: "left-1/2 bottom-[-12%] h-[50%] w-[88%] -translate-x-1/2",
+    glowClassName: "blur-[130px] opacity-[0.42] dark:opacity-[0.56]",
+  },
 ] as const
 
-const APP_SHELL_RIGHT_GLOW_DETAIL_CLASS_NAMES = [
-  "-right-72 top-[18%] h-[72%] w-[52%] blur-[160px] opacity-[0.46] dark:opacity-[0.54]",
+const APP_SHELL_DESKTOP_GLOW_POINTS: readonly AppShellGlowPoint[] = [
+  {
+    id: "left-1",
+    visibilityClassName: "hidden lg:block",
+    frameClassName: "-left-44 top-[-4%] h-[62%] w-[44%]",
+    glowClassName: "blur-[140px] opacity-[0.24] dark:opacity-[0.34]",
+  },
+  {
+    id: "left-2",
+    visibilityClassName: "hidden lg:block",
+    frameClassName: "-left-20 top-[36%] h-[48%] w-[34%]",
+    glowClassName: "blur-[130px] opacity-[0.16] dark:opacity-[0.24]",
+  },
+  {
+    id: "left-3",
+    visibilityClassName: "hidden lg:block",
+    frameClassName: "left-[12%] top-[16%] h-[34%] w-[24%]",
+    glowClassName: "blur-[110px] opacity-[0.12] dark:opacity-[0.18]",
+  },
+  {
+    id: "right-1",
+    visibilityClassName: "hidden lg:block",
+    frameClassName: "-right-72 top-[18%] h-[72%] w-[52%]",
+    glowClassName: "blur-[160px] opacity-[0.46] dark:opacity-[0.54]",
+  },
 ] as const
 
 export function AppShell({
@@ -98,17 +137,21 @@ export function AppShell({
     <SidebarProvider defaultOpen>
       <div className="relative flex h-dvh min-h-0 min-w-0 w-screen max-w-full overflow-hidden bg-sidebar lg:p-2">
         <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          {APP_SHELL_LEFT_GLOW_DETAIL_CLASS_NAMES.map((className) => (
+          {APP_SHELL_MOBILE_GLOW_POINTS.map((point) => (
             <div
-              key={`left-${className}`}
-              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${className}`}
-            />
+              key={point.id}
+              className={`absolute ${point.visibilityClassName} ${point.frameClassName}`}
+            >
+              <div className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${point.glowClassName}`} />
+            </div>
           ))}
-          {APP_SHELL_RIGHT_GLOW_DETAIL_CLASS_NAMES.map((className) => (
+          {APP_SHELL_DESKTOP_GLOW_POINTS.map((point) => (
             <div
-              key={`right-${className}`}
-              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${className}`}
-            />
+              key={point.id}
+              className={`absolute ${point.visibilityClassName} ${point.frameClassName}`}
+            >
+              <div className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${point.glowClassName}`} />
+            </div>
           ))}
         </div>
 

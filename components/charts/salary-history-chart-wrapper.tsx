@@ -181,6 +181,34 @@ function parseDateKeyToTimestamp(dateKey: string): number | null {
   return parsed.getTime()
 }
 
+function resolveDefaultVisibleRange<TMeta>(
+  series: SalaryHistoryChartSeries<TMeta>[]
+): { from: Time; to: Time } | null {
+  const allDateKeys = series
+    .flatMap((entry) => entry.points.map((point) => point.time))
+    .filter((dateKey): dateKey is string => typeof dateKey === "string" && dateKey.length > 0)
+    .sort()
+
+  const firstDateKey = allDateKeys[0]
+  const lastDateKey = allDateKeys[allDateKeys.length - 1]
+
+  if (!firstDateKey || !lastDateKey) {
+    return null
+  }
+
+  const hasStepSeries = series.some((entry) => entry.lineType === "steps" && entry.points.length > 0)
+  const firstDate = toUtcDateFromDateKey(firstDateKey)
+
+  const from = hasStepSeries && firstDate
+    ? toDateKeyFromUtcDate(addUtcDays(firstDate, -1))
+    : firstDateKey
+
+  return {
+    from,
+    to: lastDateKey,
+  }
+}
+
 function addUtcDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000)
 }
@@ -341,6 +369,7 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
     const resolveChartHeight = () => Math.max(180, Math.floor(container.clientHeight))
 
     const themeTokens = getThemeTokens(container)
+    const defaultVisibleRange = resolveDefaultVisibleRange(series)
     const chart = createChart(container, {
       width: resolveChartWidth(),
       height: resolveChartHeight(),
@@ -363,12 +392,20 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
       },
       rightPriceScale: {
         borderColor: themeTokens.borderColor,
+        autoScale: true,
+        scaleMargins: {
+          top: 0.12,
+          bottom: 0.12,
+        },
       },
       leftPriceScale: {
         visible: false,
       },
       timeScale: {
         borderColor: themeTokens.borderColor,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+        rightOffset: 0,
       },
       crosshair: {
         mode: CrosshairMode.Magnet,
@@ -383,8 +420,18 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
           labelVisible: false,
         },
       },
-      handleScroll: true,
-      handleScale: true,
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: false,
+        vertTouchDrag: false,
+      },
+      handleScale: {
+        mouseWheel: true,
+        pinch: false,
+        axisPressedMouseMove: true,
+        axisDoubleClickReset: true,
+      },
     })
 
     const pointsMapBySeriesId = new Map<
@@ -450,7 +497,19 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
       anchorSeries.setData(timelineAnchors.map((time) => ({ time })))
     }
 
-    chart.timeScale().fitContent()
+    const fitChartToFullDataRange = () => {
+      const isExplicitRangeAvailable =
+        Boolean(defaultVisibleRange) && defaultVisibleRange?.from !== defaultVisibleRange?.to
+
+      if (!isExplicitRangeAvailable || !defaultVisibleRange) {
+        chart.timeScale().fitContent()
+        return
+      }
+
+      chart.timeScale().setVisibleRange(defaultVisibleRange)
+    }
+
+    fitChartToFullDataRange()
 
     const handleCrosshairMove = (event: MouseEventParams<Time>) => {
       const dateKey = toDateKey(event.time)
@@ -518,7 +577,7 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
         width: resolveChartWidth(),
         height: resolveChartHeight(),
       })
-      chart.timeScale().fitContent()
+      fitChartToFullDataRange()
     }
 
     const resizeObserver = new ResizeObserver(() => {

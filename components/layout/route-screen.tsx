@@ -4,16 +4,20 @@ import type { ReactNode } from "react"
 import { useMemo } from "react"
 import { usePathname } from "next/navigation"
 
+import { useBreakpointData } from "@/app/hooks/use-breakpoint-data"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import { getRoutePath, ROUTES } from "@/app/lib/navigation/route-config"
 import { RouteScreenHeaderActions } from "@/components/layout/route-screen-header-actions"
 import { getNavigationGroupLabel, getRouteLabel } from "@/components/layout/navigation-utils"
 import { cn } from "@/lib/utils"
 
+type RouteScreenMobileHeaderMode = "title" | "breadcrumbs"
+
 interface RouteScreenProps {
   title: ReactNode
   subtitle?: ReactNode
   headerActions?: ReactNode
+  mobileHeaderMode?: RouteScreenMobileHeaderMode
   isLoading?: boolean
   className?: string
   bodyClassName?: string
@@ -31,6 +35,7 @@ export function RouteScreen({
   title,
   subtitle,
   headerActions,
+  mobileHeaderMode = "title",
   isLoading = false,
   className,
   bodyClassName,
@@ -40,7 +45,10 @@ export function RouteScreen({
   children,
 }: RouteScreenProps) {
   const pathname = usePathname()
+  const breakpoint = useBreakpointData()
   const { dictionary } = useDictionary()
+  const useTitleOnlyMobileHeader =
+    breakpoint.down("lg") && mobileHeaderMode === "title"
 
   const activeRoute = useMemo(() => {
     const matches = ROUTES.filter(
@@ -73,45 +81,66 @@ export function RouteScreen({
           headerClassName
         )}
       >
-        <div className="space-y-0.5 bg-white px-4 py-2 dark:bg-black">
-          <div className="flex min-w-0 items-center gap-2">
-            {sectionLabel || subSectionLabel ? (
-              <div className="flex min-w-0 items-center gap-2 text-xs text-black/60 dark:text-white/60">
-                {sectionLabel ? <span className="truncate">{sectionLabel}</span> : null}
-                {sectionLabel && subSectionLabel ? (
-                  <span aria-hidden className="text-black/35 dark:text-white/35">
-                    /
-                  </span>
-                ) : null}
-                {subSectionLabel ? (
-                  <span className="truncate font-medium text-black/80 dark:text-white/80">
-                    {subSectionLabel}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-            <RouteScreenHeaderActions settingsContent={headerActions} />
-          </div>
-          <div className="flex min-w-0 items-start gap-3">
-            <h1
-              className={cn(
-                "-mt-1 min-w-0 flex-1 truncate text-xl leading-tight font-semibold tracking-tight text-black dark:text-white",
-                titleClassName
-              )}
-            >
-              {title}
-            </h1>
-            {subtitle ? (
-              <p
+        <div
+          className={cn(
+            "bg-white px-4 py-2 dark:bg-black",
+            !useTitleOnlyMobileHeader && "space-y-0.5"
+          )}
+        >
+          {useTitleOnlyMobileHeader ? (
+            <div className="flex min-w-0 items-center gap-3">
+              <h1
                 className={cn(
-                  "hidden max-w-[52%] shrink-0 truncate text-right text-xs leading-snug text-black/70 dark:text-white/70 sm:block",
-                  subtitleClassName
+                  "min-w-0 flex-1 truncate text-2xl leading-tight font-semibold tracking-tight text-[color-mix(in_oklch,var(--ui-accent-current)_72%,black)] dark:text-[color-mix(in_oklch,var(--ui-accent-current)_82%,white)]",
+                  titleClassName
                 )}
               >
-                {subtitle}
-              </p>
-            ) : null}
-          </div>
+                {title}
+              </h1>
+              <RouteScreenHeaderActions settingsContent={headerActions} />
+            </div>
+          ) : (
+            <>
+              <div className="flex min-w-0 items-center gap-2">
+                {(sectionLabel || subSectionLabel) ? (
+                  <div className="flex min-w-0 items-center gap-2 text-xs text-black/60 dark:text-white/60">
+                    {sectionLabel ? <span className="truncate">{sectionLabel}</span> : null}
+                    {sectionLabel && subSectionLabel ? (
+                      <span aria-hidden className="text-black/35 dark:text-white/35">
+                        /
+                      </span>
+                    ) : null}
+                    {subSectionLabel ? (
+                      <span className="truncate font-medium text-black/80 dark:text-white/80">
+                        {subSectionLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                <RouteScreenHeaderActions settingsContent={headerActions} />
+              </div>
+              <div className="flex min-w-0 items-start gap-3">
+                <h1
+                  className={cn(
+                    "-mt-1 min-w-0 flex-1 truncate text-xl leading-tight font-semibold tracking-tight text-black dark:text-white",
+                    titleClassName
+                  )}
+                >
+                  {title}
+                </h1>
+                {subtitle ? (
+                  <p
+                    className={cn(
+                      "hidden max-w-[52%] shrink-0 truncate text-right text-xs leading-snug text-black/70 dark:text-white/70 sm:block",
+                      subtitleClassName
+                    )}
+                  >
+                    {subtitle}
+                  </p>
+                ) : null}
+              </div>
+            </>
+          )}
         </div>
       </header>
 

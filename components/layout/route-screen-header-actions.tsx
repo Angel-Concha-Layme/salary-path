@@ -18,6 +18,8 @@ interface RouteScreenHeaderActionsProps {
 const ROUTE_SCREEN_SEARCH_HIGHLIGHT = "route-screen-search"
 const ROUTE_SCREEN_SEARCH_HIGHLIGHT_STYLE_ID = "route-screen-search-highlight-style"
 const LEGACY_ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE = "data-route-screen-search-highlight"
+const ROUTE_SCREEN_ACTION_ICON_BUTTON_CLASS_NAME =
+  "h-8 w-8 border-0 bg-transparent text-[color-mix(in_oklch,var(--ui-accent-current)_68%,black)] shadow-none hover:bg-[color-mix(in_oklch,var(--ui-accent-current)_14%,transparent)] hover:text-[color-mix(in_oklch,var(--ui-accent-current)_78%,black)] disabled:opacity-40"
 
 interface SearchMatch {
   range: Range
@@ -307,7 +309,7 @@ export function RouteScreenHeaderActions({
             variant="ghost"
             size="icon-sm"
             aria-label={dictionary.navigation.notifications}
-            className="h-8 w-8 border-0 bg-transparent text-black/70 shadow-none hover:bg-black/5 hover:text-black dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
+            className={ROUTE_SCREEN_ACTION_ICON_BUTTON_CLASS_NAME}
           >
             <BellIcon className="size-4" />
           </Button>
@@ -328,7 +330,7 @@ export function RouteScreenHeaderActions({
             size="icon-sm"
             aria-label={dictionary.navigation.filters}
             disabled={!settingsContent}
-            className="h-8 w-8 border-0 bg-transparent text-black/70 shadow-none hover:bg-black/5 hover:text-black disabled:opacity-40 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
+            className={ROUTE_SCREEN_ACTION_ICON_BUTTON_CLASS_NAME}
           >
             <SlidersHorizontalIcon className="size-4" />
           </Button>
@@ -350,7 +352,7 @@ export function RouteScreenHeaderActions({
             variant="ghost"
             size="icon-sm"
             aria-label={dictionary.navigation.search}
-            className="h-8 w-8 border-0 bg-transparent text-black/70 shadow-none hover:bg-black/5 hover:text-black dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
+            className={ROUTE_SCREEN_ACTION_ICON_BUTTON_CLASS_NAME}
           >
             <SearchIcon className="size-4" />
           </Button>
