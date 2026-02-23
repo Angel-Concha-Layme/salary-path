@@ -112,7 +112,7 @@ function WorkloadSquare({
       className={cn(
         "pointer-events-none grid h-[82px] w-[104px] shrink-0 grid-rows-2 place-items-center rounded-md border p-1",
         isActive
-          ? "border-black/35 bg-background text-foreground dark:border-white/40"
+          ? "border-primary/45 bg-primary/10 text-foreground"
           : "border-border/70 bg-background text-foreground"
       )}
     >
@@ -307,7 +307,7 @@ export function ProfileWorkSettingsEditor({
                 variant={isActive ? "default" : "outline"}
                 className={cn(
                   "h-auto w-full min-w-0 justify-start whitespace-normal px-3 py-2.5 text-left",
-                  isActive && "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                  isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
                 onClick={() => applyPreset(preset)}
               >
@@ -324,7 +324,7 @@ export function ProfileWorkSettingsEditor({
                       className={cn(
                       "min-w-0 break-words text-[0.74rem] leading-snug sm:text-xs",
                       isActive
-                        ? "text-white/90 dark:text-black/80"
+                        ? "text-primary-foreground/90"
                         : "text-muted-foreground"
                     )}
                   >

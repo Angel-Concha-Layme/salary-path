@@ -1,6 +1,21 @@
 "use client"
 
+import { useEffect } from "react"
+
 import type { AppRole } from "@/app/lib/auth/roles"
+import { useUserUiThemeQuery } from "@/app/hooks/settings/use-user-ui-theme"
+import {
+  applyUiThemeControlsStyleToElement,
+  applyUiThemePresetToElement,
+  coerceUiThemeControlsStyle,
+  coerceUiThemePresetKey,
+  getUiThemeControlsStyleFromStorage,
+  getUiThemePresetFromStorage,
+  setUiThemeControlsStyleInStorage,
+  setUiThemePresetInStorage,
+  subscribeUiThemeControlsStyle,
+  subscribeUiThemePreset,
+} from "@/app/lib/features/ui-theme-preset"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav"
 import {
@@ -16,9 +31,7 @@ interface AppShellProps {
   children: React.ReactNode
 }
 
-export const APP_SHELL_GLOW_BASE_COLOR_CLASS_NAME = "bg-primary"
-
-const APP_SHELL_GLOW_BASE_CLASS_NAME = "absolute rounded-full"
+const APP_SHELL_GLOW_BASE_CLASS_NAME = "absolute rounded-full ui-theme-glow-base"
 
 const APP_SHELL_LEFT_GLOW_DETAIL_CLASS_NAMES = [
   "-left-44 top-[-4%] h-[62%] w-[44%] blur-[140px] opacity-[0.24] dark:opacity-[0.34]",
@@ -37,6 +50,50 @@ export function AppShell({
   userImage,
   children,
 }: AppShellProps) {
+  const userUiThemeQuery = useUserUiThemeQuery()
+
+  useEffect(() => {
+    const storedThemePresetKey = getUiThemePresetFromStorage()
+    const storedControlsStyle = getUiThemeControlsStyleFromStorage()
+    applyUiThemePresetToElement(storedThemePresetKey)
+    applyUiThemeControlsStyleToElement(storedControlsStyle)
+
+    const unsubscribePreset = subscribeUiThemePreset((nextPresetKey) => {
+      applyUiThemePresetToElement(nextPresetKey)
+    })
+
+    const unsubscribeControlsStyle = subscribeUiThemeControlsStyle((nextStyle) => {
+      applyUiThemeControlsStyleToElement(nextStyle)
+    })
+
+    return () => {
+      unsubscribePreset()
+      unsubscribeControlsStyle()
+    }
+  }, [])
+
+  useEffect(() => {
+    const dbThemePresetKey = userUiThemeQuery.data?.themePresetKey
+    const dbControlsStyle = userUiThemeQuery.data?.controlsStyle
+
+    if (!dbThemePresetKey || !dbControlsStyle) {
+      return
+    }
+
+    const resolvedThemePresetKey = coerceUiThemePresetKey(dbThemePresetKey)
+    const resolvedControlsStyle = coerceUiThemeControlsStyle(dbControlsStyle)
+    applyUiThemePresetToElement(resolvedThemePresetKey)
+    applyUiThemeControlsStyleToElement(resolvedControlsStyle)
+
+    if (getUiThemePresetFromStorage() !== resolvedThemePresetKey) {
+      setUiThemePresetInStorage(resolvedThemePresetKey)
+    }
+
+    if (getUiThemeControlsStyleFromStorage() !== resolvedControlsStyle) {
+      setUiThemeControlsStyleInStorage(resolvedControlsStyle)
+    }
+  }, [userUiThemeQuery.data?.controlsStyle, userUiThemeQuery.data?.themePresetKey])
+
   return (
     <SidebarProvider defaultOpen>
       <div className="relative flex h-dvh min-h-0 min-w-0 w-screen max-w-full overflow-hidden bg-sidebar lg:p-2">
@@ -44,13 +101,13 @@ export function AppShell({
           {APP_SHELL_LEFT_GLOW_DETAIL_CLASS_NAMES.map((className) => (
             <div
               key={`left-${className}`}
-              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${APP_SHELL_GLOW_BASE_COLOR_CLASS_NAME} ${className}`}
+              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${className}`}
             />
           ))}
           {APP_SHELL_RIGHT_GLOW_DETAIL_CLASS_NAMES.map((className) => (
             <div
               key={`right-${className}`}
-              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${APP_SHELL_GLOW_BASE_COLOR_CLASS_NAME} ${className}`}
+              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${className}`}
             />
           ))}
         </div>
@@ -65,7 +122,7 @@ export function AppShell({
         </div>
 
         <SidebarInset className="relative z-10 h-full min-h-0 overflow-hidden p-[5px] lg:min-h-0">
-          <main className="relative h-full min-h-0 min-w-0 w-full overflow-x-hidden overflow-y-auto overscroll-contain lg:min-h-0 lg:rounded-[1.35rem] lg:bg-background">
+          <main className="relative h-full min-h-0 min-w-0 w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-[1.35rem] bg-background lg:min-h-0">
             {children}
           </main>
         </SidebarInset>

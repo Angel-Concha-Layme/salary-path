@@ -551,6 +551,7 @@ export const enDictionary = {
     subtitle: "Configure your workspace behavior and quick preferences.",
     tabs: {
       sidebar: "Sidebar",
+      appearance: "Appearance",
       platform: "Platform",
     },
     sidebar: {
@@ -562,6 +563,41 @@ export const enDictionary = {
       collapsedHint:
         "Default: all sections collapsed except the current route section.",
       expandedHint: "All sections stay expanded by default.",
+    },
+    appearance: {
+      title: "Theme accent",
+      description:
+        "Select a curated accent palette for your workspace highlights and sidebar glow.",
+      hint: "Presets are optimized for contrast in light and dark mode.",
+      controls: {
+        title: "Buttons and controls",
+        description:
+          "Choose whether buttons and interactive controls follow your accent color or use the legacy black-and-white style.",
+        options: {
+          accent: "Custom accent",
+          legacy: "Legacy monochrome",
+        },
+      },
+      select: "Select preset",
+      selected: "Selected",
+      presets: {
+        lagoon: "Lagoon",
+        arctic: "Arctic",
+        ocean: "Ocean",
+        atlas: "Atlas",
+        cobalt: "Cobalt",
+        indigo: "Indigo",
+        steel: "Steel",
+        slate: "Slate",
+        ember: "Ember",
+        scarlet: "Scarlet",
+        rosewood: "Rosewood",
+        orchid: "Orchid",
+      },
+      toasts: {
+        saved: "Theme accent updated.",
+        error: "Could not update the theme accent.",
+      },
     },
     platform: {
       title: "Platform home",

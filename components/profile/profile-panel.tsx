@@ -245,7 +245,7 @@ export function ProfilePanel() {
                   variant={selected ? "default" : "outline"}
                   className={cn(
                     "h-auto justify-start gap-2 px-3 py-2 text-left",
-                    selected && "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                    selected && "bg-primary text-primary-foreground hover:bg-primary/90"
                   )}
                   onClick={() => setActiveSection(section.key)}
                   aria-current={selected ? "page" : undefined}
@@ -254,7 +254,7 @@ export function ProfilePanel() {
                     className={cn(
                       "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-semibold border border-border/70",
                       selected
-                        ? "bg-white/20 text-white dark:bg-black/10 dark:text-black"
+                        ? "border-primary-foreground/35 bg-primary-foreground/20 text-primary-foreground"
                         : "bg-background text-foreground"
                     )}
                   >

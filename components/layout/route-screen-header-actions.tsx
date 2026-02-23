@@ -81,11 +81,11 @@ export function RouteScreenHeaderActions({
     styleElement.id = ROUTE_SCREEN_SEARCH_HIGHLIGHT_STYLE_ID
     styleElement.textContent = `
 ::highlight(${ROUTE_SCREEN_SEARCH_HIGHLIGHT}) {
-  background-color: color-mix(in oklch, var(--primary) 22%, transparent);
+  background-color: color-mix(in oklch, var(--ui-accent-current) 22%, transparent);
 }
 
 .dark ::highlight(${ROUTE_SCREEN_SEARCH_HIGHLIGHT}) {
-  background-color: color-mix(in oklch, var(--primary) 32%, transparent);
+  background-color: color-mix(in oklch, var(--ui-accent-current) 32%, transparent);
 }
 `
 

@@ -1,0 +1,62 @@
+:root {
+  --ui-accent-light: oklch(0.60 0.10 185);
+  --ui-accent-dark: oklch(0.78 0.13 182);
+  --ui-accent-current: var(--ui-accent-light);
+  --ui-legacy-primary-light: oklch(0.145 0 0);
+  --ui-legacy-primary-dark: oklch(0.985 0 0);
+  --ui-legacy-ring-light: oklch(0.708 0 0);
+  --ui-legacy-ring-dark: oklch(0.556 0 0);
+  --ui-legacy-sidebar-primary-light: oklch(0.145 0 0);
+  --ui-legacy-sidebar-primary-dark: oklch(0.985 0 0);
+
+  --ui-controls-primary-light: var(--ui-accent-light);
+  --ui-controls-primary-dark: var(--ui-accent-dark);
+  --ui-controls-ring-light: var(--ui-accent-light);
+  --ui-controls-ring-dark: var(--ui-accent-dark);
+  --ui-controls-sidebar-primary-light: var(--ui-accent-light);
+  --ui-controls-sidebar-primary-dark: var(--ui-accent-dark);
+
+  --primary: var(--ui-controls-primary-light);
+  --ring: var(--ui-controls-ring-light);
+  --sidebar-primary: var(--ui-controls-sidebar-primary-light);
+}
+
+.dark {
+  --ui-accent-current: var(--ui-accent-dark);
+  --primary: var(--ui-controls-primary-dark);
+  --ring: var(--ui-controls-ring-dark);
+  --sidebar-primary: var(--ui-controls-sidebar-primary-dark);
+}
+
+:root[data-ui-controls-style="legacy"] {
+  --ui-controls-primary-light: var(--ui-legacy-primary-light);
+  --ui-controls-primary-dark: var(--ui-legacy-primary-dark);
+  --ui-controls-ring-light: var(--ui-legacy-ring-light);
+  --ui-controls-ring-dark: var(--ui-legacy-ring-dark);
+  --ui-controls-sidebar-primary-light: var(--ui-legacy-sidebar-primary-light);
+  --ui-controls-sidebar-primary-dark: var(--ui-legacy-sidebar-primary-dark);
+}
+
+.ui-theme-glow-base {
+  background-color: var(--ui-accent-current);
+}
+
+.ui-theme-sidebar-toggle-active {
+  border-color: color-mix(in oklch, var(--ui-accent-current) 45%, transparent) !important;
+  background-color: color-mix(in oklch, var(--ui-accent-current) 12%, transparent) !important;
+  color: var(--sidebar-foreground) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--ui-accent-current) 35%, transparent),
+    0 1px 2px 0 color-mix(in oklch, var(--ui-accent-current) 20%, transparent) !important;
+}
+
+.ui-theme-sidebar-toggle-active:hover {
+  background-color: color-mix(in oklch, var(--ui-accent-current) 18%, transparent) !important;
+}
+
+.ui-theme-sidebar-item-hover[data-highlighted],
+.ui-theme-sidebar-item-hover:hover,
+.ui-theme-sidebar-item-hover:focus-visible {
+  background-color: color-mix(in oklch, var(--ui-accent-current) 10%, transparent) !important;
+  color: var(--sidebar-foreground) !important;
+}

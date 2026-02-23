@@ -58,9 +58,7 @@ export function RouteScreen({
       data-route-screen="true"
       className={cn(
         "relative min-h-full min-w-0 w-full max-w-full pb-24 shadow-none lg:pb-3",
-        "[--primary:oklch(0.18_0_0)] [--primary-foreground:oklch(0.985_0_0)] [--ring:oklch(0.18_0_0)]",
         "[--chart-1:oklch(0.35_0_0)] [--chart-2:oklch(0.45_0_0)] [--chart-3:oklch(0.55_0_0)] [--chart-4:oklch(0.65_0_0)] [--chart-5:oklch(0.75_0_0)]",
-        "dark:[--primary:oklch(0.985_0_0)] dark:[--primary-foreground:oklch(0.145_0_0)] dark:[--ring:oklch(0.985_0_0)]",
         "dark:[--chart-1:oklch(0.88_0_0)] dark:[--chart-2:oklch(0.80_0_0)] dark:[--chart-3:oklch(0.72_0_0)] dark:[--chart-4:oklch(0.64_0_0)] dark:[--chart-5:oklch(0.56_0_0)]",
         "[&_*]:!shadow-none [&_*]:!drop-shadow-none",
         className

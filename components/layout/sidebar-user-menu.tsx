@@ -117,8 +117,7 @@ export function SidebarUserMenu({
               [
                 "border border-transparent bg-transparent shadow-none",
                 !entrypointActive && "text-sidebar-foreground hover:bg-sidebar-accent/40",
-                entrypointActive &&
-                  "border-sidebar-primary/45 bg-sidebar-primary/12 text-sidebar-foreground ring-1 ring-sidebar-primary/35 shadow-sm shadow-sidebar-primary/20 hover:bg-sidebar-primary/18",
+                entrypointActive && "ui-theme-sidebar-toggle-active",
               ],
             )}
           >
@@ -191,9 +190,8 @@ export function SidebarUserMenu({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className={cn(
-              "focus:bg-sidebar-accent focus:text-sidebar-accent-foreground",
-              profileActive &&
-                "bg-sidebar-primary/12 text-sidebar-foreground ring-1 ring-sidebar-primary/35 shadow-sm shadow-sidebar-primary/20"
+              "ui-theme-sidebar-item-hover focus:text-sidebar-foreground",
+              profileActive && "ui-theme-sidebar-toggle-active"
             )}
             asChild
           >
@@ -204,9 +202,8 @@ export function SidebarUserMenu({
           </DropdownMenuItem>
           <DropdownMenuItem
             className={cn(
-              "focus:bg-sidebar-accent focus:text-sidebar-accent-foreground",
-              settingsActive &&
-                "bg-sidebar-primary/12 text-sidebar-foreground ring-1 ring-sidebar-primary/35 shadow-sm shadow-sidebar-primary/20"
+              "ui-theme-sidebar-item-hover focus:text-sidebar-foreground",
+              settingsActive && "ui-theme-sidebar-toggle-active"
             )}
             asChild
           >

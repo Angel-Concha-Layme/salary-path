@@ -16,8 +16,9 @@ interface ThemeSwitcherProps {
 
 const SIDEBAR_TONE_INACTIVE_CLASS_NAME =
   "border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-const SIDEBAR_TONE_ACTIVE_CLASS_NAME =
-  "border-sidebar-primary/45 bg-sidebar-primary/12 text-sidebar-foreground ring-1 ring-sidebar-primary/35 shadow-sm shadow-sidebar-primary/20 hover:bg-sidebar-primary/18"
+const SIDEBAR_TONE_ACTIVE_CLASS_NAME = "ui-theme-sidebar-toggle-active"
+const SIDEBAR_COMPACT_ICON_CLASS_NAME =
+  "h-8 w-8 cursor-pointer rounded-lg border-0 bg-transparent px-0 text-sidebar-foreground shadow-none transition-colors duration-200 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground focus-visible:bg-sidebar-accent/70 focus-visible:text-sidebar-foreground"
 
 function subscribe() {
   return () => {}
@@ -41,17 +42,17 @@ export function ThemeSwitcher({
     const isDarkTheme = activeTheme === "dark"
     const nextTheme = activeTheme === "dark" ? "light" : "dark"
     const label = nextTheme === "dark" ? dictionary.theme.dark : dictionary.theme.light
-    const sidebarToneClassName =
+    const compactClassName =
       tone === "sidebar"
-        ? SIDEBAR_TONE_ACTIVE_CLASS_NAME
-        : undefined
+        ? SIDEBAR_COMPACT_ICON_CLASS_NAME
+        : "size-9 justify-center px-0"
 
     return (
       <div className="mx-auto w-fit">
         <Button
           type="button"
-          variant={tone === "sidebar" ? "outline" : isDarkTheme ? "default" : "outline"}
-          className={cn("size-9 justify-center px-0", sidebarToneClassName)}
+          variant={tone === "sidebar" ? "ghost" : isDarkTheme ? "default" : "outline"}
+          className={cn(compactClassName)}
           onClick={() => setTheme(nextTheme)}
           aria-label={label}
           title={label}

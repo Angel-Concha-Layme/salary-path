@@ -36,6 +36,10 @@ export const queryKeys = {
         ["settings", "finance", "list", { limit: params.limit ?? 50 }] as const,
       detail: (id: string) => ["settings", "finance", "detail", id] as const,
     },
+    userUiTheme: {
+      root: () => ["settings", "theme"] as const,
+      detail: () => ["settings", "theme", "detail"] as const,
+    },
   },
   profile: {
     root: () => ["profile"] as const,

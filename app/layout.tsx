@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
+import { createUiThemeBootstrapScript } from "@/app/lib/features/ui-theme-preset"
 import { getRequestLocale } from "@/app/lib/i18n/get-request-locale"
 import { AppProviders } from "@/components/providers/app-providers"
 
 import "./globals.css"
+import "./styles/ui-theme.css"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +35,11 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: createUiThemeBootstrapScript(),
+          }}
+        />
         <AppProviders locale={locale}>{children}</AppProviders>
       </body>
     </html>

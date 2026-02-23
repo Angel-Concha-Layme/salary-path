@@ -552,6 +552,7 @@ export const esDictionary = {
     subtitle: "Configura el comportamiento del workspace y preferencias rapidas.",
     tabs: {
       sidebar: "Sidebar",
+      appearance: "Apariencia",
       platform: "Platform",
     },
     sidebar: {
@@ -563,6 +564,41 @@ export const esDictionary = {
       collapsedHint:
         "Default: todas las secciones colapsadas excepto la seccion de la ruta actual.",
       expandedHint: "Todas las secciones quedan expandidas por defecto.",
+    },
+    appearance: {
+      title: "Color destacado",
+      description:
+        "Elige el color que se usará para los resaltados de la interfaz y el brillo del panel lateral.",
+      hint: "Los presets están ajustados para mantener buen contraste en modo claro y en modo oscuro.",
+      controls: {
+        title: "Botones y controles",
+        description:
+          "Elige si los botones y controles interactivos usan el color destacado o el estilo legacy en blanco y negro.",
+        options: {
+          accent: "Color del tema",
+          legacy: "Legacy blanco y negro",
+        },
+      },
+      select: "Seleccionar preset",
+      selected: "Seleccionado",
+      presets: {
+        lagoon: "Lagoon",
+        arctic: "Arctic",
+        ocean: "Ocean",
+        atlas: "Atlas",
+        cobalt: "Cobalt",
+        indigo: "Indigo",
+        steel: "Steel",
+        slate: "Slate",
+        ember: "Ember",
+        scarlet: "Scarlet",
+        rosewood: "Rosewood",
+        orchid: "Orchid",
+      },
+      toasts: {
+        saved: "Color de acento actualizado.",
+        error: "No se pudo actualizar el color de acento.",
+      },
     },
     platform: {
       title: "Platform home",

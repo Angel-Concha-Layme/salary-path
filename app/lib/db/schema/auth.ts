@@ -24,6 +24,8 @@ export const user = sqliteTable(
     onboardingCompletedAt: integer("onboarding_completed_at", {
       mode: "timestamp_ms",
     }),
+    uiThemePreset: text("ui_theme_preset").notNull().default("lagoon"),
+    uiControlsStyle: text("ui_controls_style").notNull().default("accent"),
   },
   (table) => [
     uniqueIndex("user_email_unique").on(table.email),
