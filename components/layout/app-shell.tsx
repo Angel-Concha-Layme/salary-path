@@ -16,6 +16,20 @@ interface AppShellProps {
   children: React.ReactNode
 }
 
+export const APP_SHELL_GLOW_BASE_COLOR_CLASS_NAME = "bg-primary"
+
+const APP_SHELL_GLOW_BASE_CLASS_NAME = "absolute rounded-full"
+
+const APP_SHELL_LEFT_GLOW_DETAIL_CLASS_NAMES = [
+  "-left-44 top-[-4%] h-[62%] w-[44%] blur-[140px] opacity-[0.24] dark:opacity-[0.34]",
+  "-left-20 top-[36%] h-[48%] w-[34%] blur-[130px] opacity-[0.16] dark:opacity-[0.24]",
+  "left-[12%] top-[16%] h-[34%] w-[24%] blur-[110px] opacity-[0.12] dark:opacity-[0.18]",
+] as const
+
+const APP_SHELL_RIGHT_GLOW_DETAIL_CLASS_NAMES = [
+  "-right-72 top-[18%] h-[72%] w-[52%] blur-[160px] opacity-[0.46] dark:opacity-[0.54]",
+] as const
+
 export function AppShell({
   role,
   userName,
@@ -27,10 +41,18 @@ export function AppShell({
     <SidebarProvider defaultOpen>
       <div className="relative flex h-dvh min-h-0 min-w-0 w-screen max-w-full overflow-hidden bg-sidebar lg:p-2">
         <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <div className="absolute -left-36 top-[-14%] h-[62%] w-[44%] rounded-full bg-primary/24 blur-[140px] dark:bg-primary/34" />
-          <div className="absolute -left-20 top-[36%] h-[48%] w-[34%] rounded-full bg-primary/16 blur-[130px] dark:bg-primary/24" />
-          <div className="absolute left-[12%] top-[16%] h-[34%] w-[24%] rounded-full bg-primary/12 blur-[110px] dark:bg-primary/18" />
-          <div className="absolute bottom-[-18%] right-[-14%] h-[52%] w-[36%] rounded-full bg-primary/18 blur-[140px] dark:bg-primary/28" />
+          {APP_SHELL_LEFT_GLOW_DETAIL_CLASS_NAMES.map((className) => (
+            <div
+              key={`left-${className}`}
+              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${APP_SHELL_GLOW_BASE_COLOR_CLASS_NAME} ${className}`}
+            />
+          ))}
+          {APP_SHELL_RIGHT_GLOW_DETAIL_CLASS_NAMES.map((className) => (
+            <div
+              key={`right-${className}`}
+              className={`${APP_SHELL_GLOW_BASE_CLASS_NAME} ${APP_SHELL_GLOW_BASE_COLOR_CLASS_NAME} ${className}`}
+            />
+          ))}
         </div>
 
         <div className="relative z-10 flex">

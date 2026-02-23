@@ -15,17 +15,43 @@ interface RouteScreenHeaderActionsProps {
   className?: string
 }
 
-const ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE = "data-route-screen-search-highlight"
-const ROUTE_SCREEN_SEARCH_HIGHLIGHT_CLASS =
-  "rounded-[2px] bg-primary/10 underline decoration-2 decoration-primary/70 underline-offset-[0.18em] dark:bg-primary/20 dark:decoration-primary/80"
+const ROUTE_SCREEN_SEARCH_HIGHLIGHT = "route-screen-search"
+const ROUTE_SCREEN_SEARCH_HIGHLIGHT_STYLE_ID = "route-screen-search-highlight-style"
+const LEGACY_ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE = "data-route-screen-search-highlight"
 
 interface SearchMatch {
+  range: Range
   element: HTMLElement
 }
 
-interface TextNodeMatches {
-  node: Text
-  starts: number[]
+type HighlightConstructor = new (...ranges: Range[]) => unknown
+
+type HighlightRegistry = {
+  delete: (name: string) => void
+  set: (name: string, value: unknown) => void
+}
+
+function getHighlightApi():
+  | {
+      Highlight: HighlightConstructor
+      highlights: HighlightRegistry
+    }
+  | null {
+  if (typeof window === "undefined" || typeof CSS === "undefined") {
+    return null
+  }
+
+  const MaybeHighlight = (window as Window & { Highlight?: HighlightConstructor }).Highlight
+  const maybeHighlights = (CSS as typeof CSS & { highlights?: HighlightRegistry }).highlights
+
+  if (!MaybeHighlight || !maybeHighlights) {
+    return null
+  }
+
+  return {
+    Highlight: MaybeHighlight,
+    highlights: maybeHighlights,
+  }
 }
 
 function isIgnoredSearchTagName(tagName: string): boolean {
@@ -42,26 +68,78 @@ export function RouteScreenHeaderActions({
   const [searchNoResults, setSearchNoResults] = useState(false)
   const searchMatchesRef = useRef<SearchMatch[]>([])
 
-  const clearSearchHighlights = useCallback((root: HTMLElement | null) => {
+  const ensureHighlightStyle = useCallback(() => {
+    if (typeof document === "undefined") {
+      return
+    }
+
+    if (document.getElementById(ROUTE_SCREEN_SEARCH_HIGHLIGHT_STYLE_ID)) {
+      return
+    }
+
+    const styleElement = document.createElement("style")
+    styleElement.id = ROUTE_SCREEN_SEARCH_HIGHLIGHT_STYLE_ID
+    styleElement.textContent = `
+::highlight(${ROUTE_SCREEN_SEARCH_HIGHLIGHT}) {
+  background-color: color-mix(in oklch, var(--primary) 22%, transparent);
+}
+
+.dark ::highlight(${ROUTE_SCREEN_SEARCH_HIGHLIGHT}) {
+  background-color: color-mix(in oklch, var(--primary) 32%, transparent);
+}
+`
+
+    document.head.appendChild(styleElement)
+  }, [])
+
+  const clearSearchHighlights = useCallback(() => {
+    const highlightApi = getHighlightApi()
+    highlightApi?.highlights.delete(ROUTE_SCREEN_SEARCH_HIGHLIGHT)
+  }, [])
+
+  const clearLegacySearchHighlightWrappers = useCallback((root: HTMLElement | null) => {
     if (!root) {
       return
     }
 
-    const highlights = root.querySelectorAll<HTMLElement>(
-      `mark[${ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE}='true']`
+    const wrappers = root.querySelectorAll<HTMLElement>(
+      `span[${LEGACY_ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE}='true'], mark[${LEGACY_ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE}='true']`
     )
 
-    highlights.forEach((highlight) => {
-      const parentNode = highlight.parentNode
+    wrappers.forEach((wrapper) => {
+      const parentNode = wrapper.parentNode
 
       if (!parentNode) {
         return
       }
 
-      parentNode.replaceChild(document.createTextNode(highlight.textContent ?? ""), highlight)
+      parentNode.replaceChild(document.createTextNode(wrapper.textContent ?? ""), wrapper)
       parentNode.normalize()
     })
   }, [])
+
+  const applySearchHighlights = useCallback(
+    (matches: SearchMatch[]) => {
+      const highlightApi = getHighlightApi()
+
+      if (!highlightApi) {
+        return
+      }
+
+      ensureHighlightStyle()
+      highlightApi.highlights.delete(ROUTE_SCREEN_SEARCH_HIGHLIGHT)
+
+      if (!matches.length) {
+        return
+      }
+
+      highlightApi.highlights.set(
+        ROUTE_SCREEN_SEARCH_HIGHLIGHT,
+        new highlightApi.Highlight(...matches.map((match) => match.range))
+      )
+    },
+    [ensureHighlightStyle]
+  )
 
   const findMatches = useCallback((root: HTMLElement, query: string): SearchMatch[] => {
     const visibilityCache = new WeakMap<HTMLElement, boolean>()
@@ -123,48 +201,31 @@ export function RouteScreenHeaderActions({
 
     let currentNode = walker.nextNode()
     const normalizedQuery = query.toLocaleLowerCase()
-    const textNodeMatches: TextNodeMatches[] = []
+    const matches: SearchMatch[] = []
 
     while (currentNode) {
-      const textNode = currentNode as Text
-      const normalizedText = textNode.data.toLocaleLowerCase()
+      const text = currentNode.textContent ?? ""
+      const normalizedText = text.toLocaleLowerCase()
       let start = normalizedText.indexOf(normalizedQuery)
-      const starts: number[] = []
+      const parentElement = currentNode.parentElement
 
-      while (start >= 0) {
-        starts.push(start)
-        start = normalizedText.indexOf(normalizedQuery, start + normalizedQuery.length)
-      }
+      while (start >= 0 && parentElement) {
+        const range = document.createRange()
+        range.setStart(currentNode, start)
+        range.setEnd(currentNode, start + normalizedQuery.length)
 
-      if (starts.length > 0) {
-        textNodeMatches.push({
-          node: textNode,
-          starts,
+        matches.push({
+          range,
+          element: parentElement,
         })
+
+        start = normalizedText.indexOf(normalizedQuery, start + normalizedQuery.length)
       }
 
       currentNode = walker.nextNode()
     }
 
-    for (let nodeIndex = textNodeMatches.length - 1; nodeIndex >= 0; nodeIndex -= 1) {
-      const matchNode = textNodeMatches[nodeIndex]
-
-      for (let startIndex = matchNode.starts.length - 1; startIndex >= 0; startIndex -= 1) {
-        const start = matchNode.starts[startIndex]
-        const range = document.createRange()
-        range.setStart(matchNode.node, start)
-        range.setEnd(matchNode.node, start + normalizedQuery.length)
-
-        const highlightElement = document.createElement("mark")
-        highlightElement.setAttribute(ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE, "true")
-        highlightElement.className = ROUTE_SCREEN_SEARCH_HIGHLIGHT_CLASS
-        range.surroundContents(highlightElement)
-      }
-    }
-
-    return Array.from(
-      root.querySelectorAll<HTMLElement>(`mark[${ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE}='true']`)
-    ).map((element) => ({ element }))
+    return matches
   }, [])
 
   const runSearch = useCallback(
@@ -176,7 +237,8 @@ export function RouteScreenHeaderActions({
       const query = rawQuery.trim()
       const routeScreenRoot = document.querySelector<HTMLElement>("[data-route-screen='true']")
 
-      clearSearchHighlights(routeScreenRoot)
+      clearLegacySearchHighlightWrappers(routeScreenRoot)
+      clearSearchHighlights()
 
       if (!isSearchOpen || !query) {
         searchMatchesRef.current = []
@@ -193,15 +255,15 @@ export function RouteScreenHeaderActions({
       const matches = findMatches(routeScreenRoot, query)
       searchMatchesRef.current = matches
       setSearchNoResults(matches.length === 0)
+      applySearchHighlights(matches)
       return matches
     },
-    [clearSearchHighlights, findMatches]
+    [applySearchHighlights, clearLegacySearchHighlightWrappers, clearSearchHighlights, findMatches]
   )
 
   useEffect(
     () => () => {
-      const routeScreenRoot = document.querySelector<HTMLElement>("[data-route-screen='true']")
-      clearSearchHighlights(routeScreenRoot)
+      clearSearchHighlights()
     },
     [clearSearchHighlights]
   )
