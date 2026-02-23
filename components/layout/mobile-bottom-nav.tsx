@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { MenuIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import { useBreakpointData } from "@/app/hooks/use-breakpoint-data"
 import type { AppRole } from "@/app/lib/auth/roles"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import {
@@ -52,6 +53,7 @@ function getRequiredRoute(
 }
 
 export function MobileBottomNav({ role }: MobileBottomNavProps) {
+  const breakpoint = useBreakpointData()
   const { dictionary } = useDictionary()
   const pathname = usePathname()
   const router = useRouter()
@@ -120,8 +122,12 @@ export function MobileBottomNav({ role }: MobileBottomNavProps) {
     router.refresh()
   }
 
+  if (breakpoint.up("lg")) {
+    return null
+  }
+
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] lg:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
       <div className="mx-auto w-full max-w-[28rem] rounded-2xl border border-border/70 bg-background/90 px-1.5 py-1 shadow-lg backdrop-blur">
         <div className="grid w-full grid-cols-5 items-stretch">
           {primaryTabs.map((tab) => (

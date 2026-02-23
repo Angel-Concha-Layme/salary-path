@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { SignInCard } from "@/components/auth/sign-in-card"
+import { SignInScreen } from "@/app/(auth)/sign-in/_components/sign-in-screen"
 import { getServerSession } from "@/app/lib/auth/server"
 import { getOnboardingStatus } from "@/app/lib/server/domain/onboarding/onboarding.domain"
 
@@ -22,5 +22,5 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     redirect(onboardingStatus.completed ? "/career-path/salary-tracking" : "/onboarding")
   }
 
-  return <SignInCard callbackUrl={callbackUrl} />
+  return <SignInScreen callbackUrl={callbackUrl} />
 }

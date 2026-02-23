@@ -1,5 +1,5 @@
-import { ProfilePanel } from "@/components/profile/profile-panel"
+import { ProfileScreen } from "@/app/(protected-app)/profile/_components/profile-screen"
 
 export default function ProfilePage() {
-  return <ProfilePanel />
+  return <ProfileScreen />
 }

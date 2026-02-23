@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CompaniesDrawer } from "@/components/personal-path/companies-drawer"
+import { CompaniesDrawer } from "@/app/(protected-app)/career-path/salary-tracking/_components/companies-drawer"
 import { RouteScreen } from "@/components/layout/route-screen"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -114,7 +114,7 @@ function formatCount(template: string, value: number): string {
   return template.replace("{count}", String(value))
 }
 
-export function PersonalPathWorkspace() {
+export function PersonalPathScreen() {
   const { dictionary, locale } = useDictionary()
   const [view, setView] = useState<PersonalPathChartView>("rate")
   const [range, setRange] = useState<PersonalPathRangePreset>("all")

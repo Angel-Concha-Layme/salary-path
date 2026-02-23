@@ -8,8 +8,8 @@ import { useProfileOverviewQuery } from "@/app/hooks/profile/use-profile-overvie
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import { ApiClientError } from "@/app/types/api"
 import { RouteScreen } from "@/components/layout/route-screen"
-import { CareerEventsTable } from "@/components/profile/career-events-table"
-import { ProfileWorkSettingsEditor } from "@/components/profile/profile-work-settings-editor"
+import { CareerEventsTable } from "@/app/(protected-app)/profile/_components/career-events-table"
+import { ProfileWorkSettingsEditor } from "@/app/(protected-app)/profile/_components/profile-work-settings-editor"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -139,7 +139,7 @@ function normalizeProfileLayoutMode(value: string | null): ProfileLayoutMode {
   return value === "vertical" ? "vertical" : "tabs"
 }
 
-export function ProfilePanel() {
+export function ProfileScreen() {
   const { dictionary, locale } = useDictionary()
   const profileQuery = useProfileOverviewQuery()
   const profile = profileQuery.data

@@ -1,5 +1,5 @@
-import { PersonalPathWorkspace } from "@/components/personal-path/personal-path-workspace"
+import { PersonalPathScreen } from "@/app/(protected-app)/career-path/salary-tracking/_components/personal-path-screen"
 
 export default function SalaryTrackingPage() {
-  return <PersonalPathWorkspace />
+  return <PersonalPathScreen />
 }

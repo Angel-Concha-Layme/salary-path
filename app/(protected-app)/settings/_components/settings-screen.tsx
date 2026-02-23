@@ -48,7 +48,7 @@ function normalizeSettingsTab(value: string | null | undefined): SettingsTabKey 
   return value === "platform" ? "platform" : "sidebar"
 }
 
-export function SettingsWorkspace() {
+export function SettingsScreen() {
   const { dictionary } = useDictionary()
   const [activeTab, setActiveTab] = useState<SettingsTabKey>("sidebar")
   const [selectedThemePresetKey, setSelectedThemePresetKey] = useState<UiThemePresetKey>(

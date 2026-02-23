@@ -6,7 +6,7 @@ import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import { RouteScreen } from "@/components/layout/route-screen"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export function HomeWorkspace() {
+export function HomeScreen() {
   const { dictionary } = useDictionary()
 
   return (

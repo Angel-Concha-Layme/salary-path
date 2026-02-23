@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
-import { ComparisonTwoPeoplePreviewChart } from "@/components/comparison/comparison-two-people-preview-chart"
+import { ComparisonTwoPeoplePreviewChart } from "@/app/(protected-app)/career-path/comparison/_components/comparison-two-people-preview-chart"
 import { OnboardingWizardShell } from "@/components/onboarding/onboarding-wizard-shell"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"

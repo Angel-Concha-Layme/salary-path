@@ -4,6 +4,7 @@ import * as React from "react"
 import { PanelLeftIcon } from "lucide-react"
 import { Slot } from "radix-ui"
 
+import { useBreakpointData } from "@/app/hooks/use-breakpoint-data"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -25,26 +26,6 @@ interface SidebarContextValue {
 }
 
 const SidebarContext = React.createContext<SidebarContextValue | null>(null)
-
-function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = React.useState(false)
-
-  React.useEffect(() => {
-    const media = window.matchMedia("(max-width: 1023px)")
-    const onChange = () => {
-      setIsMobile(media.matches)
-    }
-
-    onChange()
-    media.addEventListener("change", onChange)
-
-    return () => {
-      media.removeEventListener("change", onChange)
-    }
-  }, [])
-
-  return isMobile
-}
 
 function setOpenValue(
   nextValue: boolean | ((current: boolean) => boolean),
@@ -74,7 +55,8 @@ function SidebarProvider({
 }: SidebarProviderProps) {
   const [_open, _setOpen] = React.useState(defaultOpen)
   const [openMobile, setOpenMobile] = React.useState(false)
-  const isMobile = useIsMobile()
+  const breakpoint = useBreakpointData()
+  const isMobile = breakpoint.down("lg")
 
   const open = openProp ?? _open
 
