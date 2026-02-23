@@ -1,11 +1,5 @@
-import { RoutePlaceholder } from "@/components/layout/route-placeholder"
+import { RouteComingSoonScreen } from "@/components/layout/route-coming-soon-screen"
 
 export default function TaxesPeruPage() {
-  return (
-    <RoutePlaceholder
-      routeKey="taxesPeru"
-      access="protected"
-      protectedRoute
-    />
-  )
+  return <RouteComingSoonScreen routeKey="taxesPeru" />
 }

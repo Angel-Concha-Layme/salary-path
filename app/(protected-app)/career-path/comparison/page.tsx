@@ -1,5 +1,5 @@
-import { ComparisonOnboardingWizard } from "@/components/comparison/comparison-onboarding-wizard"
+import { ComparisonWorkspace } from "@/components/comparison/comparison-workspace"
 
 export default function CareerPathComparisonPage() {
-  return <ComparisonOnboardingWizard />
+  return <ComparisonWorkspace />
 }

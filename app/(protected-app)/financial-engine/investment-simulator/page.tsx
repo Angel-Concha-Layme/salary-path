@@ -1,11 +1,5 @@
-import { RoutePlaceholder } from "@/components/layout/route-placeholder"
+import { RouteComingSoonScreen } from "@/components/layout/route-coming-soon-screen"
 
 export default function InvestmentSimulatorPage() {
-  return (
-    <RoutePlaceholder
-      routeKey="investmentSimulator"
-      access="protected"
-      protectedRoute
-    />
-  )
+  return <RouteComingSoonScreen routeKey="investmentSimulator" />
 }

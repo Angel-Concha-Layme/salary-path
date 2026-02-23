@@ -1,11 +1,5 @@
-import { RoutePlaceholder } from "@/components/layout/route-placeholder"
+import { RouteComingSoonScreen } from "@/components/layout/route-coming-soon-screen"
 
 export default function AdminUserDetailPage() {
-  return (
-    <RoutePlaceholder
-      routeKey="adminUserDetail"
-      access="admin"
-      protectedRoute
-    />
-  )
+  return <RouteComingSoonScreen routeKey="adminUserDetail" />
 }
