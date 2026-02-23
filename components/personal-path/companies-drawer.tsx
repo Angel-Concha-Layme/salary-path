@@ -189,13 +189,13 @@ export function CompaniesDrawer({
   )
   const accentSoftBackground = headerRgb
     ? `rgba(${headerRgb.red}, ${headerRgb.green}, ${headerRgb.blue}, 0.10)`
-    : "rgba(15, 118, 110, 0.10)"
+    : "rgba(100, 116, 139, 0.08)"
   const accentMediumBackground = headerRgb
     ? `rgba(${headerRgb.red}, ${headerRgb.green}, ${headerRgb.blue}, 0.18)`
-    : "rgba(15, 118, 110, 0.18)"
+    : "rgba(100, 116, 139, 0.14)"
   const accentBorderColor = headerRgb
     ? `rgba(${headerRgb.red}, ${headerRgb.green}, ${headerRgb.blue}, 0.35)`
-    : "rgba(15, 118, 110, 0.35)"
+    : "rgba(100, 116, 139, 0.30)"
 
   const drawerStyle: CSSProperties = {
     "--companies-drawer-size": resolvedSize,
@@ -359,7 +359,7 @@ export function CompaniesDrawer({
               </h3>
               {sortedEvents.length === 0 ? (
                 <div
-                  className="rounded-lg border border-dashed px-3 py-4"
+                  className="rounded-lg border px-3 py-4"
                   style={{
                     borderColor: accentBorderColor,
                     backgroundColor: accentSoftBackground,

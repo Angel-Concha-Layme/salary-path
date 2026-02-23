@@ -358,7 +358,7 @@ export function CompaniesWorkspace() {
 
   function renderCompaniesContent() {
     if (companiesQuery.isLoading) {
-      return <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
+      return null
     }
 
     if (companiesQuery.error) {
@@ -431,7 +431,7 @@ export function CompaniesWorkspace() {
     }
 
     if (companyEventsQuery.isLoading) {
-      return <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
+      return null
     }
 
     if (companyEventsQuery.error) {
@@ -490,7 +490,7 @@ export function CompaniesWorkspace() {
     }
 
     if (selectedEventId && !selectedEvent && companyEventsQuery.isLoading) {
-      return <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
+      return null
     }
 
     if (selectedEvent) {
@@ -520,10 +520,13 @@ export function CompaniesWorkspace() {
     )
   }
 
+  const isScreenLoading = companiesQuery.isLoading || companyEventsQuery.isLoading
+
   return (
     <RouteScreen
       title={dictionary.companies.title}
       subtitle={dictionary.companies.subtitle}
+      isLoading={isScreenLoading}
       headerActions={(
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">

@@ -52,6 +52,9 @@ export interface PersonalPathChartSeries {
   label: string
   color: string
   lineType: "steps" | "simple"
+  pointMarkersVisible?: boolean
+  showInLegend?: boolean
+  showInTooltip?: boolean
   points: PersonalPathChartSeriesPoint[]
 }
 
@@ -116,6 +119,13 @@ interface CompanyRateSegment {
   start: Date
   end: Date
   monthlyRate: number
+}
+
+interface HistoricalRateAnchor {
+  companyId: string
+  date: Date
+  amount: number
+  compensationType: PathCompaniesEntity["compensationType"]
 }
 
 interface NormalizedEventRecord {
@@ -292,6 +302,80 @@ function buildCompanyEventsMap(
   return map
 }
 
+function resolveRateSeriesEndDate(
+  company: PathCompaniesEntity,
+  normalizedEvents: NormalizedEventRecord[],
+  referenceDate: Date
+): Date {
+  const normalizedReferenceDate = toUtcDateOnly(referenceDate)
+  const explicitCompanyEndDate = company.endDate
+    ? parseIsoToUtcDateOnly(company.endDate)
+    : null
+  const latestEndOfEmploymentEventDate = normalizedEvents
+    .filter((record) => record.source.eventType === "end_of_employment")
+    .at(-1)?.date ?? null
+  const explicitEndDate = latestEndOfEmploymentEventDate ?? explicitCompanyEndDate
+
+  if (!explicitEndDate) {
+    return normalizedReferenceDate
+  }
+
+  return minDate(explicitEndDate, normalizedReferenceDate)
+}
+
+function buildHistoricalRateAnchors(
+  companies: PathCompaniesEntity[],
+  rateEventsByCompany: Map<string, NormalizedEventRecord[]>
+): HistoricalRateAnchor[] {
+  const companiesById = new Map(companies.map((company) => [company.id, company]))
+  const anchors: HistoricalRateAnchor[] = []
+
+  rateEventsByCompany.forEach((events, companyId) => {
+    const company = companiesById.get(companyId)
+
+    if (!company) {
+      return
+    }
+
+    events.forEach((event) => {
+      anchors.push({
+        companyId,
+        date: event.date,
+        amount: event.source.amount,
+        compensationType: company.compensationType,
+      })
+    })
+  })
+
+  return anchors.sort((left, right) => left.date.getTime() - right.date.getTime())
+}
+
+function resolvePreviousCareerAnchor(
+  anchors: HistoricalRateAnchor[],
+  companyId: string,
+  date: Date
+): HistoricalRateAnchor | null {
+  const targetTimestamp = date.getTime()
+
+  for (let index = anchors.length - 1; index >= 0; index -= 1) {
+    const anchor = anchors[index]
+
+    if (!anchor) {
+      continue
+    }
+
+    if (anchor.companyId === companyId) {
+      continue
+    }
+
+    if (anchor.date.getTime() <= targetTimestamp) {
+      return anchor
+    }
+  }
+
+  return null
+}
+
 export function resolveBaseCurrency(
   companies: PathCompaniesEntity[],
   baseCurrency?: string
@@ -450,7 +534,40 @@ export function buildRateChartSeries(
   const companiesById = new Map(options.companies.map((company) => [company.id, company]))
   const eventsByCompany = buildCompanyEventsMap(options.events)
   const monthlyWorkHours = resolveMonthlyWorkHours(options.monthlyWorkHours)
+  const normalizedEventsByCompany = new Map<string, NormalizedEventRecord[]>()
+  const activeRateEventsByCompany = new Map<string, NormalizedEventRecord[]>()
+  const seriesEndDateByCompany = new Map<string, Date>()
   const result: PersonalPathChartSeries[] = []
+
+  options.companies.forEach((company) => {
+    const sortedEvents = sortEventsAsc(eventsByCompany.get(company.id) ?? [])
+
+    if (sortedEvents.length === 0) {
+      return
+    }
+
+    const normalizedEvents = normalizeEventRecords(sortedEvents)
+
+    if (normalizedEvents.length === 0) {
+      return
+    }
+
+    const seriesEndDate = resolveRateSeriesEndDate(company, normalizedEvents, referenceDate)
+    const activeEvents = normalizedEvents.filter(
+      (record) =>
+        record.source.eventType !== "end_of_employment" &&
+        record.date.getTime() <= seriesEndDate.getTime()
+    )
+
+    normalizedEventsByCompany.set(company.id, normalizedEvents)
+    activeRateEventsByCompany.set(company.id, activeEvents)
+    seriesEndDateByCompany.set(company.id, seriesEndDate)
+  })
+
+  const historicalRateAnchors = buildHistoricalRateAnchors(
+    options.companies,
+    activeRateEventsByCompany
+  )
 
   options.companyIds.forEach((companyId) => {
     const company = companiesById.get(companyId)
@@ -459,14 +576,40 @@ export function buildRateChartSeries(
       return
     }
 
-    const sortedEvents = sortEventsAsc(eventsByCompany.get(companyId) ?? [])
+    const normalizedEvents = normalizedEventsByCompany.get(companyId) ?? []
+    const seriesEndDate = seriesEndDateByCompany.get(companyId)
+    const activeEvents = activeRateEventsByCompany.get(companyId) ?? []
 
-    if (sortedEvents.length === 0) {
+    if (normalizedEvents.length === 0 || !seriesEndDate) {
       return
     }
 
-    const points = sortedEvents.map((event, index): PersonalPathChartSeriesPoint => {
-      const previousAmount = sortedEvents[index - 1]?.amount ?? event.amount
+    const endOfEmploymentRecord = normalizedEvents
+      .filter(
+        (record) =>
+          record.source.eventType === "end_of_employment" &&
+          record.date.getTime() <= seriesEndDate.getTime()
+      )
+      .at(-1) ?? null
+
+    if (activeEvents.length === 0) {
+      return
+    }
+
+    const points = activeEvents.map((record, index): PersonalPathChartSeriesPoint => {
+      const event = record.source
+      const previousEvent = activeEvents[index - 1]
+      const previousCareerAnchor = previousEvent
+        ? null
+        : resolvePreviousCareerAnchor(historicalRateAnchors, company.id, record.date)
+      const previousAmount =
+        previousEvent?.source.amount ??
+        previousCareerAnchor?.amount ??
+        event.amount
+      const previousCompensationType =
+        previousEvent
+          ? company.compensationType
+          : previousCareerAnchor?.compensationType ?? company.compensationType
       const normalizedAmount = normalizeAmountToRateBasis(
         event.amount,
         company.compensationType,
@@ -475,13 +618,13 @@ export function buildRateChartSeries(
       )
       const normalizedPreviousAmount = normalizeAmountToRateBasis(
         previousAmount,
-        company.compensationType,
+        previousCompensationType,
         options.rateBasis,
         monthlyWorkHours
       )
 
       return {
-        time: event.effectiveDate.slice(0, 10),
+        time: toDateKey(record.date),
         value: normalizedAmount,
         meta: {
           type: "rate",
@@ -498,6 +641,33 @@ export function buildRateChartSeries(
       }
     })
 
+    if (endOfEmploymentRecord) {
+      const lastPoint = points[points.length - 1]
+      const endDateKey = toDateKey(endOfEmploymentRecord.date)
+
+      if (lastPoint?.meta.type === "rate" && lastPoint.time <= endDateKey) {
+        const endPoint: PersonalPathChartSeriesPoint = {
+          ...lastPoint,
+          time: endDateKey,
+          meta: {
+            ...lastPoint.meta,
+            eventType: "end_of_employment",
+            increase: 0,
+            amount: lastPoint.value,
+          },
+        }
+
+        if (lastPoint.time === endDateKey) {
+          points[points.length - 1] = endPoint
+        } else {
+          points.push(endPoint)
+        }
+      }
+    }
+
+    const lastPoint = points[points.length - 1]
+    const seriesEndDateKey = toDateKey(seriesEndDate)
+
     result.push({
       id: company.id,
       label: company.displayName,
@@ -505,6 +675,28 @@ export function buildRateChartSeries(
       lineType: "steps",
       points: filterPointsByRange(points, options.range, referenceDate),
     })
+
+    if (lastPoint?.meta.type === "rate" && lastPoint.time < seriesEndDateKey) {
+      const continuationPoint: PersonalPathChartSeriesPoint = {
+        ...lastPoint,
+        time: seriesEndDateKey,
+        meta: {
+          ...lastPoint.meta,
+          increase: 0,
+        },
+      }
+
+      result.push({
+        id: `${company.id}--continuation`,
+        label: company.displayName,
+        color: company.color,
+        lineType: "steps",
+        pointMarkersVisible: false,
+        showInLegend: false,
+        showInTooltip: false,
+        points: filterPointsByRange([lastPoint, continuationPoint], options.range, referenceDate),
+      })
+    }
   })
 
   return result

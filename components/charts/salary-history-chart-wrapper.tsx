@@ -13,6 +13,7 @@ import {
   type LineSeriesOptions,
   type MouseEventParams,
   type Time,
+  type WhitespaceData,
 } from "lightweight-charts"
 
 import { cn } from "@/lib/utils"
@@ -69,6 +70,7 @@ interface SalaryHistoryChartWrapperProps<TMeta = unknown> {
     description?: string
     items?: Array<{ id: string; label: string; color: string }>
     className?: string
+    itemClassName?: string
   }
   tooltip?: {
     render?: (payload: SalaryHistoryTooltipPayload<TMeta>) => ReactNode
@@ -153,6 +155,145 @@ function getThemeTokens(container: HTMLElement) {
     gridHorizontal: getColorWithAlpha(textColor, 0.1),
     crosshair: getColorWithAlpha(textColor, 0.35),
   }
+}
+
+function toUtcDateFromDateKey(dateKey: string): Date | null {
+  const parsed = new Date(`${dateKey}T00:00:00.000Z`)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null
+  }
+
+  return parsed
+}
+
+function toDateKeyFromUtcDate(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
+function parseDateKeyToTimestamp(dateKey: string): number | null {
+  const parsed = toUtcDateFromDateKey(dateKey)
+
+  if (!parsed) {
+    return null
+  }
+
+  return parsed.getTime()
+}
+
+function addUtcDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000)
+}
+
+function buildDailyTimelineAnchors<TMeta>(
+  series: SalaryHistoryChartSeries<TMeta>[]
+): string[] {
+  const allDates = series
+    .flatMap((entry) => entry.points.map((point) => toUtcDateFromDateKey(point.time)))
+    .filter((date): date is Date => Boolean(date))
+
+  if (allDates.length < 2) {
+    return []
+  }
+
+  const minTimestamp = Math.min(...allDates.map((date) => date.getTime()))
+  const maxTimestamp = Math.max(...allDates.map((date) => date.getTime()))
+
+  if (!Number.isFinite(minTimestamp) || !Number.isFinite(maxTimestamp) || minTimestamp >= maxTimestamp) {
+    return []
+  }
+
+  const minDate = new Date(minTimestamp)
+  const maxDate = new Date(maxTimestamp)
+  const anchors: string[] = []
+  let cursor = minDate
+
+  while (cursor.getTime() <= maxDate.getTime()) {
+    anchors.push(toDateKeyFromUtcDate(cursor))
+    cursor = addUtcDays(cursor, 1)
+  }
+
+  return anchors
+}
+
+function findPointForDate<TMeta>(
+  points: SalaryHistoryChartSeriesPoint<TMeta>[],
+  dateKey: string,
+  lineType: SalaryHistoryChartSeries<TMeta>["lineType"]
+): SalaryHistoryChartSeriesPoint<TMeta> | null {
+  if (points.length === 0) {
+    return null
+  }
+
+  let previous: SalaryHistoryChartSeriesPoint<TMeta> | null = null
+  let next: SalaryHistoryChartSeriesPoint<TMeta> | null = null
+  let exactMatch: SalaryHistoryChartSeriesPoint<TMeta> | null = null
+
+  for (const point of points) {
+    if (point.time === dateKey) {
+      exactMatch = point
+      break
+    }
+
+    if (point.time < dateKey) {
+      previous = point
+      continue
+    }
+
+    next = point
+    break
+  }
+
+  const hasEndedEmploymentEvent =
+    (meta: unknown): boolean =>
+      typeof meta === "object" &&
+      meta !== null &&
+      "eventType" in meta &&
+      (meta as { eventType?: unknown }).eventType === "end_of_employment"
+
+  if (exactMatch) {
+    return exactMatch
+  }
+
+  if (lineType === "steps") {
+    if (!previous) {
+      return null
+    }
+
+    if (!next && hasEndedEmploymentEvent(previous.meta)) {
+      return null
+    }
+
+    return previous
+  }
+
+  if (!previous) {
+    return next
+  }
+
+  if (!next) {
+    if (hasEndedEmploymentEvent(previous.meta)) {
+      return null
+    }
+
+    return previous
+  }
+
+  const targetTimestamp = parseDateKeyToTimestamp(dateKey)
+  const previousTimestamp = parseDateKeyToTimestamp(previous.time)
+  const nextTimestamp = parseDateKeyToTimestamp(next.time)
+
+  if (
+    targetTimestamp === null ||
+    previousTimestamp === null ||
+    nextTimestamp === null
+  ) {
+    return previous
+  }
+
+  return Math.abs(targetTimestamp - previousTimestamp) <= Math.abs(nextTimestamp - targetTimestamp)
+    ? previous
+    : next
 }
 
 export function SalaryHistoryChartWrapper<TMeta = unknown>({
@@ -250,6 +391,7 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
       string,
       Map<string, SalaryHistoryChartSeriesPoint<TMeta>>
     >()
+    const pointsListBySeriesId = new Map<string, SalaryHistoryChartSeriesPoint<TMeta>[]>()
 
     series.forEach((entry) => {
       const lineSeriesOptions: DeepPartial<LineSeriesOptions> = {
@@ -264,17 +406,49 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
         lastValueVisible: false,
       }
       const lineSeries = chart.addSeries(LineSeries, lineSeriesOptions)
-      const chartData: LineData<Time>[] = entry.points.map((point) => ({
+      const pointsData: LineData<Time>[] = entry.points.map((point) => ({
         time: point.time,
         value: point.value,
       }))
+      const chartData: Array<LineData<Time> | WhitespaceData<Time>> = pointsData
+
+      if (entry.lineType === "steps" && pointsData.length > 0) {
+        const firstPointDateKey = toDateKey(pointsData[0]?.time)
+        const firstPointDate = firstPointDateKey
+          ? toUtcDateFromDateKey(firstPointDateKey)
+          : null
+
+        if (firstPointDate) {
+          const previousDay = new Date(firstPointDate.getTime() - 24 * 60 * 60 * 1000)
+          const previousDayKey = toDateKeyFromUtcDate(previousDay)
+
+          chartData.unshift({ time: previousDayKey })
+        }
+      }
 
       lineSeries.setData(chartData)
+
       pointsMapBySeriesId.set(
         entry.id,
         new Map(entry.points.map((point) => [point.time, point]))
       )
+      pointsListBySeriesId.set(entry.id, entry.points)
     })
+
+    const timelineAnchors = buildDailyTimelineAnchors(series)
+
+    if (timelineAnchors.length > 0) {
+      const anchorSeries = chart.addSeries(LineSeries, {
+        color: "rgba(0, 0, 0, 0)",
+        lineWidth: 1,
+        lineType: LineType.Simple,
+        pointMarkersVisible: false,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+
+      anchorSeries.setData(timelineAnchors.map((time) => ({ time })))
+    }
 
     chart.timeScale().fitContent()
 
@@ -300,7 +474,10 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
             return null
           }
 
-          const point = pointsMapBySeriesId.get(entry.id)?.get(dateKey)
+          const points = pointsListBySeriesId.get(entry.id) ?? []
+          const point =
+            pointsMapBySeriesId.get(entry.id)?.get(dateKey) ??
+            findPointForDate(points, dateKey, entry.lineType)
 
           if (!point) {
             return null
@@ -426,7 +603,10 @@ export function SalaryHistoryChartWrapper<TMeta = unknown>({
               {legendItems.map((entry) => (
                 <span
                   key={entry.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background px-2 py-1"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background px-2 py-1",
+                    legend.itemClassName
+                  )}
                 >
                   <span
                     className="size-2 rounded-full"

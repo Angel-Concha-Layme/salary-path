@@ -223,6 +223,7 @@ export function PersonalPathWorkspace() {
               item.meta.increase,
               item.meta.normalizedCompensationType === "hourly" ? 2 : 0
             )
+            const shouldShowChange = Math.abs(item.meta.increase) > Number.EPSILON
 
             return (
               <div key={`${payload.dateKey}-${item.seriesId}`} className="space-y-0.5">
@@ -236,9 +237,11 @@ export function PersonalPathWorkspace() {
                 <p>
                   {dictionary.personalPath.chart.eventTypeLabel}: {eventTypeLabels[item.meta.eventType]}
                 </p>
-                <p>
-                  {dictionary.personalPath.chart.changeLabel}: {increaseLabel}
-                </p>
+                {shouldShowChange ? (
+                  <p>
+                    {dictionary.personalPath.chart.changeLabel}: {increaseLabel}
+                  </p>
+                ) : null}
               </div>
             )
           })}
@@ -277,14 +280,13 @@ export function PersonalPathWorkspace() {
 
   if (dashboard.isLoading) {
     return (
-      <Card className="rounded-xl border border-border/80 bg-card shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-primary">{dictionary.personalPath.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{dictionary.common.loading}</p>
-        </CardContent>
-      </Card>
+      <RouteScreen
+        title={dictionary.personalPath.title}
+        subtitle={dictionary.personalPath.subtitle}
+        isLoading
+      >
+        {null}
+      </RouteScreen>
     )
   }
 
@@ -325,172 +327,181 @@ export function PersonalPathWorkspace() {
       title={dictionary.personalPath.title}
       subtitle={dictionary.personalPath.subtitle}
     >
-      <section className="min-w-0 w-full max-w-full space-y-4 text-card-foreground">
-        <div className="flex flex-col gap-2 rounded-2xl bg-muted/30 p-2 ring-1 ring-border/60 lg:flex-row">
-          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              {dictionary.personalPath.chart.viewLabel}
-            </p>
-            <Select
-              value={view}
-              onValueChange={(nextValue) =>
-                setView(nextValue as PersonalPathChartView)
-              }
-            >
-              <SelectTrigger className="mt-1 h-9 w-full border-border/60 bg-transparent shadow-none">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rate">{dictionary.personalPath.chart.views.rate}</SelectItem>
-                <SelectItem value="cumulativeIncome">
-                  {dictionary.personalPath.chart.views.cumulativeIncome}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <section className="min-w-0 w-full max-w-full text-card-foreground">
+        <div className="overflow-hidden rounded-2xl border border-border/80 bg-background">
+          <div className="grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+            <div className="order-2 space-y-3 p-4 xl:order-1 xl:p-5">
+              {dashboard.currencyMismatch ? (
+                <div className="flex items-start gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-xs text-muted-foreground">
+                  <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <p>
+                    {formatCount(
+                      dictionary.personalPath.chart.currencyWarning,
+                      dashboard.currencyMismatch.excludedCount
+                    )}{" "}
+                    {dictionary.personalPath.chart.currencyWarningSuffix} {dashboard.baseCurrency}:{" "}
+                    {dashboard.currencyMismatch.excludedCompanyNames.join(", ")}
+                  </p>
+                </div>
+              ) : null}
 
-          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              {dictionary.personalPath.chart.rangeLabel}
-            </p>
-            <Select
-              value={range}
-              onValueChange={(nextValue) =>
-                setRange(nextValue as PersonalPathRangePreset)
-              }
-            >
-              <SelectTrigger className="mt-1 h-9 w-full border-border/60 bg-transparent shadow-none">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RANGE_PRESETS.map((preset) => (
-                  <SelectItem key={preset} value={preset}>
-                    {dictionary.personalPath.chart.ranges[preset]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              {dictionary.personalPath.chart.rateBasisLabel}
-            </p>
-            <Select
-              value={rateBasis}
-              onValueChange={(nextValue) =>
-                setRateBasis(nextValue as PersonalPathRateBasis)
-              }
-            >
-              <SelectTrigger className="mt-1 h-9 w-full border-border/60 bg-transparent shadow-none">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="monthly">{dictionary.personalPath.chart.rateBasis.monthly}</SelectItem>
-                <SelectItem value="hourly">{dictionary.personalPath.chart.rateBasis.hourly}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="min-w-0 rounded-xl bg-background/85 px-3 py-2 supports-[backdrop-filter]:backdrop-blur-sm lg:flex-1 lg:basis-0">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              {dictionary.personalPath.chart.companiesLabel}
-            </p>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="mt-1 h-9 w-full justify-between border-border/60 bg-transparent shadow-none hover:bg-accent/40"
-                >
-                  <span className="truncate">{selectedCompaniesLabel}</span>
-                  <ChevronDownIcon className="size-4 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-72 border-border/80">
-                <DropdownMenuLabel>{dictionary.personalPath.chart.companiesLabel}</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault()
-                    if (allCompaniesSelected) {
-                      clearCompanySelection()
-                      return
+              <SalaryHistoryChartWrapper<PersonalPathChartPointMeta>
+                view={view}
+                filters={{
+                  range,
+                  companyIds: selectedCompanyIds,
+                }}
+                series={dashboard.series}
+                height={320}
+                legend={{
+                  title: dictionary.personalPath.chart.legendTitle,
+                  className: "mb-3 space-y-2 border-b border-border/70 pb-2",
+                  itemClassName: "border-border/70 bg-transparent",
+                }}
+                className="rounded-none border-0 bg-transparent p-0 shadow-none"
+                chartClassName="min-w-0 w-full max-w-full"
+                emptyState={dictionary.personalPath.chart.emptyState}
+                formatters={{
+                  date: (dateKey) => formatDateKey(dateKey, locale),
+                  value: (value, item) => {
+                    if (item.meta.type === "rate") {
+                      return formatAmount(
+                        locale,
+                        item.meta.currency,
+                        value,
+                        item.meta.normalizedCompensationType === "hourly" ? 2 : 0
+                      )
                     }
 
-                    selectAllCompanies()
-                  }}
-                >
-                  {allCompaniesSelected
-                    ? dictionary.personalPath.chart.clearCompanySelection
-                    : dictionary.personalPath.chart.selectAllCompanies}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {sortedCompanies.map((company) => (
-                  <DropdownMenuCheckboxItem
-                    key={company.id}
-                    checked={selectedCompanyIdSet.has(company.id)}
-                    onCheckedChange={() => toggleCompany(company.id)}
-                    onSelect={(event) => event.preventDefault()}
+                    return formatAmount(locale, item.meta.currency, value, 0)
+                  },
+                }}
+                tooltip={{
+                  render: renderTooltip,
+                  className: "border-border/70 bg-background/95 shadow-lg supports-[backdrop-filter]:backdrop-blur-sm",
+                }}
+              />
+            </div>
+
+            <aside className="order-1 border-b border-border/70 p-4 xl:order-2 xl:border-b-0 xl:border-l xl:p-5">
+              <div className="space-y-4 xl:sticky xl:top-24">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {dictionary.personalPath.chart.viewLabel}
+                  </p>
+                  <Select
+                    value={view}
+                    onValueChange={(nextValue) =>
+                      setView(nextValue as PersonalPathChartView)
+                    }
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <span className="size-2 rounded-full" style={{ backgroundColor: company.color }} />
-                      <span>{company.displayName}</span>
-                    </span>
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <SelectTrigger className="h-10 w-full border-border/70 bg-background shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rate">{dictionary.personalPath.chart.views.rate}</SelectItem>
+                      <SelectItem value="cumulativeIncome">
+                        {dictionary.personalPath.chart.views.cumulativeIncome}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5 border-t border-border/60 pt-3">
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {dictionary.personalPath.chart.rangeLabel}
+                  </p>
+                  <Select
+                    value={range}
+                    onValueChange={(nextValue) =>
+                      setRange(nextValue as PersonalPathRangePreset)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full border-border/70 bg-background shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RANGE_PRESETS.map((preset) => (
+                        <SelectItem key={preset} value={preset}>
+                          {dictionary.personalPath.chart.ranges[preset]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5 border-t border-border/60 pt-3">
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {dictionary.personalPath.chart.rateBasisLabel}
+                  </p>
+                  <Select
+                    value={rateBasis}
+                    onValueChange={(nextValue) =>
+                      setRateBasis(nextValue as PersonalPathRateBasis)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full border-border/70 bg-background shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">{dictionary.personalPath.chart.rateBasis.monthly}</SelectItem>
+                      <SelectItem value="hourly">{dictionary.personalPath.chart.rateBasis.hourly}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5 border-t border-border/60 pt-3">
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {dictionary.personalPath.chart.companiesLabel}
+                  </p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="h-10 w-full justify-between border-border/70 bg-background shadow-none hover:bg-accent/40"
+                      >
+                        <span className="truncate">{selectedCompaniesLabel}</span>
+                        <ChevronDownIcon className="size-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-72 border-border/80">
+                      <DropdownMenuLabel>{dictionary.personalPath.chart.companiesLabel}</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onSelect={(event) => {
+                          event.preventDefault()
+                          if (allCompaniesSelected) {
+                            clearCompanySelection()
+                            return
+                          }
+
+                          selectAllCompanies()
+                        }}
+                      >
+                        {allCompaniesSelected
+                          ? dictionary.personalPath.chart.clearCompanySelection
+                          : dictionary.personalPath.chart.selectAllCompanies}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {sortedCompanies.map((company) => (
+                        <DropdownMenuCheckboxItem
+                          key={company.id}
+                          checked={selectedCompanyIdSet.has(company.id)}
+                          onCheckedChange={() => toggleCompany(company.id)}
+                          onSelect={(event) => event.preventDefault()}
+                        >
+                          <span className="inline-flex items-center gap-2">
+                            <span className="size-2 rounded-full" style={{ backgroundColor: company.color }} />
+                            <span>{company.displayName}</span>
+                          </span>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
-
-        {dashboard.currencyMismatch ? (
-          <div className="flex flex-wrap items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-50/70 px-3 py-2 text-xs text-amber-950 dark:border-amber-300/35 dark:bg-amber-950/20 dark:text-amber-100">
-            <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0" />
-            <p>
-              {formatCount(
-                dictionary.personalPath.chart.currencyWarning,
-                dashboard.currencyMismatch.excludedCount
-              )}{" "}
-              {dictionary.personalPath.chart.currencyWarningSuffix} {dashboard.baseCurrency}:{" "}
-              {dashboard.currencyMismatch.excludedCompanyNames.join(", ")}
-            </p>
-          </div>
-        ) : null}
-
-        <SalaryHistoryChartWrapper<PersonalPathChartPointMeta>
-          view={view}
-          filters={{
-            range,
-            companyIds: selectedCompanyIds,
-          }}
-          series={dashboard.series}
-          height={320}
-          legend={{
-            title: dictionary.personalPath.chart.legendTitle,
-            className: "mb-3 rounded-xl bg-muted/30 px-3 py-2 ring-1 ring-border/60",
-          }}
-          className="rounded-2xl border-0 bg-transparent p-0 shadow-none"
-          chartClassName="rounded-2xl bg-background/70"
-          emptyState={dictionary.personalPath.chart.emptyState}
-          formatters={{
-            date: (dateKey) => formatDateKey(dateKey, locale),
-            value: (value, item) => {
-              if (item.meta.type === "rate") {
-                return formatAmount(
-                  locale,
-                  item.meta.currency,
-                  value,
-                  item.meta.normalizedCompensationType === "hourly" ? 2 : 0
-                )
-              }
-
-              return formatAmount(locale, item.meta.currency, value, 0)
-            },
-          }}
-          tooltip={{
-            render: renderTooltip,
-            className: "border-border/60 bg-background/95 shadow-lg supports-[backdrop-filter]:backdrop-blur-sm",
-          }}
-        />
       </section>
 
       <section className="w-full max-w-full rounded-xl border border-border/80 bg-background text-card-foreground">

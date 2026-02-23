@@ -1,7 +1,7 @@
 "use client"
 
 import type { FormEvent, ReactNode } from "react"
-import { useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { BellIcon, SearchIcon, SlidersHorizontalIcon } from "lucide-react"
 
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
@@ -15,6 +15,23 @@ interface RouteScreenHeaderActionsProps {
   className?: string
 }
 
+const ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE = "data-route-screen-search-highlight"
+const ROUTE_SCREEN_SEARCH_HIGHLIGHT_CLASS =
+  "rounded-[2px] bg-primary/10 underline decoration-2 decoration-primary/70 underline-offset-[0.18em] dark:bg-primary/20 dark:decoration-primary/80"
+
+interface SearchMatch {
+  element: HTMLElement
+}
+
+interface TextNodeMatches {
+  node: Text
+  starts: number[]
+}
+
+function isIgnoredSearchTagName(tagName: string): boolean {
+  return tagName === "SCRIPT" || tagName === "STYLE" || tagName === "NOSCRIPT" || tagName === "TEXTAREA"
+}
+
 export function RouteScreenHeaderActions({
   settingsContent,
   className,
@@ -23,8 +40,30 @@ export function RouteScreenHeaderActions({
   const [searchQuery, setSearchQuery] = useState("")
   const [searchPopoverOpen, setSearchPopoverOpen] = useState(false)
   const [searchNoResults, setSearchNoResults] = useState(false)
+  const searchMatchesRef = useRef<SearchMatch[]>([])
 
-  const findFirstMatch = (root: HTMLElement, query: string): Range | null => {
+  const clearSearchHighlights = useCallback((root: HTMLElement | null) => {
+    if (!root) {
+      return
+    }
+
+    const highlights = root.querySelectorAll<HTMLElement>(
+      `mark[${ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE}='true']`
+    )
+
+    highlights.forEach((highlight) => {
+      const parentNode = highlight.parentNode
+
+      if (!parentNode) {
+        return
+      }
+
+      parentNode.replaceChild(document.createTextNode(highlight.textContent ?? ""), highlight)
+      parentNode.normalize()
+    })
+  }, [])
+
+  const findMatches = useCallback((root: HTMLElement, query: string): SearchMatch[] => {
     const visibilityCache = new WeakMap<HTMLElement, boolean>()
 
     const isVisibleForSearch = (element: HTMLElement): boolean => {
@@ -66,6 +105,10 @@ export function RouteScreenHeaderActions({
           return NodeFilter.FILTER_REJECT
         }
 
+        if (isIgnoredSearchTagName(parentElement.tagName)) {
+          return NodeFilter.FILTER_REJECT
+        }
+
         if (parentElement.closest("[data-route-screen-search-ignore='true']")) {
           return NodeFilter.FILTER_REJECT
         }
@@ -80,64 +123,117 @@ export function RouteScreenHeaderActions({
 
     let currentNode = walker.nextNode()
     const normalizedQuery = query.toLocaleLowerCase()
+    const textNodeMatches: TextNodeMatches[] = []
 
     while (currentNode) {
-      const text = currentNode.textContent ?? ""
-      const start = text.toLocaleLowerCase().indexOf(normalizedQuery)
+      const textNode = currentNode as Text
+      const normalizedText = textNode.data.toLocaleLowerCase()
+      let start = normalizedText.indexOf(normalizedQuery)
+      const starts: number[] = []
 
-      if (start >= 0) {
-        const range = document.createRange()
-        range.setStart(currentNode, start)
-        range.setEnd(currentNode, start + normalizedQuery.length)
-        return range
+      while (start >= 0) {
+        starts.push(start)
+        start = normalizedText.indexOf(normalizedQuery, start + normalizedQuery.length)
+      }
+
+      if (starts.length > 0) {
+        textNodeMatches.push({
+          node: textNode,
+          starts,
+        })
       }
 
       currentNode = walker.nextNode()
     }
 
-    return null
+    for (let nodeIndex = textNodeMatches.length - 1; nodeIndex >= 0; nodeIndex -= 1) {
+      const matchNode = textNodeMatches[nodeIndex]
+
+      for (let startIndex = matchNode.starts.length - 1; startIndex >= 0; startIndex -= 1) {
+        const start = matchNode.starts[startIndex]
+        const range = document.createRange()
+        range.setStart(matchNode.node, start)
+        range.setEnd(matchNode.node, start + normalizedQuery.length)
+
+        const highlightElement = document.createElement("mark")
+        highlightElement.setAttribute(ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE, "true")
+        highlightElement.className = ROUTE_SCREEN_SEARCH_HIGHLIGHT_CLASS
+        range.surroundContents(highlightElement)
+      }
+    }
+
+    return Array.from(
+      root.querySelectorAll<HTMLElement>(`mark[${ROUTE_SCREEN_SEARCH_HIGHLIGHT_ATTRIBUTE}='true']`)
+    ).map((element) => ({ element }))
+  }, [])
+
+  const runSearch = useCallback(
+    (rawQuery: string, isSearchOpen: boolean): SearchMatch[] => {
+      if (typeof window === "undefined") {
+        return []
+      }
+
+      const query = rawQuery.trim()
+      const routeScreenRoot = document.querySelector<HTMLElement>("[data-route-screen='true']")
+
+      clearSearchHighlights(routeScreenRoot)
+
+      if (!isSearchOpen || !query) {
+        searchMatchesRef.current = []
+        setSearchNoResults(false)
+        return []
+      }
+
+      if (!routeScreenRoot) {
+        searchMatchesRef.current = []
+        setSearchNoResults(true)
+        return []
+      }
+
+      const matches = findMatches(routeScreenRoot, query)
+      searchMatchesRef.current = matches
+      setSearchNoResults(matches.length === 0)
+      return matches
+    },
+    [clearSearchHighlights, findMatches]
+  )
+
+  useEffect(
+    () => () => {
+      const routeScreenRoot = document.querySelector<HTMLElement>("[data-route-screen='true']")
+      clearSearchHighlights(routeScreenRoot)
+    },
+    [clearSearchHighlights]
+  )
+
+  const handleSearchPopoverChange = (nextOpen: boolean) => {
+    setSearchPopoverOpen(nextOpen)
+    runSearch(searchQuery, nextOpen)
+  }
+
+  const handleSearchInputChange = (nextQuery: string) => {
+    setSearchQuery(nextQuery)
+    runSearch(nextQuery, searchPopoverOpen)
   }
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (typeof window === "undefined") {
+    if (!searchPopoverOpen) {
       return
     }
 
-    const query = searchQuery.trim()
+    const matches = runSearch(searchQuery, searchPopoverOpen)
+    const firstMatch = matches[0]
 
-    if (!query) {
-      setSearchNoResults(false)
+    if (!firstMatch) {
       return
     }
 
-    const routeScreenRoot = document.querySelector<HTMLElement>("[data-route-screen='true']")
-
-    if (!routeScreenRoot) {
-      setSearchNoResults(true)
-      return
-    }
-
-    const matchRange = findFirstMatch(routeScreenRoot, query)
-
-    if (!matchRange) {
-      setSearchNoResults(true)
-      return
-    }
-
-    setSearchNoResults(false)
-
-    const selection = window.getSelection()
-    selection?.removeAllRanges()
-    selection?.addRange(matchRange)
-
-    matchRange.startContainer.parentElement?.scrollIntoView({
+    firstMatch.element.scrollIntoView({
       block: "center",
       behavior: "smooth",
     })
-
-    setSearchPopoverOpen(false)
   }
 
   return (
@@ -185,7 +281,7 @@ export function RouteScreenHeaderActions({
         ) : null}
       </Popover>
 
-      <Popover open={searchPopoverOpen} onOpenChange={setSearchPopoverOpen}>
+      <Popover open={searchPopoverOpen} onOpenChange={handleSearchPopoverChange}>
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -203,7 +299,7 @@ export function RouteScreenHeaderActions({
             <div className="flex items-center gap-2">
               <Input
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => handleSearchInputChange(event.target.value)}
                 placeholder={dictionary.navigation.search}
                 className="h-8"
               />

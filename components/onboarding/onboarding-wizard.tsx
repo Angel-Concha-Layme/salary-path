@@ -759,9 +759,9 @@ export function OnboardingWizard() {
               {dictionary.onboarding.completionAnimation.description}
             </p>
             <div className="mt-4 flex items-center justify-center gap-1.5">
-              <span className="size-1.5 animate-pulse rounded-full bg-primary/40" />
-              <span className="size-1.5 animate-pulse rounded-full bg-primary/60 [animation-delay:150ms]" />
-              <span className="size-1.5 animate-pulse rounded-full bg-primary [animation-delay:300ms]" />
+              <span className="size-1.5 rounded-full bg-primary/40" />
+              <span className="size-1.5 rounded-full bg-primary/60" />
+              <span className="size-1.5 rounded-full bg-primary" />
             </div>
           </div>
         </div>

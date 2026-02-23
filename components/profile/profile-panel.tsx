@@ -158,7 +158,15 @@ export function ProfilePanel() {
   const [activeSection, setActiveSection] = useState<ProfileSectionKey>("userInformation")
 
   if (profileQuery.isLoading) {
-    return <StateCard title={dictionary.profile.title} message={dictionary.common.loading} />
+    return (
+      <RouteScreen
+        title={dictionary.profile.title}
+        subtitle={dictionary.profile.subtitle}
+        isLoading
+      >
+        {null}
+      </RouteScreen>
+    )
   }
 
   if (profileQuery.isError) {

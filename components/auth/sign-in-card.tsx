@@ -29,9 +29,7 @@ const SalaryProgressionPreviewChart = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <div className="mt-5 h-[300px] animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
-    ),
+    loading: () => null,
   }
 )
 

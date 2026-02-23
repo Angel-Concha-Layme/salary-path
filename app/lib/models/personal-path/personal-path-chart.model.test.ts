@@ -125,22 +125,91 @@ describe("personal path chart model", () => {
       referenceDate: new Date("2024-03-01T00:00:00.000Z"),
     })
 
-    expect(result).toHaveLength(1)
-    expect(result[0]?.lineType).toBe("steps")
-    expect(result[0]?.points.map((point) => point.time)).toEqual([
+    expect(result).toHaveLength(2)
+
+    const mainSeries = result.find((series) => series.id === "company-a")
+    const continuationSeries = result.find((series) => series.id === "company-a--continuation")
+
+    expect(mainSeries?.lineType).toBe("steps")
+    expect(mainSeries?.points.map((point) => point.time)).toEqual([
       "2024-01-01",
       "2024-02-01",
     ])
-    expect(result[0]?.points[0]?.meta.type).toBe("rate")
-    expect(result[0]?.points[1]?.meta.type).toBe("rate")
+    expect(mainSeries?.points[0]?.meta.type).toBe("rate")
+    expect(mainSeries?.points[1]?.meta.type).toBe("rate")
 
-    const secondPointMeta = result[0]?.points[1]?.meta
+    expect(continuationSeries?.showInLegend).toBe(false)
+    expect(continuationSeries?.showInTooltip).toBe(false)
+    expect(continuationSeries?.pointMarkersVisible).toBe(false)
+    expect(continuationSeries?.points.map((point) => point.time)).toEqual([
+      "2024-02-01",
+      "2024-03-01",
+    ])
+
+    const secondPointMeta = mainSeries?.points[1]?.meta
     if (!secondPointMeta || secondPointMeta.type !== "rate") {
       throw new Error("Expected rate point metadata")
     }
 
     expect(secondPointMeta.increase).toBe(1000)
     expect(secondPointMeta.companyName).toBe("Northbyte")
+  })
+
+  it("calculates start_rate increase against the previous company when applicable", () => {
+    const companies: PathCompaniesEntity[] = [
+      {
+        ...companiesFixture[0],
+        id: "company-prev",
+        displayName: "Prev Company",
+        compensationType: "monthly",
+      },
+      {
+        ...companiesFixture[1],
+        id: "company-next",
+        displayName: "Next Company",
+        compensationType: "monthly",
+        startDate: "2024-03-01T00:00:00.000Z",
+        endDate: null,
+      },
+    ]
+
+    const events: PathCompanyEventsEntity[] = [
+      {
+        ...eventsFixture[0],
+        id: "event-prev-1",
+        pathCompanyId: "company-prev",
+        eventType: "start_rate",
+        amount: 1200,
+        effectiveDate: "2024-01-01T00:00:00.000Z",
+      },
+      {
+        ...eventsFixture[0],
+        id: "event-next-1",
+        pathCompanyId: "company-next",
+        eventType: "start_rate",
+        amount: 1600,
+        effectiveDate: "2024-03-01T00:00:00.000Z",
+      },
+    ]
+
+    const result = buildRateChartSeries({
+      companies,
+      events,
+      companyIds: ["company-next"],
+      range: "all",
+      rateBasis: "monthly",
+      referenceDate: new Date("2024-03-15T00:00:00.000Z"),
+    })
+
+    const mainSeries = result.find((series) => series.id === "company-next")
+    const startPointMeta = mainSeries?.points[0]?.meta
+
+    if (!startPointMeta || startPointMeta.type !== "rate") {
+      throw new Error("Expected rate point metadata")
+    }
+
+    expect(startPointMeta.eventType).toBe("start_rate")
+    expect(startPointMeta.increase).toBe(400)
   })
 
   it("applies range filter and keeps continuity point", () => {
@@ -172,12 +241,67 @@ describe("personal path chart model", () => {
       referenceDate: new Date("2025-06-30T00:00:00.000Z"),
     })
 
-    expect(result).toHaveLength(1)
-    expect(result[0]?.points.map((point) => point.time)).toEqual([
+    expect(result).toHaveLength(2)
+
+    const mainSeries = result.find((series) => series.id === "company-a")
+    const continuationSeries = result.find((series) => series.id === "company-a--continuation")
+
+    expect(mainSeries?.points.map((point) => point.time)).toEqual([
       "2024-06-30",
       "2025-01-01",
     ])
-    expect(result[0]?.points[0]?.value).toBe(2000)
+    expect(mainSeries?.points[0]?.value).toBe(2000)
+    expect(mainSeries?.points[1]?.value).toBe(2200)
+    expect(continuationSeries?.points.map((point) => point.time)).toEqual([
+      "2025-01-01",
+      "2025-06-30",
+    ])
+    expect(continuationSeries?.points[1]?.value).toBe(2200)
+  })
+
+  it("uses end_of_employment to close the route without changing the current rate", () => {
+    const result = buildRateChartSeries({
+      companies: companiesFixture,
+      events: [
+        {
+          ...eventsFixture[0],
+          id: "event-end-1",
+          amount: 1000,
+          effectiveDate: "2024-01-01T00:00:00.000Z",
+        },
+        {
+          ...eventsFixture[0],
+          id: "event-end-2",
+          eventType: "end_of_employment",
+          amount: 1,
+          effectiveDate: "2024-03-01T00:00:00.000Z",
+        },
+      ],
+      companyIds: ["company-a"],
+      range: "all",
+      rateBasis: "monthly",
+      referenceDate: new Date("2024-06-30T00:00:00.000Z"),
+    })
+
+    expect(result).toHaveLength(1)
+
+    const mainSeries = result.find((series) => series.id === "company-a")
+    const continuationSeries = result.find((series) => series.id === "company-a--continuation")
+
+    expect(mainSeries?.points.map((point) => point.time)).toEqual([
+      "2024-01-01",
+      "2024-03-01",
+    ])
+    expect(mainSeries?.points.map((point) => point.value)).toEqual([1000, 1000])
+
+    const endPointMeta = mainSeries?.points[1]?.meta
+    if (!endPointMeta || endPointMeta.type !== "rate") {
+      throw new Error("Expected rate point metadata")
+    }
+
+    expect(endPointMeta.eventType).toBe("end_of_employment")
+    expect(endPointMeta.increase).toBe(0)
+    expect(continuationSeries).toBeUndefined()
   })
 
   it("calculates cumulative income with monthly and hourly normalization", () => {

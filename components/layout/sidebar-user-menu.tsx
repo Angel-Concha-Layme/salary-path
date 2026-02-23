@@ -104,8 +104,8 @@ export function SidebarUserMenu({
 
   return (
     <div className="mt-auto space-y-2">
-      {collapsed ? <LanguageSwitcher compact /> : null}
-      {collapsed ? <ThemeSwitcher compact /> : null}
+      {collapsed ? <LanguageSwitcher compact tone="sidebar" /> : null}
+      {collapsed ? <ThemeSwitcher compact tone="sidebar" /> : null}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -115,10 +115,10 @@ export function SidebarUserMenu({
               "w-full rounded-xl",
               collapsed ? "h-9 justify-center px-0" : "h-10 justify-start px-2",
               [
-                "border-0 bg-transparent shadow-none",
+                "border border-transparent bg-transparent shadow-none",
                 !entrypointActive && "text-sidebar-foreground hover:bg-sidebar-accent/40",
                 entrypointActive &&
-                  "bg-white text-black hover:bg-white/95 dark:bg-white dark:text-black dark:hover:bg-white/95",
+                  "border-sidebar-primary/45 bg-sidebar-primary/12 text-sidebar-foreground ring-1 ring-sidebar-primary/35 shadow-sm shadow-sidebar-primary/20 hover:bg-sidebar-primary/18",
               ],
             )}
           >
@@ -138,7 +138,7 @@ export function SidebarUserMenu({
                   className={cn(
                     "size-3.5",
                     entrypointActive
-                      ? "text-black dark:text-black"
+                      ? "text-sidebar-foreground"
                       : "text-muted-foreground"
                   )}
                 />
@@ -150,7 +150,10 @@ export function SidebarUserMenu({
           align="end"
           side="right"
           sideOffset={8}
-          className={cn("min-w-56", !collapsed && "w-60 min-w-60")}
+          className={cn(
+            "min-w-56 border-sidebar-border bg-sidebar text-sidebar-foreground ring-sidebar-ring/30",
+            !collapsed && "w-60 min-w-60"
+          )}
         >
           <DropdownMenuLabel className="px-2 py-1.5">
             <div className="flex items-center gap-1.5">
@@ -161,8 +164,12 @@ export function SidebarUserMenu({
                 iconClassName="size-3.5"
               />
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{userName}</p>
-                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+                <p className="truncate text-sm font-medium text-sidebar-foreground">
+                  {userName}
+                </p>
+                <p className="truncate text-xs text-sidebar-foreground/70">
+                  {userEmail}
+                </p>
               </div>
             </div>
           </DropdownMenuLabel>
@@ -172,23 +179,37 @@ export function SidebarUserMenu({
               <DropdownMenuSeparator />
               <DropdownMenuLabel>{dictionary.navigation.language}</DropdownMenuLabel>
               <div className="px-2 pb-2">
-                <LanguageSwitcher small />
+                <LanguageSwitcher small tone="sidebar" />
               </div>
               <DropdownMenuLabel>{dictionary.navigation.theme}</DropdownMenuLabel>
               <div className="px-2 pb-2">
-                <ThemeSwitcher small />
+                <ThemeSwitcher small tone="sidebar" />
               </div>
             </>
           ) : null}
 
           <DropdownMenuSeparator />
-          <DropdownMenuItem className={cn(profileActive && "bg-accent")} asChild>
+          <DropdownMenuItem
+            className={cn(
+              "focus:bg-sidebar-accent focus:text-sidebar-accent-foreground",
+              profileActive &&
+                "bg-sidebar-primary/12 text-sidebar-foreground ring-1 ring-sidebar-primary/35 shadow-sm shadow-sidebar-primary/20"
+            )}
+            asChild
+          >
             <Link href={profilePath}>
               <NavigationIcon icon="user" className="size-4" />
               {dictionary.navigation.profile}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem className={cn(settingsActive && "bg-accent")} asChild>
+          <DropdownMenuItem
+            className={cn(
+              "focus:bg-sidebar-accent focus:text-sidebar-accent-foreground",
+              settingsActive &&
+                "bg-sidebar-primary/12 text-sidebar-foreground ring-1 ring-sidebar-primary/35 shadow-sm shadow-sidebar-primary/20"
+            )}
+            asChild
+          >
             <Link href={settingsPath}>
               <NavigationIcon icon="settings" className="size-4" />
               {dictionary.navigation.settings}
