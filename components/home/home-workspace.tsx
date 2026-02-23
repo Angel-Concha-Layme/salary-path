@@ -33,8 +33,8 @@ export function HomeWorkspace() {
             <CardDescription>{dictionary.homePage.cards.financialEngineDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link className="text-sm text-primary hover:underline" href="/financial-engine/taxes-peru">
-              {dictionary.navigation.taxesPeru}
+            <Link className="text-sm text-primary hover:underline" href="/financial-engine/taxes">
+              {dictionary.navigation.taxes}
             </Link>
           </CardContent>
         </Card>

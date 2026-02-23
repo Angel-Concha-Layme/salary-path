@@ -16,7 +16,7 @@ export type RouteKey =
   | "companies"
   | "comparison"
   | "growthPrediction"
-  | "taxesPeru"
+  | "taxes"
   | "savingsProjection"
   | "investmentSimulator"
   | "taxStrategies"
@@ -142,8 +142,8 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     group: "careerPath",
   },
   {
-    key: "taxesPeru",
-    segment: "/financial-engine/taxes-peru",
+    key: "taxes",
+    segment: "/financial-engine/taxes",
     access: "protected",
     protectedRoute: true,
     adminOnly: false,

@@ -25,7 +25,7 @@ export default function ExplorePage() {
       title: dictionary.exploreLanding.modules.financialEngine.title,
       body: dictionary.exploreLanding.modules.financialEngine.body,
       items: [
-        dictionary.exploreLanding.modules.financialEngine.items.taxesPeru,
+        dictionary.exploreLanding.modules.financialEngine.items.taxes,
         dictionary.exploreLanding.modules.financialEngine.items.savingsProjection,
         dictionary.exploreLanding.modules.financialEngine.items.investmentSimulator,
         dictionary.exploreLanding.modules.financialEngine.items.taxStrategies,

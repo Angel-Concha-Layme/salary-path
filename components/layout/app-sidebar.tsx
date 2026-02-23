@@ -117,22 +117,46 @@ export function AppSidebar({
           collapsed ? "px-1 py-2" : "px-2.5 py-2.5"
         )}
       >
-        <div className={cn("flex items-center", collapsed ? "gap-1" : "gap-2")}>
+        <div
+          className={cn(
+            "flex transition-all duration-200 ease-out",
+            collapsed ? "items-center gap-1" : "items-center gap-2"
+          )}
+        >
           <Link
             href="/home"
             aria-label={dictionary.navigation.home}
             className={cn(
-              "inline-flex h-8 items-center border-0 bg-black text-white shadow-none",
-              collapsed ? "h-6 w-6 justify-center rounded-lg px-0" : "w-full justify-start rounded-xl px-3"
+              "inline-flex items-center border-0 bg-black text-white shadow-none transition-[width,height,padding,border-radius] duration-200 ease-out",
+              collapsed
+                ? "h-6 w-6 justify-center rounded-lg px-0"
+                : "h-8 w-full justify-start rounded-xl px-3"
             )}
           >
             <span
-              className={cn(
-                "font-semibold leading-none tracking-[0.14em] uppercase text-white",
-                collapsed ? "text-[9px] tracking-[0.09em]" : "text-[11px]"
-              )}
+              className="relative inline-flex w-full min-w-0 items-center overflow-hidden"
             >
-              {collapsed ? brandCompactLabel : brandLabel}
+              <span
+                aria-hidden={!collapsed}
+                className={cn(
+                  "absolute left-1/2 top-1/2 text-[9px] font-semibold leading-none tracking-[0.1em] uppercase text-white transition-all duration-200 ease-out",
+                  collapsed
+                    ? "-translate-x-1/2 -translate-y-1/2 opacity-100"
+                    : "-translate-x-1/2 -translate-y-1/2 scale-90 opacity-0"
+                )}
+              >
+                {brandCompactLabel}
+              </span>
+              <span
+                className={cn(
+                  "truncate whitespace-nowrap font-semibold leading-none tracking-[0.14em] uppercase text-white transition-all duration-200 ease-out",
+                  collapsed
+                    ? "max-w-0 -translate-y-0.5 opacity-0 text-[10px]"
+                    : "max-w-[10rem] translate-y-0 opacity-100 text-[11px]"
+                )}
+              >
+                {brandLabel}
+              </span>
             </span>
           </Link>
           <button
@@ -140,8 +164,8 @@ export function AppSidebar({
             aria-label={toggleLabel}
             onClick={toggleSidebar}
             className={cn(
-              "ml-auto hidden h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-sidebar-foreground shadow-none transition-none hover:bg-transparent focus-visible:bg-transparent lg:inline-flex",
-              collapsed && "h-6 w-6 rounded-lg"
+              "hidden h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-sidebar-foreground shadow-none transition-colors duration-200 hover:bg-sidebar-accent/70 focus-visible:bg-sidebar-accent/70 lg:inline-flex",
+              collapsed ? "h-6 w-6 rounded-lg" : "ml-auto"
             )}
           >
             <PanelLeftIcon className="size-4" />

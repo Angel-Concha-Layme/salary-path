@@ -54,8 +54,8 @@ export function getRouteLabel(dictionary: Dictionary, key: RouteKey): string {
       return dictionary.navigation.comparison
     case "growthPrediction":
       return dictionary.navigation.growthPrediction
-    case "taxesPeru":
-      return dictionary.navigation.taxesPeru
+    case "taxes":
+      return dictionary.navigation.taxes
     case "savingsProjection":
       return dictionary.navigation.savingsProjection
     case "investmentSimulator":

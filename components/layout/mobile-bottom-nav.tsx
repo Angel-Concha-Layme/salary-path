@@ -58,7 +58,7 @@ export function MobileBottomNav({ role }: MobileBottomNavProps) {
 
   const navigationRoutes = getNavigationRoutes(role)
   const careerEntryRoute = getRequiredRoute(navigationRoutes, "personalPath")
-  const financialEntryRoute = getRequiredRoute(navigationRoutes, "taxesPeru")
+  const financialEntryRoute = getRequiredRoute(navigationRoutes, "taxes")
   const homeEntryRoute = getRequiredRoute(navigationRoutes, "mortgageEligibility")
   const profileRoute = getRequiredRoute(navigationRoutes, "profile")
 

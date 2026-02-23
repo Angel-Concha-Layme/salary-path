@@ -77,7 +77,7 @@ export const enDictionary = {
     companies: "Companies",
     comparison: "Comparison",
     growthPrediction: "Growth Prediction",
-    taxesPeru: "Peru Taxes",
+    taxes: "Taxes",
     savingsProjection: "Savings Projection",
     investmentSimulator: "Investment Simulator",
     taxStrategies: "Tax Strategies",
@@ -121,7 +121,7 @@ export const enDictionary = {
         title: "Financial Engine",
         body: "Convert income evolution into financial projections and strategy.",
         items: {
-          taxesPeru: "Peru taxes",
+          taxes: "Taxes",
           savingsProjection: "Savings projection",
           investmentSimulator: "Investment simulation",
           taxStrategies: "Tax strategies",

@@ -77,7 +77,7 @@ export const esDictionary = {
     companies: "Empresas",
     comparison: "Comparación",
     growthPrediction: "Predicción de Crecimiento",
-    taxesPeru: "Impuestos Perú",
+    taxes: "Impuestos",
     savingsProjection: "Proyección de Ahorro",
     investmentSimulator: "Simulador de Inversión",
     taxStrategies: "Estrategias Fiscales",
@@ -121,7 +121,7 @@ export const esDictionary = {
         title: "Financial Engine",
         body: "Convierte la evolución del ingreso en proyecciones y estrategia financiera.",
         items: {
-          taxesPeru: "Impuestos Perú",
+          taxes: "Impuestos",
           savingsProjection: "Proyección de ahorro",
           investmentSimulator: "Simulación de inversiones",
           taxStrategies: "Estrategias fiscales",
