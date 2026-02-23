@@ -16,6 +16,7 @@ interface RouteScreenProps {
   headerActions?: ReactNode
   isLoading?: boolean
   className?: string
+  bodyClassName?: string
   headerClassName?: string
   titleClassName?: string
   subtitleClassName?: string
@@ -32,6 +33,7 @@ export function RouteScreen({
   headerActions,
   isLoading = false,
   className,
+  bodyClassName,
   headerClassName,
   titleClassName,
   subtitleClassName,
@@ -113,7 +115,10 @@ export function RouteScreen({
         </div>
       </header>
 
-      <section data-slot="route-screen-body" className="mt-4 space-y-5 px-3 pb-3">
+      <section
+        data-slot="route-screen-body"
+        className={cn("mt-4 space-y-5 px-3 pb-3", bodyClassName)}
+      >
         {children}
       </section>
 

@@ -65,8 +65,10 @@ export function CompaniesListContent({
             type="button"
             onClick={() => onSelectCompany(company.id)}
             className={cn(
-              "w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-border/80 hover:bg-accent/30",
-              isSelected ? "border-foreground/30 bg-background" : "border-border/80 bg-background"
+              "w-full cursor-pointer rounded-lg border border-border/80 px-3 py-2 text-left transition-colors hover:bg-[color-mix(in_oklch,var(--ui-accent-current)_16%,transparent)]",
+              isSelected
+                ? "bg-[color-mix(in_oklch,var(--ui-accent-current)_22%,transparent)]"
+                : "bg-background"
             )}
           >
             <div className="flex items-start justify-between gap-3">

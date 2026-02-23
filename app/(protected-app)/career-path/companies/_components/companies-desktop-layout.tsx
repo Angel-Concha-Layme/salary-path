@@ -12,7 +12,7 @@ type CompaniesDesktopLayoutProps = ScreenLayoutProps<CompaniesDesktopLayoutState
 
 export function CompaniesDesktopLayout({ state }: CompaniesDesktopLayoutProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:h-full md:min-h-0 md:grid-cols-3 md:items-stretch">
       {state.companiesPanel}
       {state.eventsPanel}
       {state.detailsPanel}

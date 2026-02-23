@@ -56,6 +56,7 @@ export function SingleDatePickerField({
             id={id}
             type="button"
             variant="outline"
+            data-date-input-trigger="true"
             aria-invalid={ariaInvalid}
             disabled={disabled}
             className={cn(

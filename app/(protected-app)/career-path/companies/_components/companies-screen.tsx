@@ -38,6 +38,7 @@ import { CreateEventDialog } from "@/app/(protected-app)/career-path/companies/_
 import { EventsListContent } from "@/app/(protected-app)/career-path/companies/_components/events-list-content"
 import { RouteScreen } from "@/components/layout/route-screen"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 type CompaniesSortOrder = "newest_first" | "oldest_first"
 
@@ -401,6 +402,10 @@ export function CompaniesScreen() {
       title={dictionary.companies.title}
       subtitle={dictionary.companies.subtitle}
       isLoading={isScreenLoading}
+      className={cn(breakpoint.isDesktop && "h-full min-h-0 flex flex-col")}
+      bodyClassName={cn(
+        breakpoint.isDesktop && "mt-0 flex min-h-0 flex-1 flex-col space-y-0 px-3 pb-3 pt-4"
+      )}
       headerActions={(
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
