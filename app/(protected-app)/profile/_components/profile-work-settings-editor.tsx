@@ -112,7 +112,7 @@ function WorkloadSquare({
       className={cn(
         "pointer-events-none grid h-[82px] w-[104px] shrink-0 grid-rows-2 place-items-center rounded-md border p-1",
         isActive
-          ? "border-primary/45 bg-primary/10 text-foreground"
+          ? "border-primary/45 bg-primary/10 text-foreground dark:bg-black"
           : "border-border/70 bg-background text-foreground"
       )}
     >
@@ -282,7 +282,7 @@ export function ProfileWorkSettingsEditor({
   }
 
   return (
-    <section className="rounded-lg border border-border/80 bg-background p-4">
+    <section className="rounded-lg bg-background p-2 md:border md:border-border/80 md:p-4">
       <div className="space-y-1">
         <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-foreground">
           {dictionary.profile.workSettings.title}
@@ -296,7 +296,7 @@ export function ProfileWorkSettingsEditor({
         <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {dictionary.profile.workSettings.presetsLabel}
         </p>
-        <div className="mt-2 grid gap-2 lg:grid-cols-2">
+        <div className="mt-2 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 pr-8 lg:grid lg:overflow-visible lg:pb-0 lg:pr-0 lg:grid-cols-2">
           {WORK_SCHEDULE_PRESETS.map((preset) => {
             const isActive = selectedPresetId === preset.id
 
@@ -306,7 +306,7 @@ export function ProfileWorkSettingsEditor({
                 type="button"
                 variant={isActive ? "default" : "outline"}
                 className={cn(
-                  "h-auto w-full min-w-0 justify-start whitespace-normal px-3 py-2.5 text-left",
+                  "h-auto w-[78vw] max-w-[320px] min-w-[260px] snap-start justify-start whitespace-normal px-3 py-2.5 text-left lg:w-full lg:max-w-none lg:min-w-0",
                   isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
                 onClick={() => applyPreset(preset)}
@@ -349,7 +349,7 @@ export function ProfileWorkSettingsEditor({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid grid-cols-2 gap-2 md:gap-3">
         <Field>
           <FieldLabel htmlFor="profile-monthly-work-hours">
             {dictionary.onboarding.fields.monthlyWorkHours}
@@ -364,7 +364,7 @@ export function ProfileWorkSettingsEditor({
             disabled={isSaving}
             onChange={updateMonthlyWorkHours}
           />
-          <FieldDescription>
+          <FieldDescription className="hidden md:block">
             {dictionary.profile.workSettings.hints.monthlyWorkHours}
           </FieldDescription>
         </Field>
@@ -383,7 +383,7 @@ export function ProfileWorkSettingsEditor({
             disabled={isSaving}
             onChange={updateWorkDaysPerYear}
           />
-          <FieldDescription>
+          <FieldDescription className="hidden md:block">
             {dictionary.profile.workSettings.hints.workDaysPerYear}
           </FieldDescription>
         </Field>

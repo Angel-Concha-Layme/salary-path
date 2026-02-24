@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { UserCircle2Icon } from "lucide-react"
+import { ChevronDownIcon, UserCircle2Icon } from "lucide-react"
 
 import { useProfileOverviewQuery } from "@/app/hooks/profile/use-profile-overview"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import { ApiClientError } from "@/app/types/api"
 import { RouteScreen } from "@/components/layout/route-screen"
 import { CareerEventsTable } from "@/app/(protected-app)/profile/_components/career-events-table"
+import { ProfileSalaryByCompanyTable } from "@/app/(protected-app)/profile/_components/profile-salary-by-company-table"
 import { ProfileWorkSettingsEditor } from "@/app/(protected-app)/profile/_components/profile-work-settings-editor"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -88,18 +89,53 @@ function formatNumber(locale: string, value: number, maximumFractionDigits = 2):
 function ProfileSection({
   title,
   children,
+  mobileCollapsible = false,
+  defaultMobileOpen = true,
 }: {
   title: string
   children: React.ReactNode
+  mobileCollapsible?: boolean
+  defaultMobileOpen?: boolean
 }) {
+  const [isMobileOpen, setIsMobileOpen] = useState(defaultMobileOpen)
+
   return (
-    <section className="rounded-xl border border-border/80 bg-background text-card-foreground">
-      <header className="border-b border-border/70 px-4 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
-          {title}
-        </h2>
-      </header>
-      <div className="p-4">{children}</div>
+    <section className="rounded-xl bg-background text-card-foreground md:border md:border-border/80">
+      {mobileCollapsible ? (
+        <>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 px-1 pb-2 pt-1 text-left md:hidden"
+            onClick={() => setIsMobileOpen((current) => !current)}
+            aria-expanded={isMobileOpen}
+            aria-label={title}
+          >
+            <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              {title}
+            </h2>
+            <ChevronDownIcon
+              className={cn(
+                "size-4 shrink-0 text-muted-foreground transition-transform",
+                isMobileOpen && "rotate-180"
+              )}
+            />
+          </button>
+          <header className="hidden md:block md:border-b md:border-border/70 md:px-4 md:py-3">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+              {title}
+            </h2>
+          </header>
+        </>
+      ) : (
+        <header className="px-1 pb-2 pt-1 md:border-b md:border-border/70 md:px-4 md:py-3">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground md:text-sm md:text-foreground">
+            {title}
+          </h2>
+        </header>
+      )}
+      <div className={cn("p-1 md:p-4", mobileCollapsible && !isMobileOpen && "hidden md:block")}>
+        {children}
+      </div>
     </section>
   )
 }
@@ -116,7 +152,7 @@ function FieldCard({
   mono?: boolean
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-background px-3 py-2">
+    <div className="rounded-lg bg-background px-2 py-1.5 md:border md:border-border/80 md:px-3 md:py-2">
       <p className="text-xs font-semibold uppercase tracking-[0.1em] text-foreground/80">{label}</p>
       <div className={cn("mt-1 text-sm", muted && "text-muted-foreground", mono && "font-mono text-xs")}>
         {value}
@@ -184,14 +220,14 @@ export function ProfileScreen() {
 
   const sectionPages: Array<{ key: ProfileSectionKey; label: string }> = [
     { key: "userInformation", label: dictionary.profile.sections.userInformation },
-    { key: "workSettings", label: dictionary.profile.sections.workSettings },
     { key: "currentSalary", label: dictionary.profile.sections.currentSalary },
+    { key: "workSettings", label: dictionary.profile.sections.workSettings },
     { key: "careerEvents", label: dictionary.profile.sections.careerEvents },
     { key: "usefulInformation", label: dictionary.profile.sections.usefulInformation },
   ]
 
-  const isSectionVisible = (section: ProfileSectionKey) =>
-    layoutMode === "vertical" || activeSection === section
+  const hiddenOnDesktopClass = (section: ProfileSectionKey) =>
+    layoutMode === "tabs" && activeSection !== section ? "md:hidden" : ""
 
   const handleLayoutModeChange = (value: string) => {
     const nextMode = normalizeProfileLayoutMode(value)
@@ -207,6 +243,18 @@ export function ProfileScreen() {
       // Ignore storage write errors (private mode, blocked storage, etc.).
     }
   }
+
+  const userAvatarContent = profile.user.image ? (
+    <img
+      src={profile.user.image}
+      alt={profile.user.name}
+      className="h-full w-full object-cover"
+      loading="lazy"
+      referrerPolicy="no-referrer"
+    />
+  ) : (
+    <UserCircle2Icon className="size-14 text-muted-foreground md:size-20" />
+  )
 
   return (
     <RouteScreen
@@ -231,7 +279,7 @@ export function ProfileScreen() {
     >
       {layoutMode === "tabs" ? (
         <nav
-          className="rounded-xl border border-border/80 bg-background p-2"
+          className="hidden rounded-xl bg-background p-2 md:block md:border md:border-border/80"
           aria-label={dictionary.profile.title}
         >
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
@@ -268,21 +316,36 @@ export function ProfileScreen() {
         </nav>
       ) : null}
 
-      {isSectionVisible("userInformation") ? (
-        <ProfileSection title={dictionary.profile.sections.userInformation}>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[352px_minmax(0,1fr)_minmax(0,1fr)] xl:grid-rows-3">
-            <div className="overflow-hidden rounded-lg border border-border/80 bg-background md:col-span-2 xl:col-span-1 xl:row-span-3">
+      <div className={hiddenOnDesktopClass("userInformation")}>
+        <ProfileSection
+          title={dictionary.profile.sections.userInformation}
+          mobileCollapsible
+          defaultMobileOpen
+        >
+          <div className="flex flex-col items-center px-2 py-3 text-center md:hidden">
+            <div
+              className={cn(
+                "flex size-24 items-center justify-center overflow-hidden rounded-full",
+                !profile.user.image && "bg-accent/15"
+              )}
+            >
+              {userAvatarContent}
+            </div>
+            <p className="mt-3 text-xl font-semibold leading-tight text-foreground">
+              {profile.user.name}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {profile.user.email}
+            </p>
+          </div>
+
+          <div className="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-[352px_minmax(0,1fr)_minmax(0,1fr)] xl:grid-rows-3">
+            <div className="overflow-hidden rounded-lg bg-background md:col-span-2 md:border md:border-border/80 xl:col-span-1 xl:row-span-3">
               {profile.user.image ? (
-                <img
-                  src={profile.user.image}
-                  alt={profile.user.name}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
+                userAvatarContent
               ) : (
                 <div className="flex h-full min-h-[352px] items-center justify-center">
-                  <UserCircle2Icon className="size-20 text-muted-foreground" />
+                  {userAvatarContent}
                 </div>
               )}
             </div>
@@ -315,46 +378,34 @@ export function ProfileScreen() {
           </div>
 
         </ProfileSection>
-      ) : null}
+      </div>
 
-      {isSectionVisible("workSettings") ? (
-        <ProfileSection title={dictionary.profile.sections.workSettings}>
-          <ProfileWorkSettingsEditor
-            currency={profile.financeSettings?.currency ?? profile.usefulInfo.preferredCurrency}
-            locale={profile.financeSettings?.locale ?? profile.usefulInfo.preferredLocale}
-            monthlyWorkHours={profile.usefulInfo.monthlyWorkHours}
-            workDaysPerYear={profile.usefulInfo.workDaysPerYear}
-          />
-        </ProfileSection>
-      ) : null}
-
-      {isSectionVisible("currentSalary") ? (
-        <ProfileSection title={dictionary.profile.sections.currentSalary}>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <FieldCard
-              label={dictionary.profile.salary.annualAverage}
-              value={
-                profile.salary.annualAverage !== null
+      <div className={hiddenOnDesktopClass("currentSalary")}>
+        <ProfileSection
+          title={dictionary.profile.sections.currentSalary}
+          mobileCollapsible
+          defaultMobileOpen={false}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.salary.annualAverage}</p>
+              <p className={cn("text-sm font-semibold tabular-nums text-foreground", profile.salary.annualAverage === null && "text-muted-foreground")}>
+                {profile.salary.annualAverage !== null
                   ? formatAmount(locale, profile.salary.baseCurrency, profile.salary.annualAverage, 0)
-                  : dictionary.profile.notAvailable
-              }
-              muted={profile.salary.annualAverage === null}
-            />
-            <FieldCard
-              label={dictionary.profile.salary.baseCurrency}
-              value={profile.salary.baseCurrency}
-            />
-            <FieldCard
-              label={dictionary.profile.salary.includedInAverage}
-              value={formatNumber(locale, profile.salary.annualAverageCompanyCount, 0)}
-            />
-            <FieldCard
-              label={dictionary.profile.salary.excludedFromAverage}
-              value={formatNumber(locale, profile.salary.excludedFromAverageCount, 0)}
-            />
+                  : dictionary.profile.notAvailable}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.salary.monthlyEquivalent}</p>
+              <p className={cn("text-sm font-semibold tabular-nums text-foreground", profile.salary.annualAverage === null && "text-muted-foreground")}>
+                {profile.salary.annualAverage !== null
+                  ? formatAmount(locale, profile.salary.baseCurrency, profile.salary.annualAverage / 12, 2)
+                  : dictionary.profile.notAvailable}
+              </p>
+            </div>
           </div>
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4">
             {profile.salary.byCompany.length === 0 ? (
               <div className="space-y-3 rounded-lg border border-dashed border-border/70 bg-background p-4">
                 <p className="text-sm text-muted-foreground">{dictionary.profile.empty.salaries}</p>
@@ -363,76 +414,49 @@ export function ProfileScreen() {
                 </Button>
               </div>
             ) : (
-              <table className="w-full min-w-[820px] text-left text-sm">
-                <thead className="bg-background text-xs uppercase tracking-[0.08em] text-foreground">
-                  <tr>
-                    <th className="whitespace-nowrap px-3 py-2 font-medium">
-                      {dictionary.personalPath.table.columns.displayName}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-medium">
-                      {dictionary.personalPath.table.columns.roleDisplayName}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-medium">
-                      {dictionary.personalPath.table.columns.compensationType}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-medium">
-                      {dictionary.profile.salary.monthlyEquivalent}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-medium">
-                      {dictionary.profile.salary.annualizedSalary}
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-medium">
-                      {dictionary.personalPath.table.columns.eventCount}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profile.salary.byCompany.map((companySalary) => (
-                    <tr
-                      key={companySalary.pathCompanyId}
-                      className="border-t border-border/70 align-top text-foreground transition-colors hover:bg-accent/40"
-                    >
-                      <td className="whitespace-nowrap px-3 py-2 font-medium">
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            className="size-2.5 rounded-full border border-border/80"
-                            style={{ backgroundColor: companySalary.color }}
-                          />
-                          {companySalary.displayName}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2">
-                        {companySalary.roleDisplayName}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2">
-                        {companySalary.compensationType === "hourly"
-                          ? dictionary.companies.options.compensationHourly
-                          : dictionary.companies.options.compensationMonthly}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2">
-                        {companySalary.monthlyEquivalent !== null
-                          ? formatAmount(locale, companySalary.currency, companySalary.monthlyEquivalent, 2)
-                          : dictionary.profile.notAvailable}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2">
-                        {companySalary.annualizedSalary !== null
-                          ? formatAmount(locale, companySalary.currency, companySalary.annualizedSalary, 0)
-                          : dictionary.profile.notAvailable}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2">
-                        {formatNumber(locale, companySalary.eventCount, 0)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ProfileSalaryByCompanyTable
+                companies={profile.salary.byCompany}
+                locale={locale}
+                notAvailableLabel={dictionary.profile.notAvailable}
+                compensationLabels={{
+                  hourly: dictionary.companies.options.compensationHourly,
+                  monthly: dictionary.companies.options.compensationMonthly,
+                }}
+                labels={{
+                  displayName: dictionary.personalPath.table.columns.displayName,
+                  roleDisplayName: dictionary.personalPath.table.columns.roleDisplayName,
+                  compensationType: dictionary.personalPath.table.columns.compensationType,
+                  monthlyEquivalent: dictionary.profile.salary.monthlyEquivalent,
+                  annualizedSalary: dictionary.profile.salary.annualizedSalary,
+                  eventCount: dictionary.personalPath.table.columns.eventCount,
+                }}
+              />
             )}
           </div>
         </ProfileSection>
-      ) : null}
+      </div>
 
-      {isSectionVisible("careerEvents") ? (
-        <ProfileSection title={dictionary.profile.sections.careerEvents}>
+      <div className={hiddenOnDesktopClass("workSettings")}>
+        <ProfileSection
+          title={dictionary.profile.sections.workSettings}
+          mobileCollapsible
+          defaultMobileOpen={false}
+        >
+          <ProfileWorkSettingsEditor
+            currency={profile.financeSettings?.currency ?? profile.usefulInfo.preferredCurrency}
+            locale={profile.financeSettings?.locale ?? profile.usefulInfo.preferredLocale}
+            monthlyWorkHours={profile.usefulInfo.monthlyWorkHours}
+            workDaysPerYear={profile.usefulInfo.workDaysPerYear}
+          />
+        </ProfileSection>
+      </div>
+
+      <div className={hiddenOnDesktopClass("careerEvents")}>
+        <ProfileSection
+          title={dictionary.profile.sections.careerEvents}
+          mobileCollapsible
+          defaultMobileOpen={false}
+        >
           {profile.careerEventsByCompany.length === 0 ? (
             <div className="space-y-3 rounded-lg border border-dashed border-border/70 bg-background p-4">
               <p className="text-sm text-muted-foreground">{dictionary.profile.empty.events}</p>
@@ -441,52 +465,178 @@ export function ProfileScreen() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {profile.careerEventsByCompany.map((companyGroup) => (
-                <div
-                  key={companyGroup.pathCompanyId}
-                  className="overflow-hidden rounded-lg border border-border/80"
-                >
-                  <div className="flex flex-wrap items-center gap-2 border-b border-border/70 bg-background px-3 py-2">
-                    <span
-                      className="size-2.5 rounded-full border border-border/80"
-                      style={{ backgroundColor: companyGroup.color }}
-                    />
-                    <p className="text-sm font-medium">{companyGroup.displayName}</p>
-                    <span className="text-xs text-muted-foreground">· {companyGroup.roleDisplayName}</span>
-                    <Badge variant="outline" className="ml-auto border-border/70 bg-background text-foreground">
-                      {formatNumber(locale, companyGroup.events.length, 0)} {dictionary.profile.events.countLabel}
-                    </Badge>
-                  </div>
+            <>
+              <div className="space-y-1 md:hidden">
+                {profile.careerEventsByCompany.map((companyGroup) => (
+                  <details
+                    key={companyGroup.pathCompanyId}
+                    className="group overflow-hidden rounded-lg bg-accent/10"
+                  >
+                    <summary className="flex list-none cursor-pointer items-center gap-2 px-2.5 py-2 [&::-webkit-details-marker]:hidden">
+                      <span
+                        className="size-2.5 rounded-full border border-border/80"
+                        style={{ backgroundColor: companyGroup.color }}
+                      />
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                        {companyGroup.displayName}
+                      </p>
+                      <Badge variant="outline" className="shrink-0 border-border/70 bg-background text-foreground">
+                        {formatNumber(locale, companyGroup.events.length, 0)} {dictionary.profile.events.countLabel}
+                      </Badge>
+                      <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                    </summary>
 
-                  <CareerEventsTable
-                    events={companyGroup.events}
-                    currency={companyGroup.currency}
-                    compensationType={companyGroup.compensationType}
-                    monthlyWorkHours={profile.usefulInfo.monthlyWorkHours}
-                    workDaysPerYear={profile.usefulInfo.workDaysPerYear}
-                    locale={locale}
-                    eventTypeLabels={eventTypeLabels}
-                    notAvailableLabel={dictionary.profile.notAvailable}
-                    emptyMessage={dictionary.companies.empty.events}
-                    labels={{
-                      effectiveDate: dictionary.companies.labels.effectiveDate,
-                      eventType: dictionary.companies.labels.eventType,
-                      hourlyRate: dictionary.profile.events.hourlyRate,
-                      monthlyAverage: dictionary.profile.events.monthlyAverage,
-                      annualSalary: dictionary.profile.events.annualSalary,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
+                    <div className="pb-1">
+                      <p className="px-2.5 pb-1 text-xs text-muted-foreground">
+                        {companyGroup.roleDisplayName}
+                      </p>
+                      <CareerEventsTable
+                        events={companyGroup.events}
+                        currency={companyGroup.currency}
+                        compensationType={companyGroup.compensationType}
+                        monthlyWorkHours={profile.usefulInfo.monthlyWorkHours}
+                        workDaysPerYear={profile.usefulInfo.workDaysPerYear}
+                        locale={locale}
+                        eventTypeLabels={eventTypeLabels}
+                        notAvailableLabel={dictionary.profile.notAvailable}
+                        emptyMessage={dictionary.companies.empty.events}
+                        labels={{
+                          effectiveDate: dictionary.companies.labels.effectiveDate,
+                          eventType: dictionary.companies.labels.eventType,
+                          hourlyRate: dictionary.profile.events.hourlyRate,
+                          monthlyAverage: dictionary.profile.events.monthlyAverage,
+                          annualSalary: dictionary.profile.events.annualSalary,
+                        }}
+                      />
+                    </div>
+                  </details>
+                ))}
+              </div>
+
+              <div className="hidden space-y-3 md:block">
+                {profile.careerEventsByCompany.map((companyGroup) => (
+                  <div
+                    key={companyGroup.pathCompanyId}
+                    className="overflow-hidden rounded-lg bg-background md:border md:border-border/80"
+                  >
+                    <div className="flex flex-wrap items-center gap-2 bg-background px-2 py-2 md:border-b md:border-border/70 md:px-3">
+                      <span
+                        className="size-2.5 rounded-full border border-border/80"
+                        style={{ backgroundColor: companyGroup.color }}
+                      />
+                      <p className="text-sm font-medium">{companyGroup.displayName}</p>
+                      <span className="text-xs text-muted-foreground">· {companyGroup.roleDisplayName}</span>
+                      <Badge variant="outline" className="ml-auto border-border/70 bg-background text-foreground">
+                        {formatNumber(locale, companyGroup.events.length, 0)} {dictionary.profile.events.countLabel}
+                      </Badge>
+                    </div>
+
+                    <CareerEventsTable
+                      events={companyGroup.events}
+                      currency={companyGroup.currency}
+                      compensationType={companyGroup.compensationType}
+                      monthlyWorkHours={profile.usefulInfo.monthlyWorkHours}
+                      workDaysPerYear={profile.usefulInfo.workDaysPerYear}
+                      locale={locale}
+                      eventTypeLabels={eventTypeLabels}
+                      notAvailableLabel={dictionary.profile.notAvailable}
+                      emptyMessage={dictionary.companies.empty.events}
+                      labels={{
+                        effectiveDate: dictionary.companies.labels.effectiveDate,
+                        eventType: dictionary.companies.labels.eventType,
+                        hourlyRate: dictionary.profile.events.hourlyRate,
+                        monthlyAverage: dictionary.profile.events.monthlyAverage,
+                        annualSalary: dictionary.profile.events.annualSalary,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </ProfileSection>
-      ) : null}
+      </div>
 
-      {isSectionVisible("usefulInformation") ? (
-        <ProfileSection title={dictionary.profile.sections.usefulInformation}>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className={hiddenOnDesktopClass("usefulInformation")}>
+        <ProfileSection
+          title={dictionary.profile.sections.usefulInformation}
+          mobileCollapsible
+          defaultMobileOpen={false}
+        >
+          <div className="space-y-1 md:hidden">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.totalCompanies}</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">
+                {formatNumber(locale, profile.usefulInfo.totalCompanies, 0)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.activeCompanies}</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">
+                {formatNumber(locale, profile.usefulInfo.activeCompanies, 0)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.totalCareerEvents}</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">
+                {formatNumber(locale, profile.usefulInfo.totalCareerEvents, 0)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.averageCompanyScore}</p>
+              <p className={cn("text-sm font-semibold tabular-nums text-foreground", profile.usefulInfo.averageCompanyScore === null && "text-muted-foreground")}>
+                {profile.usefulInfo.averageCompanyScore !== null
+                  ? formatNumber(locale, profile.usefulInfo.averageCompanyScore, 1)
+                  : dictionary.profile.notAvailable}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.firstCompanyStartDate}</p>
+              <p className={cn("text-sm font-semibold text-foreground", !profile.usefulInfo.firstCompanyStartDate && "text-muted-foreground")}>
+                {formatDateValue(profile.usefulInfo.firstCompanyStartDate, locale)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.latestCareerEventDate}</p>
+              <p className={cn("text-sm font-semibold text-foreground", !profile.usefulInfo.latestCareerEventDate && "text-muted-foreground")}>
+                {formatDateValue(profile.usefulInfo.latestCareerEventDate, locale)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.yearsTracked}</p>
+              <p className={cn("text-sm font-semibold tabular-nums text-foreground", profile.usefulInfo.yearsTracked === null && "text-muted-foreground")}>
+                {profile.usefulInfo.yearsTracked !== null
+                  ? formatNumber(locale, profile.usefulInfo.yearsTracked, 2)
+                  : dictionary.profile.notAvailable}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.monthlyWorkHours}</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">
+                {formatNumber(locale, profile.usefulInfo.monthlyWorkHours, 0)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.workDaysPerYear}</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">
+                {formatNumber(locale, profile.usefulInfo.workDaysPerYear, 0)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.preferredCurrency}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {profile.usefulInfo.preferredCurrency}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.useful.preferredLocale}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {profile.usefulInfo.preferredLocale}
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-4">
             <FieldCard
               label={dictionary.profile.useful.totalCompanies}
               value={formatNumber(locale, profile.usefulInfo.totalCompanies, 0)}
@@ -545,7 +695,42 @@ export function ProfileScreen() {
             />
           </div>
         </ProfileSection>
-      ) : null}
+      </div>
+
+      <div className="md:hidden">
+        <ProfileSection
+          title={dictionary.profile.sections.accountDetails}
+          mobileCollapsible
+          defaultMobileOpen={false}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.permissions.accessLabel}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {profile.user.role}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.user.authSource}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {profile.source}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.user.accountCreatedAt}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {formatDateValue(profile.user.createdAt, locale)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-accent/15 px-2.5 py-2">
+              <p className="text-xs text-muted-foreground">{dictionary.profile.user.accountUpdatedAt}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {formatDateValue(profile.user.updatedAt, locale)}
+              </p>
+            </div>
+          </div>
+        </ProfileSection>
+      </div>
     </RouteScreen>
   )
 }

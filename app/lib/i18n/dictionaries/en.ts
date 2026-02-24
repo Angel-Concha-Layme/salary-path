@@ -634,6 +634,7 @@ export const enDictionary = {
     notAvailable: "N/A",
     sections: {
       userInformation: "User information",
+      accountDetails: "Account details",
       workSettings: "Work schedule",
       currentSalary: "Current salary",
       careerEvents: "Career events",

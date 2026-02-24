@@ -635,6 +635,7 @@ export const esDictionary = {
     notAvailable: "N/D",
     sections: {
       userInformation: "Información del usuario",
+      accountDetails: "Detalles de la cuenta",
       workSettings: "Configuración de jornada",
       currentSalary: "Salario actual",
       careerEvents: "Eventos de carrera",
