@@ -88,7 +88,6 @@ export function SidebarUserMenu({
   const settingsPath = getRoutePath("/settings")
   const profileActive = isPathWithinSection(pathname, profilePath)
   const settingsActive = isPathWithinSection(pathname, settingsPath)
-  const entrypointActive = profileActive || settingsActive
 
   async function handleSignOut() {
     const result = await authClient.signOut()
@@ -114,11 +113,7 @@ export function SidebarUserMenu({
             className={cn(
               "w-full rounded-xl",
               collapsed ? "h-9 justify-center px-0" : "h-10 justify-start px-2",
-              [
-                "border border-transparent bg-transparent shadow-none",
-                !entrypointActive && "text-sidebar-foreground hover:bg-sidebar-accent/40",
-                entrypointActive && "ui-theme-sidebar-toggle-active",
-              ],
+              "border border-transparent bg-transparent text-sidebar-foreground shadow-none hover:bg-sidebar-accent/40",
             )}
           >
             <SidebarAvatar
@@ -134,12 +129,7 @@ export function SidebarUserMenu({
                   {userName}
                 </span>
                 <ChevronsUpDownIcon
-                  className={cn(
-                    "size-3.5",
-                    entrypointActive
-                      ? "text-sidebar-foreground"
-                      : "text-muted-foreground"
-                  )}
+                  className="size-3.5 text-muted-foreground"
                 />
               </>
             ) : null}

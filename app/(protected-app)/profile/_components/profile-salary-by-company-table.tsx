@@ -119,64 +119,81 @@ export function ProfileSalaryByCompanyTable({
 }: ProfileSalaryByCompanyTableProps) {
   return (
     <>
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[820px] text-left text-sm">
-          <thead className="bg-background text-xs uppercase tracking-[0.08em] text-foreground">
-            <tr>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
-                {labels.displayName}
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
-                {labels.roleDisplayName}
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
-                {labels.compensationType}
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
-                {labels.monthlyEquivalent}
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
-                {labels.annualizedSalary}
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">
-                {labels.eventCount}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map((companySalary) => (
-              <tr
-                key={companySalary.pathCompanyId}
-                className="border-t border-border/70 align-top text-foreground transition-colors hover:bg-accent/40"
-              >
-                <td className="whitespace-nowrap px-3 py-2 font-medium">
-                  <span className="inline-flex items-center gap-2">
-                    <span
-                      className="size-2.5 rounded-full border border-border/80"
-                      style={{ backgroundColor: companySalary.color }}
-                    />
-                    {companySalary.displayName}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {companySalary.roleDisplayName}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {getCompensationTypeLabel(companySalary.compensationType, compensationLabels)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {getMonthlyEquivalentValue(companySalary, locale, notAvailableLabel)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {getAnnualizedSalaryValue(companySalary, locale, notAvailableLabel)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {formatNumber(locale, companySalary.eventCount, 0)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-3">
+        {companies.map((companySalary) => {
+          const monthlyValue = getMonthlyEquivalentValue(companySalary, locale, notAvailableLabel)
+          const annualValue = getAnnualizedSalaryValue(companySalary, locale, notAvailableLabel)
+          const compensationValue = getCompensationTypeLabel(
+            companySalary.compensationType,
+            compensationLabels
+          )
+
+          return (
+            <article
+              key={companySalary.pathCompanyId}
+              className="rounded-xl border border-border/50 px-3 py-3 backdrop-blur-[1px]"
+              style={getCompanyCardStyle(companySalary.color)}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-5 w-1 shrink-0 rounded-full"
+                  style={{ backgroundColor: companySalary.color }}
+                  aria-hidden
+                />
+                <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                  {companySalary.displayName}
+                </p>
+              </div>
+
+              <p className="mt-1 truncate text-xs text-muted-foreground">
+                {companySalary.roleDisplayName}
+              </p>
+
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-background/75 px-2.5 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    {labels.compensationType}
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">
+                    {compensationValue}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-background/75 px-2.5 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    {labels.eventCount}
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
+                    {formatNumber(locale, companySalary.eventCount, 0)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-background/75 px-2.5 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    {labels.monthlyEquivalent}
+                  </p>
+                  <p
+                    className={`mt-0.5 text-sm font-semibold tabular-nums ${
+                      companySalary.monthlyEquivalent === null ? "text-muted-foreground" : "text-foreground"
+                    }`}
+                  >
+                    {monthlyValue}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-background/75 px-2.5 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    {labels.annualizedSalary}
+                  </p>
+                  <p
+                    className={`mt-0.5 text-sm font-semibold tabular-nums ${
+                      companySalary.annualizedSalary === null ? "text-muted-foreground" : "text-foreground"
+                    }`}
+                  >
+                    {annualValue}
+                  </p>
+                </div>
+              </div>
+            </article>
+          )
+        })}
       </div>
 
       <div className="space-y-1 md:hidden">

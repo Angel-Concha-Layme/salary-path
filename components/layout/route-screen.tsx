@@ -49,6 +49,7 @@ export function RouteScreen({
   const { dictionary } = useDictionary()
   const useTitleOnlyMobileHeader =
     breakpoint.down("lg") && mobileHeaderMode === "title"
+  const showBodySurface = breakpoint.up("lg")
 
   const activeRoute = useMemo(() => {
     const matches = ROUTES.filter(
@@ -67,7 +68,8 @@ export function RouteScreen({
     <div
       data-route-screen="true"
       className={cn(
-        "relative min-h-full min-w-0 w-full max-w-full pb-24 shadow-none lg:pb-3",
+        "relative flex min-h-full min-w-0 w-full max-w-full flex-col shadow-none",
+        "[--route-screen-shell-radius:1.35rem]",
         "[--chart-1:oklch(0.35_0_0)] [--chart-2:oklch(0.45_0_0)] [--chart-3:oklch(0.55_0_0)] [--chart-4:oklch(0.65_0_0)] [--chart-5:oklch(0.75_0_0)]",
         "dark:[--chart-1:oklch(0.88_0_0)] dark:[--chart-2:oklch(0.80_0_0)] dark:[--chart-3:oklch(0.72_0_0)] dark:[--chart-4:oklch(0.64_0_0)] dark:[--chart-5:oklch(0.56_0_0)]",
         "[&_*]:!shadow-none [&_*]:!drop-shadow-none",
@@ -77,7 +79,7 @@ export function RouteScreen({
       <header
         data-route-screen-search-ignore="true"
         className={cn(
-          "sticky top-0 z-30 w-full overflow-hidden border-b border-black/10 bg-background lg:rounded-t-[1.35rem] lg:rounded-b-none dark:border-white/10",
+          "sticky top-0 z-30 w-full overflow-hidden border-b border-black/10 bg-background lg:rounded-t-[var(--route-screen-shell-radius)] lg:rounded-b-none dark:border-white/10",
           headerClassName
         )}
       >
@@ -146,9 +148,27 @@ export function RouteScreen({
 
       <section
         data-slot="route-screen-body"
-        className={cn("mt-4 space-y-5 px-3 pb-3", bodyClassName)}
+        className={cn(
+          "flex min-h-0 flex-1 [--route-screen-body-inset:0.5rem] px-[var(--route-screen-body-inset)] py-[var(--route-screen-body-inset)] sm:[--route-screen-body-inset:0.75rem]",
+          !showBodySurface && "pb-[calc(var(--route-screen-body-inset)+env(safe-area-inset-bottom)+5.25rem)]",
+          !showBodySurface && "flex-col space-y-5",
+          !showBodySurface && bodyClassName
+        )}
       >
-        {children}
+        {showBodySurface ? (
+          <div
+            data-slot="route-screen-body-surface"
+            className={cn(
+              "flex flex-1 flex-col rounded-t-[var(--route-screen-shell-radius)] rounded-b-[var(--route-screen-shell-radius)] border border-border/80 bg-card/35 p-3 backdrop-blur-[1px] sm:p-4 lg:p-5",
+              "space-y-5",
+              bodyClassName
+            )}
+          >
+            {children}
+          </div>
+        ) : (
+          children
+        )}
       </section>
 
       {isLoading ? (
@@ -157,8 +177,22 @@ export function RouteScreen({
           aria-busy="true"
           className="absolute inset-0 z-40 flex items-center justify-center bg-background/55 backdrop-blur-[2px]"
         >
-          <div className="inline-flex items-center justify-center rounded-full border border-border/70 bg-background/75 p-3 shadow-sm">
-            <span className="block size-6 rounded-full border-2 border-black/15 border-t-black/75 animate-spin dark:border-white/20 dark:border-t-white/80" />
+          <div className="inline-flex flex-col items-center gap-3 rounded-2xl bg-background/80 px-6 py-5 shadow-sm">
+            <div className="relative grid place-items-center">
+              <span
+                aria-hidden
+                className="absolute size-16 rounded-full bg-[color-mix(in_oklch,var(--ui-accent-current)_24%,transparent)] blur-[8px] animate-pulse"
+              />
+              <span className="block size-12 rounded-full border-[3px] border-[color-mix(in_oklch,var(--ui-accent-current)_26%,transparent)] border-t-[var(--ui-accent-current)] animate-spin" />
+            </div>
+            <p className="text-sm font-semibold tracking-wide text-[color-mix(in_oklch,var(--ui-accent-current)_72%,black)] dark:text-[color-mix(in_oklch,var(--ui-accent-current)_82%,white)]">
+              {dictionary.common.loading}
+            </p>
+            <div aria-hidden className="flex items-center gap-1">
+              <span className="size-1.5 rounded-full bg-[var(--ui-accent-current)] animate-bounce [animation-delay:-0.24s]" />
+              <span className="size-1.5 rounded-full bg-[var(--ui-accent-current)] animate-bounce [animation-delay:-0.12s]" />
+              <span className="size-1.5 rounded-full bg-[var(--ui-accent-current)] animate-bounce" />
+            </div>
           </div>
           <span className="sr-only">{dictionary.common.loading}</span>
         </div>

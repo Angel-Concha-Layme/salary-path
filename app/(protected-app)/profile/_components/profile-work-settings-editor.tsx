@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import {
@@ -33,6 +34,7 @@ interface ProfileWorkSettingsEditorProps {
   locale: string
   monthlyWorkHours: number
   workDaysPerYear: number
+  showDescription?: boolean
 }
 
 interface WorkSchedulePreset {
@@ -112,7 +114,7 @@ function WorkloadSquare({
       className={cn(
         "pointer-events-none grid h-[82px] w-[104px] shrink-0 grid-rows-2 place-items-center rounded-md border p-1",
         isActive
-          ? "border-primary/45 bg-primary/10 text-foreground dark:bg-black"
+          ? "border-primary/45 bg-white text-black dark:bg-black dark:text-white"
           : "border-border/70 bg-background text-foreground"
       )}
     >
@@ -153,6 +155,7 @@ export function ProfileWorkSettingsEditor({
   locale,
   monthlyWorkHours,
   workDaysPerYear,
+  showDescription = true,
 }: ProfileWorkSettingsEditorProps) {
   const { dictionary } = useDictionary()
   const settingsListQuery = useUserFinanceSettingsListQuery({ limit: 1 })
@@ -196,6 +199,65 @@ export function ProfileWorkSettingsEditor({
   const yearlyShortLabel = dictionary.profile.workSettings.metrics.yearlyShort
   const dayShortLabel = dictionary.profile.workSettings.metrics.dayShort
   const weekShortLabel = dictionary.profile.workSettings.metrics.weekShort
+  const presetsScrollerRef = useRef<HTMLDivElement | null>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+  const [isPresetScrollable, setIsPresetScrollable] = useState(false)
+  const presetScrollButtonClassName =
+    "size-7 rounded-full border-[color-mix(in_oklch,var(--ui-accent-current)_38%,transparent)] bg-[color-mix(in_oklch,var(--ui-accent-current)_10%,transparent)] text-[var(--ui-accent-current)] hover:bg-[color-mix(in_oklch,var(--ui-accent-current)_18%,transparent)] hover:text-[var(--ui-accent-current)] disabled:border-[color-mix(in_oklch,var(--ui-accent-current)_20%,transparent)] disabled:bg-[color-mix(in_oklch,var(--ui-accent-current)_8%,transparent)] disabled:text-[color-mix(in_oklch,var(--ui-accent-current)_46%,transparent)]"
+
+  const updatePresetScrollerState = useCallback(() => {
+    const container = presetsScrollerRef.current
+
+    if (!container) {
+      setCanScrollLeft(false)
+      setCanScrollRight(false)
+      setIsPresetScrollable(false)
+      return
+    }
+
+    const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
+    setIsPresetScrollable(maxScrollLeft > 1)
+    setCanScrollLeft(container.scrollLeft > 1)
+    setCanScrollRight(container.scrollLeft < maxScrollLeft - 1)
+  }, [])
+
+  useEffect(() => {
+    const container = presetsScrollerRef.current
+
+    if (!container) {
+      return
+    }
+
+    const handleScroll = () => {
+      updatePresetScrollerState()
+    }
+
+    updatePresetScrollerState()
+
+    container.addEventListener("scroll", handleScroll, { passive: true })
+    window.addEventListener("resize", updatePresetScrollerState)
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("resize", updatePresetScrollerState)
+    }
+  }, [updatePresetScrollerState])
+
+  const scrollPresets = (direction: "left" | "right") => {
+    const container = presetsScrollerRef.current
+
+    if (!container) {
+      return
+    }
+
+    const step = Math.max(220, Math.round(container.clientWidth * 0.72))
+
+    container.scrollBy({
+      left: direction === "left" ? -step : step,
+      behavior: "smooth",
+    })
+  }
 
   const updateMonthlyWorkHours = (value: number) => {
     setDraft((previous) => ({
@@ -282,21 +344,52 @@ export function ProfileWorkSettingsEditor({
   }
 
   return (
-    <section className="rounded-lg bg-background p-2 md:border md:border-border/80 md:p-4">
-      <div className="space-y-1">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-foreground">
-          {dictionary.profile.workSettings.title}
-        </h3>
+    <section className="rounded-2xl bg-background/80 p-3 md:p-4">
+      {showDescription ? (
         <p className="text-sm text-muted-foreground">
           {dictionary.profile.workSettings.description}
         </p>
-      </div>
+      ) : null}
 
-      <div className="mt-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-          {dictionary.profile.workSettings.presetsLabel}
-        </p>
-        <div className="mt-2 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 pr-8 lg:grid lg:overflow-visible lg:pb-0 lg:pr-0 lg:grid-cols-2">
+      <div className={cn(showDescription ? "mt-4" : "mt-0")}>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            {dictionary.profile.workSettings.presetsLabel}
+          </p>
+          <div
+            className={cn(
+              "flex items-center gap-1 transition-opacity",
+              isPresetScrollable ? "opacity-100" : "pointer-events-none opacity-0"
+            )}
+          >
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className={presetScrollButtonClassName}
+              onClick={() => scrollPresets("left")}
+              disabled={!canScrollLeft}
+              aria-label="Scroll presets left"
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className={presetScrollButtonClassName}
+              onClick={() => scrollPresets("right")}
+              disabled={!canScrollRight}
+              aria-label="Scroll presets right"
+            >
+              <ChevronRightIcon className="size-4" />
+            </Button>
+          </div>
+        </div>
+        <div
+          ref={presetsScrollerRef}
+          className="no-scrollbar mt-2 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
           {WORK_SCHEDULE_PRESETS.map((preset) => {
             const isActive = selectedPresetId === preset.id
 
@@ -306,7 +399,7 @@ export function ProfileWorkSettingsEditor({
                 type="button"
                 variant={isActive ? "default" : "outline"}
                 className={cn(
-                  "h-auto w-[78vw] max-w-[320px] min-w-[260px] snap-start justify-start whitespace-normal px-3 py-2.5 text-left lg:w-full lg:max-w-none lg:min-w-0",
+                  "h-auto w-[78vw] max-w-[320px] min-w-[260px] snap-start justify-start whitespace-normal px-3 py-2.5 text-left",
                   isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
                 onClick={() => applyPreset(preset)}
@@ -314,7 +407,7 @@ export function ProfileWorkSettingsEditor({
                 <span className="flex w-full min-w-0 items-center justify-between gap-2">
                   <span
                     className={cn(
-                      "grid min-w-0 flex-1 grid-cols-1 items-start gap-1 sm:grid-cols-[minmax(116px,0.85fr)_minmax(0,1.8fr)] sm:gap-2.5",
+                      "flex min-w-0 flex-1 flex-col items-start gap-1",
                     )}
                   >
                     <span className="break-words text-[0.86rem] font-normal leading-tight sm:text-sm">
@@ -389,29 +482,31 @@ export function ProfileWorkSettingsEditor({
         </Field>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          onClick={saveChanges}
-          disabled={!hasChanges || isSaving}
-        >
-          {isSaving
-            ? dictionary.profile.workSettings.actions.saving
-            : dictionary.profile.workSettings.actions.save}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={resetDraft}
-          disabled={!hasChanges || isSaving}
-        >
-          {dictionary.profile.workSettings.actions.reset}
-        </Button>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
         <span className="text-xs text-muted-foreground">
           {dictionary.profile.workSettings.hints.affectsCalculations}
         </span>
+        <div className="flex w-full justify-end gap-2 sm:ml-auto sm:w-auto">
+          <Button
+            type="button"
+            size="sm"
+            onClick={saveChanges}
+            disabled={!hasChanges || isSaving}
+          >
+            {isSaving
+              ? dictionary.profile.workSettings.actions.saving
+              : dictionary.profile.workSettings.actions.save}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={resetDraft}
+            disabled={!hasChanges || isSaving}
+          >
+            {dictionary.profile.workSettings.actions.reset}
+          </Button>
+        </div>
       </div>
     </section>
   )

@@ -1,7 +1,7 @@
 "use client"
 
 import type { CSSProperties } from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { ChevronDownIcon } from "lucide-react"
 
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
@@ -36,6 +36,7 @@ interface PersonalPathCompaniesTableMobileLayoutProps
   eventTypeLabels: Record<string, string>
   eventsTitle: string
   noEventsLabel: string
+  defaultExpanded?: boolean
 }
 
 function formatDateValue(value: string | null, locale: string): string {
@@ -210,13 +211,11 @@ export function PersonalPathCompaniesTableMobileLayout({
   eventTypeLabels,
   eventsTitle,
   noEventsLabel,
+  defaultExpanded = true,
 }: PersonalPathCompaniesTableMobileLayoutProps) {
-  const [collapsedCompanyIds, setCollapsedCompanyIds] = useState<string[]>([])
-
-  useEffect(() => {
-    const validRowIds = new Set(rows.map((row) => row.id))
-    setCollapsedCompanyIds((current) => current.filter((companyId) => validRowIds.has(companyId)))
-  }, [rows])
+  const [collapsedCompanyIds, setCollapsedCompanyIds] = useState<string[]>(
+    () => (defaultExpanded ? [] : rows.map((row) => row.id))
+  )
 
   const sortedEventsByCompanyId = useMemo(() => {
     const sortedMap = new Map<string, PathCompanyEventsEntity[]>()

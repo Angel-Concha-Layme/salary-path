@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react"
+
 import type { ProfileCareerEvent } from "@/app/lib/models/profile/profile-overview.model"
 import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-companies.model"
 import {
@@ -11,6 +13,7 @@ interface CareerEventsTableProps {
   compensationType: PathCompaniesEntity["compensationType"]
   monthlyWorkHours: number
   workDaysPerYear: number
+  accentColor?: string
   locale: string
   eventTypeLabels: Record<string, string>
   notAvailableLabel: string
@@ -121,12 +124,47 @@ function MobileValueItem({
   )
 }
 
+function hexToRgb(hexColor: string): { red: number; green: number; blue: number } | null {
+  const normalized = hexColor.trim().replace("#", "")
+
+  if (![3, 6].includes(normalized.length)) {
+    return null
+  }
+
+  const expanded = normalized.length === 3
+    ? normalized.split("").map((segment) => `${segment}${segment}`).join("")
+    : normalized
+
+  const red = Number.parseInt(expanded.slice(0, 2), 16)
+  const green = Number.parseInt(expanded.slice(2, 4), 16)
+  const blue = Number.parseInt(expanded.slice(4, 6), 16)
+
+  if ([red, green, blue].some((value) => Number.isNaN(value))) {
+    return null
+  }
+
+  return { red, green, blue }
+}
+
+function getTintPanelStyle(hexColor: string, alpha = 0.11): CSSProperties | undefined {
+  const rgb = hexToRgb(hexColor)
+
+  if (!rgb) {
+    return undefined
+  }
+
+  return {
+    backgroundColor: `rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${alpha})`,
+  }
+}
+
 export function CareerEventsTable({
   events,
   currency,
   compensationType,
   monthlyWorkHours,
   workDaysPerYear,
+  accentColor,
   locale,
   eventTypeLabels,
   notAvailableLabel,
@@ -149,54 +187,13 @@ export function CareerEventsTable({
 
   return (
     <>
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[940px] table-fixed text-left text-sm">
-          <colgroup>
-            <col className="w-[18%]" />
-            <col className="w-[24%]" />
-            <col className="w-[19%]" />
-            <col className="w-[19%]" />
-            <col className="w-[20%]" />
-          </colgroup>
-          <thead className="bg-background text-xs uppercase tracking-[0.08em] text-foreground">
-            <tr>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">{labels.effectiveDate}</th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">{labels.eventType}</th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">{labels.hourlyRate}</th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">{labels.monthlyAverage}</th>
-              <th className="whitespace-nowrap px-3 py-2 font-medium">{labels.annualSalary}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {eventRows.map(({ event, compensation }) => (
-              <tr
-                key={event.id}
-                className="border-t border-border/70 align-top transition-colors hover:bg-accent/40"
-              >
-                <td className="whitespace-nowrap px-3 py-2">
-                  {formatDateValue(event.effectiveDate, locale)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {eventTypeLabels[event.eventType] ?? notAvailableLabel}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {formatAmount(locale, currency, compensation.hourlyRate, 2)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {formatAmount(locale, currency, compensation.monthlyAverage, 2)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  {formatAmount(locale, currency, compensation.annualSalary, 0)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="space-y-1 p-1 md:hidden">
+      <div className="space-y-1 p-1">
         {eventRows.map(({ event, compensation }) => (
-          <article key={event.id} className="rounded-lg bg-accent/15 px-2.5 py-2">
+          <article
+            key={event.id}
+            className="rounded-lg px-2.5 py-2"
+            style={accentColor ? getTintPanelStyle(accentColor) : undefined}
+          >
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
                 {formatDateValue(event.effectiveDate, locale)}

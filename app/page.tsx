@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { getServerSession } from "@/app/lib/auth/server"
+import { readOnboardingCompletedFromSession } from "@/app/lib/auth/session-onboarding"
 import { getOnboardingStatus } from "@/app/lib/server/domain/onboarding/onboarding.domain"
 
 export default async function RootPage() {
@@ -10,7 +11,9 @@ export default async function RootPage() {
     redirect("/sign-in")
   }
 
-  const onboardingStatus = await getOnboardingStatus(session.user.id)
+  const onboardingCompletedFromSession = readOnboardingCompletedFromSession(session)
+  const onboardingCompleted =
+    onboardingCompletedFromSession ?? (await getOnboardingStatus(session.user.id)).completed
 
-  redirect(onboardingStatus.completed ? "/career-path/salary-tracking" : "/onboarding")
+  redirect(onboardingCompleted ? "/career-path/salary-tracking" : "/onboarding")
 }

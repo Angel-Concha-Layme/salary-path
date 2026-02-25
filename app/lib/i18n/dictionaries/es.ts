@@ -549,12 +549,7 @@ export const esDictionary = {
   },
   settingsPage: {
     title: "Settings",
-    subtitle: "Configura el comportamiento del workspace y preferencias rapidas.",
-    tabs: {
-      sidebar: "Sidebar",
-      appearance: "Apariencia",
-      platform: "Platform",
-    },
+    subtitle: "Configura sidebar y apariencia desde una sola pantalla.",
     sidebar: {
       title: "Comportamiento de secciones en sidebar",
       description:
@@ -566,10 +561,18 @@ export const esDictionary = {
       expandedHint: "Todas las secciones quedan expandidas por defecto.",
     },
     appearance: {
-      title: "Color destacado",
+      title: "Tema de la aplicación",
+      accentTitle: "Color destacado",
       description:
         "Elige el color que se usará para los resaltados de la interfaz y el brillo del panel lateral.",
       hint: "Los presets están ajustados para mantener buen contraste en modo claro y en modo oscuro.",
+      actions: {
+        apply: "Aplicar cambios",
+        applying: "Aplicando...",
+        discard: "Descartar cambios",
+        pending: "Cambios pendientes",
+        upToDate: "Todo sincronizado",
+      },
       controls: {
         title: "Botones y controles",
         description:
@@ -578,6 +581,22 @@ export const esDictionary = {
           accent: "Color del tema",
           legacy: "Legacy blanco y negro",
         },
+      },
+      preview: {
+        title: "Vista previa",
+        description:
+          "Compara el estado actual contra tu borrador antes de aplicar, en claro y oscuro.",
+        currentState: "Estado actual",
+        draftState: "Borrador",
+        highlightTone: "Color destacado",
+        controlsTone: "Color de controles",
+        sampleTitle: "Controles de ejemplo",
+        primaryButton: "Accion principal",
+        outlineButton: "Secundario",
+        secondaryButton: "Neutral",
+        inputField: "Meta salarial: +12%",
+        lightMode: "Claro",
+        darkMode: "Oscuro",
       },
       select: "Seleccionar preset",
       selected: "Seleccionado",
@@ -599,12 +618,6 @@ export const esDictionary = {
         saved: "Color de acento actualizado.",
         error: "No se pudo actualizar el color de acento.",
       },
-    },
-    platform: {
-      title: "Platform home",
-      description:
-        "Abre la vista Home para ver resumen de modulos, guia de uso y accesos utiles.",
-      goHome: "Open Home",
     },
   },
   homePage: {
@@ -637,9 +650,17 @@ export const esDictionary = {
       userInformation: "Información del usuario",
       accountDetails: "Detalles de la cuenta",
       workSettings: "Configuración de jornada",
+      currentSummary: "Resumen actual",
       currentSalary: "Salario actual",
       careerEvents: "Eventos de carrera",
       usefulInformation: "Información útil",
+    },
+    sectionSummaries: {
+      userInformation: "Consulta los datos básicos de tu cuenta y contacto.",
+      currentSummary: "Visualiza tus empresas y eventos más recientes en una sola vista.",
+      workSettings: "Define cómo trabajas para normalizar salarios por hora, mes y año.",
+      usefulInformation: "Revisa métricas clave y señales históricas de tu recorrido laboral.",
+      accountDetails: "Consulta permisos, origen de acceso y fechas principales de tu cuenta.",
     },
     layout: {
       label: "Vista del perfil",
@@ -701,7 +722,7 @@ export const esDictionary = {
       includedInAverage: "Empresas en promedio",
       excludedFromAverage: "Excluidas (moneda distinta)",
       currentRate: "Compensación actual",
-      monthlyEquivalent: "Salario mensual",
+      monthlyEquivalent: "Salario mensual promedio",
       annualizedSalary: "Salario anual",
       currentRateDate: "Fecha de la compensación actual",
     },
@@ -710,6 +731,11 @@ export const esDictionary = {
       hourlyRate: "Tarifa por hora",
       monthlyAverage: "Promedio mensual",
       annualSalary: "Salario anual",
+    },
+    currentSummary: {
+      eventsTitle: "Eventos",
+      companiesTitle: "Empresas",
+      selectedCompany: "Empresa seleccionada",
     },
     useful: {
       totalCompanies: "Empresas totales",

@@ -207,6 +207,12 @@ export const auth = betterAuth({
   },
 })
 
+type ServerSession = Awaited<ReturnType<typeof auth.api.getSession>>
+type SessionWithOnboarding = NonNullable<ServerSession> & {
+  user: NonNullable<ServerSession>["user"] & {
+    onboardingCompletedAt?: Date | null
+  }
+}
 type SessionLike = {
   session: {
     userId: string
@@ -214,6 +220,208 @@ type SessionLike = {
   user: {
     email?: string | null
     role?: string | null
+  }
+}
+
+const SESSION_CACHE_TTL_MS = 5_000
+const SESSION_COOKIE_NAMES = [
+  "__Secure-better-auth.session_token",
+  "better-auth.session_token",
+] as const
+
+const sessionCache = new Map<string, { value: SessionWithOnboarding; expiresAtMs: number }>()
+const sessionLookupInflight = new Map<string, Promise<SessionWithOnboarding | null>>()
+
+function parseCookieHeader(cookieHeader: string): Map<string, string> {
+  const cookieValues = new Map<string, string>()
+
+  for (const segment of cookieHeader.split(";")) {
+    const [rawName, ...valueParts] = segment.trim().split("=")
+
+    if (!rawName || valueParts.length === 0) {
+      continue
+    }
+
+    cookieValues.set(rawName, valueParts.join("="))
+  }
+
+  return cookieValues
+}
+
+function decodeCookieValue(value: string): string {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+function extractSessionToken(cookieValue: string): string | null {
+  const decodedValue = decodeCookieValue(cookieValue)
+  const [tokenCandidate] = decodedValue.split(".", 2)
+  const token = tokenCandidate?.trim() ?? ""
+
+  return token.length > 0 ? token : null
+}
+
+function readSessionTokenFromHeaders(requestHeaders: Headers): string | null {
+  const cookieHeader = requestHeaders.get("cookie")
+
+  if (!cookieHeader) {
+    return null
+  }
+
+  const cookieValues = parseCookieHeader(cookieHeader)
+
+  for (const cookieName of SESSION_COOKIE_NAMES) {
+    const cookieValue = cookieValues.get(cookieName)
+
+    if (!cookieValue) {
+      continue
+    }
+
+    const token = extractSessionToken(cookieValue)
+
+    if (token) {
+      return token
+    }
+  }
+
+  return null
+}
+
+function getCachedSession(sessionToken: string, nowMs: number): SessionWithOnboarding | null {
+  const cached = sessionCache.get(sessionToken)
+
+  if (!cached) {
+    return null
+  }
+
+  if (cached.expiresAtMs <= nowMs) {
+    sessionCache.delete(sessionToken)
+    return null
+  }
+
+  return cached.value
+}
+
+function setCachedSession(sessionToken: string, sessionValue: SessionWithOnboarding) {
+  const nowMs = Date.now()
+  const sessionExpiryMs = sessionValue.session.expiresAt.getTime()
+  const expiresAtMs = Math.min(sessionExpiryMs, nowMs + SESSION_CACHE_TTL_MS)
+
+  if (expiresAtMs <= nowMs) {
+    sessionCache.delete(sessionToken)
+    return
+  }
+
+  sessionCache.set(sessionToken, {
+    value: sessionValue,
+    expiresAtMs,
+  })
+}
+
+async function resolveSessionByToken(sessionToken: string): Promise<SessionWithOnboarding | null> {
+  const rows = await db
+    .select({
+      sessionId: schema.session.id,
+      sessionCreatedAt: schema.session.createdAt,
+      sessionUpdatedAt: schema.session.updatedAt,
+      userId: schema.session.userId,
+      sessionExpiresAt: schema.session.expiresAt,
+      sessionToken: schema.session.token,
+      sessionIpAddress: schema.session.ipAddress,
+      sessionUserAgent: schema.session.userAgent,
+      sessionImpersonatedBy: schema.session.impersonatedBy,
+      userCreatedAt: schema.user.createdAt,
+      userUpdatedAt: schema.user.updatedAt,
+      userEmail: schema.user.email,
+      userEmailVerified: schema.user.emailVerified,
+      userName: schema.user.name,
+      userImage: schema.user.image,
+      userBanned: schema.user.banned,
+      userRole: schema.user.role,
+      userBanReason: schema.user.banReason,
+      userBanExpires: schema.user.banExpires,
+      userOnboardingCompletedAt: schema.user.onboardingCompletedAt,
+    })
+    .from(schema.session)
+    .innerJoin(schema.user, eq(schema.user.id, schema.session.userId))
+    .where(eq(schema.session.token, sessionToken))
+    .limit(1)
+
+  const row = rows[0]
+
+  if (!row) {
+    return null
+  }
+
+  if (row.userBanned || row.sessionExpiresAt.getTime() <= Date.now()) {
+    return null
+  }
+
+  return {
+    session: {
+      id: row.sessionId,
+      createdAt: row.sessionCreatedAt,
+      updatedAt: row.sessionUpdatedAt,
+      userId: row.userId,
+      expiresAt: row.sessionExpiresAt,
+      token: row.sessionToken,
+      ipAddress: row.sessionIpAddress,
+      userAgent: row.sessionUserAgent,
+      impersonatedBy: row.sessionImpersonatedBy,
+    },
+    user: {
+      id: row.userId,
+      createdAt: row.userCreatedAt,
+      updatedAt: row.userUpdatedAt,
+      email: row.userEmail,
+      emailVerified: row.userEmailVerified,
+      name: row.userName,
+      image: row.userImage,
+      banned: row.userBanned,
+      role: row.userRole,
+      banReason: row.userBanReason,
+      banExpires: row.userBanExpires,
+      onboardingCompletedAt: row.userOnboardingCompletedAt,
+    },
+  } as SessionWithOnboarding
+}
+
+async function resolveFastCookieSession(requestHeaders: Headers): Promise<SessionWithOnboarding | null> {
+  const sessionToken = readSessionTokenFromHeaders(requestHeaders)
+
+  if (!sessionToken) {
+    return null
+  }
+
+  const nowMs = Date.now()
+  const cached = getCachedSession(sessionToken, nowMs)
+
+  if (cached) {
+    return cached
+  }
+
+  const inflightLookup = sessionLookupInflight.get(sessionToken)
+
+  if (inflightLookup) {
+    return inflightLookup
+  }
+
+  const lookupPromise = resolveSessionByToken(sessionToken)
+  sessionLookupInflight.set(sessionToken, lookupPromise)
+
+  try {
+    const resolved = await lookupPromise
+
+    if (resolved) {
+      setCachedSession(sessionToken, resolved)
+    }
+
+    return resolved
+  } finally {
+    sessionLookupInflight.delete(sessionToken)
   }
 }
 
@@ -249,16 +457,18 @@ async function ensureAdminRoleFromSession<T extends SessionLike | null>(
   return currentSession
 }
 
-export async function getServerSession() {
+export async function getServerSession(): Promise<ServerSession> {
   const requestHeaders = await headers()
-  const session = await auth.api.getSession({
-    headers: requestHeaders,
-  })
-
-  return ensureAdminRoleFromSession(session)
+  return getServerSessionFromHeaders(requestHeaders)
 }
 
-export async function getServerSessionFromHeaders(requestHeaders: Headers) {
+export async function getServerSessionFromHeaders(requestHeaders: Headers): Promise<ServerSession> {
+  const fastSession = await resolveFastCookieSession(requestHeaders)
+
+  if (fastSession) {
+    return ensureAdminRoleFromSession(fastSession)
+  }
+
   const session = await auth.api.getSession({
     headers: requestHeaders,
   })

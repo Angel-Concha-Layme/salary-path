@@ -548,12 +548,7 @@ export const enDictionary = {
   },
   settingsPage: {
     title: "Settings",
-    subtitle: "Configure your workspace behavior and quick preferences.",
-    tabs: {
-      sidebar: "Sidebar",
-      appearance: "Appearance",
-      platform: "Platform",
-    },
+    subtitle: "Configure sidebar and appearance from a single screen.",
     sidebar: {
       title: "Sidebar groups behavior",
       description:
@@ -565,10 +560,18 @@ export const enDictionary = {
       expandedHint: "All sections stay expanded by default.",
     },
     appearance: {
-      title: "Theme accent",
+      title: "App theme",
+      accentTitle: "Accent color",
       description:
         "Select a curated accent palette for your workspace highlights and sidebar glow.",
       hint: "Presets are optimized for contrast in light and dark mode.",
+      actions: {
+        apply: "Apply changes",
+        applying: "Applying...",
+        discard: "Discard changes",
+        pending: "Pending changes",
+        upToDate: "Everything is synced",
+      },
       controls: {
         title: "Buttons and controls",
         description:
@@ -577,6 +580,22 @@ export const enDictionary = {
           accent: "Custom accent",
           legacy: "Legacy monochrome",
         },
+      },
+      preview: {
+        title: "Preview",
+        description:
+          "Compare the current state against your draft before applying, in light and dark modes.",
+        currentState: "Current state",
+        draftState: "Draft",
+        highlightTone: "Highlight color",
+        controlsTone: "Controls color",
+        sampleTitle: "Sample controls",
+        primaryButton: "Primary action",
+        outlineButton: "Secondary",
+        secondaryButton: "Neutral",
+        inputField: "Salary target: +12%",
+        lightMode: "Light",
+        darkMode: "Dark",
       },
       select: "Select preset",
       selected: "Selected",
@@ -598,12 +617,6 @@ export const enDictionary = {
         saved: "Theme accent updated.",
         error: "Could not update the theme accent.",
       },
-    },
-    platform: {
-      title: "Platform home",
-      description:
-        "Open the Home view to review modules, usage guidance, and useful platform links.",
-      goHome: "Open Home",
     },
   },
   homePage: {
@@ -636,9 +649,17 @@ export const enDictionary = {
       userInformation: "User information",
       accountDetails: "Account details",
       workSettings: "Work schedule",
+      currentSummary: "Current summary",
       currentSalary: "Current salary",
       careerEvents: "Career events",
       usefulInformation: "Useful information",
+    },
+    sectionSummaries: {
+      userInformation: "Review your basic account and contact details.",
+      currentSummary: "See your latest companies and career events in one view.",
+      workSettings: "Define your schedule to normalize hourly, monthly, and annual salary.",
+      usefulInformation: "Check key metrics and historical signals from your career path.",
+      accountDetails: "Review access level, auth source, and core account timestamps.",
     },
     layout: {
       label: "Profile view",
@@ -700,7 +721,7 @@ export const enDictionary = {
       includedInAverage: "Companies in average",
       excludedFromAverage: "Excluded (currency mismatch)",
       currentRate: "Current rate",
-      monthlyEquivalent: "Monthly salary",
+      monthlyEquivalent: "Monthly average salary",
       annualizedSalary: "Annual salary",
       currentRateDate: "Current rate date",
     },
@@ -709,6 +730,11 @@ export const enDictionary = {
       hourlyRate: "Hourly rate",
       monthlyAverage: "Monthly average",
       annualSalary: "Annual salary",
+    },
+    currentSummary: {
+      eventsTitle: "Events",
+      companiesTitle: "Companies",
+      selectedCompany: "Selected company",
     },
     useful: {
       totalCompanies: "Total companies",
