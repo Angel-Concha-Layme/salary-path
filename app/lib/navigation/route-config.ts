@@ -37,6 +37,21 @@ export type NavIconKey =
   | "chart"
   | "users"
   | "sparkles"
+  | "wallet"
+  | "building"
+  | "scale"
+  | "trendingUp"
+  | "receiptText"
+  | "piggyBank"
+  | "chartLine"
+  | "landmark"
+  | "house"
+  | "calculator"
+  | "mapPinned"
+  | "handshake"
+  | "userRound"
+  | "settings2"
+  | "shieldUser"
 
 export interface AppRouteDefinition {
   key: RouteKey
@@ -102,7 +117,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: false,
     mobilePrimary: true,
-    icon: "grid",
+    icon: "wallet",
     group: "careerPath",
   },
   {
@@ -114,7 +129,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "briefcase",
+    icon: "building",
     group: "careerPath",
   },
   {
@@ -126,7 +141,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "chart",
+    icon: "scale",
     group: "careerPath",
   },
   {
@@ -138,7 +153,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "sparkles",
+    icon: "trendingUp",
     group: "careerPath",
   },
   {
@@ -150,7 +165,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: false,
     mobilePrimary: true,
-    icon: "grid",
+    icon: "receiptText",
     group: "financialEngine",
   },
   {
@@ -162,7 +177,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "chart",
+    icon: "piggyBank",
     group: "financialEngine",
   },
   {
@@ -174,7 +189,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "briefcase",
+    icon: "chartLine",
     group: "financialEngine",
   },
   {
@@ -186,7 +201,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "settings",
+    icon: "landmark",
     group: "financialEngine",
   },
   {
@@ -198,7 +213,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: false,
     mobilePrimary: true,
-    icon: "grid",
+    icon: "house",
     group: "homePath",
   },
   {
@@ -210,7 +225,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "chart",
+    icon: "calculator",
     group: "homePath",
   },
   {
@@ -222,7 +237,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "briefcase",
+    icon: "mapPinned",
     group: "homePath",
   },
   {
@@ -234,7 +249,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "sparkles",
+    icon: "handshake",
     group: "homePath",
   },
   {
@@ -246,7 +261,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: false,
     mobilePrimary: true,
-    icon: "user",
+    icon: "userRound",
     group: "account",
   },
   {
@@ -258,7 +273,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "settings",
+    icon: "settings2",
     group: "account",
   },
   {
@@ -270,7 +285,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: true,
     showInMobileMenu: true,
     mobilePrimary: false,
-    icon: "users",
+    icon: "shieldUser",
     group: "admin",
   },
   {
@@ -282,7 +297,7 @@ export const ROUTES: readonly AppRouteDefinition[] = [
     showInNavigation: false,
     showInMobileMenu: false,
     mobilePrimary: false,
-    icon: "users",
+    icon: "shieldUser",
     group: "admin",
   },
 ] as const

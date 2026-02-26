@@ -5,7 +5,9 @@ import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 import {
   ChevronsUpDownIcon,
+  LanguagesIcon,
   LogOutIcon,
+  PaletteIcon,
   UserCircle2Icon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -166,11 +168,17 @@ export function SidebarUserMenu({
           {!collapsed ? (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>{dictionary.navigation.language}</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <LanguagesIcon className="size-3.5" />
+                {dictionary.navigation.language}
+              </DropdownMenuLabel>
               <div className="px-2 pb-2">
                 <LanguageSwitcher small tone="sidebar" />
               </div>
-              <DropdownMenuLabel>{dictionary.navigation.theme}</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <PaletteIcon className="size-3.5" />
+                {dictionary.navigation.theme}
+              </DropdownMenuLabel>
               <div className="px-2 pb-2">
                 <ThemeSwitcher small tone="sidebar" />
               </div>
@@ -186,7 +194,7 @@ export function SidebarUserMenu({
             asChild
           >
             <Link href={profilePath}>
-              <NavigationIcon icon="user" className="size-4" />
+              <NavigationIcon icon="userRound" className="size-4" />
               {dictionary.navigation.profile}
             </Link>
           </DropdownMenuItem>
@@ -198,7 +206,7 @@ export function SidebarUserMenu({
             asChild
           >
             <Link href={settingsPath}>
-              <NavigationIcon icon="settings" className="size-4" />
+              <NavigationIcon icon="settings2" className="size-4" />
               {dictionary.navigation.settings}
             </Link>
           </DropdownMenuItem>

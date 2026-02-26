@@ -1,12 +1,27 @@
 import type { ComponentType } from "react"
 import {
+  Building2Icon,
   BriefcaseBusinessIcon,
+  CalculatorIcon,
+  ChartLineIcon,
   ChartSplineIcon,
   Grid2x2Icon,
+  HandshakeIcon,
+  HouseIcon,
+  LandmarkIcon,
+  MapPinnedIcon,
+  PiggyBankIcon,
+  ReceiptTextIcon,
+  ScaleIcon,
   SettingsIcon,
+  Settings2Icon,
+  ShieldUserIcon,
   SparklesIcon,
+  TrendingUpIcon,
   UserIcon,
+  UserRoundIcon,
   UsersIcon,
+  WalletIcon,
 } from "lucide-react"
 
 import type {
@@ -24,6 +39,21 @@ const iconMap: Record<NavIconKey, ComponentType<{ className?: string }>> = {
   chart: ChartSplineIcon,
   users: UsersIcon,
   sparkles: SparklesIcon,
+  wallet: WalletIcon,
+  building: Building2Icon,
+  scale: ScaleIcon,
+  trendingUp: TrendingUpIcon,
+  receiptText: ReceiptTextIcon,
+  piggyBank: PiggyBankIcon,
+  chartLine: ChartLineIcon,
+  landmark: LandmarkIcon,
+  house: HouseIcon,
+  calculator: CalculatorIcon,
+  mapPinned: MapPinnedIcon,
+  handshake: HandshakeIcon,
+  userRound: UserRoundIcon,
+  settings2: Settings2Icon,
+  shieldUser: ShieldUserIcon,
 }
 
 export function NavigationIcon({
