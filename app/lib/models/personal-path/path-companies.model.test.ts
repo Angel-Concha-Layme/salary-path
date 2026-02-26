@@ -61,6 +61,7 @@ describe("path companies model", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
       deletedAt: null,
+      workSchedule: null,
     } satisfies PathCompaniesEntity
 
     expect(entity.color).toBe("#1D4ED8")

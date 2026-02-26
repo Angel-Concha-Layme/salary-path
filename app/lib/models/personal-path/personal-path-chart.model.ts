@@ -1,18 +1,16 @@
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
 import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-companies.model"
 
-const DAY_MS = 24 * 60 * 60 * 1000
 const DEFAULT_MONTHLY_WORK_HOURS = 174
 export const PERSONAL_PATH_NO_COMPANIES_SELECTION = "__none__"
 
-export type PersonalPathChartView = "rate" | "cumulativeIncome"
+export type PersonalPathChartView = "rate"
 
 export type PersonalPathRangePreset = "all" | "ytd" | "last12m" | "last36m"
 
 export type PersonalPathRateBasis = "monthly" | "hourly"
 
 export interface PersonalPathChartFilters {
-  view: PersonalPathChartView
   range: PersonalPathRangePreset
   rateBasis: PersonalPathRateBasis
   companyIds: string[]
@@ -31,15 +29,7 @@ export interface PersonalPathRatePointMeta {
   increase: number
 }
 
-export interface PersonalPathCumulativePointMeta {
-  type: "cumulative"
-  currency: string
-  monthlyTotal: number
-  activeCompanyIds: string[]
-  activeCompanyNames: string[]
-}
-
-export type PersonalPathChartPointMeta = PersonalPathRatePointMeta | PersonalPathCumulativePointMeta
+export type PersonalPathChartPointMeta = PersonalPathRatePointMeta
 
 export interface PersonalPathChartSeriesPoint {
   time: string
@@ -56,13 +46,6 @@ export interface PersonalPathChartSeries {
   showInLegend?: boolean
   showInTooltip?: boolean
   points: PersonalPathChartSeriesPoint[]
-}
-
-export interface CurrencyMismatchInfo {
-  baseCurrency: string
-  excludedCompanyIds: string[]
-  excludedCompanyNames: string[]
-  excludedCount: number
 }
 
 export interface PersonalPathCompanyTableRow {
@@ -98,29 +81,6 @@ export interface BuildRateChartSeriesOptions {
   referenceDate?: Date
 }
 
-export interface BuildCumulativeIncomeSeriesOptions {
-  companies: PathCompaniesEntity[]
-  events: PathCompanyEventsEntity[]
-  companyIds: string[]
-  baseCurrency?: string
-  monthlyWorkHours?: number
-  range: PersonalPathRangePreset
-  referenceDate?: Date
-}
-
-export interface BuildCumulativeIncomeSeriesResult {
-  series: PersonalPathChartSeries[]
-  currencyMismatch: CurrencyMismatchInfo | null
-}
-
-interface CompanyRateSegment {
-  companyId: string
-  companyName: string
-  start: Date
-  end: Date
-  monthlyRate: number
-}
-
 interface HistoricalRateAnchor {
   companyId: string
   date: Date
@@ -151,10 +111,6 @@ function toDateKey(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
-function addUtcDays(date: Date, days: number): Date {
-  return new Date(date.getTime() + days * DAY_MS)
-}
-
 function subtractUtcMonths(date: Date, months: number): Date {
   const firstOfTargetMonth = new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - months, 1)
@@ -167,10 +123,6 @@ function subtractUtcMonths(date: Date, months: number): Date {
   return new Date(
     Date.UTC(firstOfTargetMonth.getUTCFullYear(), firstOfTargetMonth.getUTCMonth(), day)
   )
-}
-
-function maxDate(left: Date, right: Date): Date {
-  return left.getTime() >= right.getTime() ? left : right
 }
 
 function minDate(left: Date, right: Date): Date {
@@ -376,23 +328,6 @@ function resolvePreviousCareerAnchor(
   return null
 }
 
-export function resolveBaseCurrency(
-  companies: PathCompaniesEntity[],
-  baseCurrency?: string
-): string {
-  if (baseCurrency && baseCurrency.trim().length > 0) {
-    return baseCurrency.trim().toUpperCase()
-  }
-
-  const firstCompanyCurrency = companies[0]?.currency
-
-  if (firstCompanyCurrency && firstCompanyCurrency.trim().length > 0) {
-    return firstCompanyCurrency.trim().toUpperCase()
-  }
-
-  return "USD"
-}
-
 export function normalizeAmountToMonthly(
   amount: number,
   compensationType: PathCompaniesEntity["compensationType"],
@@ -440,91 +375,6 @@ export function normalizeAmountToRateBasis(
   }
 
   return normalizeAmountToHourly(amount, compensationType, monthlyWorkHours)
-}
-
-function getDateRangeEndExclusive(referenceDate: Date): Date {
-  return addUtcDays(toUtcDateOnly(referenceDate), 1)
-}
-
-function isDateInSegment(segment: CompanyRateSegment, date: Date): boolean {
-  const timestamp = date.getTime()
-  return segment.start.getTime() <= timestamp && timestamp < segment.end.getTime()
-}
-
-function buildCumulativeSegmentsForCompany(
-  company: PathCompaniesEntity,
-  events: PathCompanyEventsEntity[],
-  monthlyWorkHours: number,
-  referenceDate: Date
-): CompanyRateSegment[] {
-  const normalizedEvents = normalizeEventRecords(events)
-
-  if (normalizedEvents.length === 0) {
-    return []
-  }
-
-  const companyStart = parseIsoToUtcDateOnly(company.startDate) ?? normalizedEvents[0].date
-  const referenceEndExclusive = getDateRangeEndExclusive(referenceDate)
-  const rawCompanyEndDate = company.endDate
-    ? parseIsoToUtcDateOnly(company.endDate)
-    : toUtcDateOnly(referenceDate)
-  const companyEndExclusive = addUtcDays(
-    minDate(rawCompanyEndDate ?? toUtcDateOnly(referenceDate), toUtcDateOnly(referenceDate)),
-    1
-  )
-  const safeEndExclusive = minDate(companyEndExclusive, referenceEndExclusive)
-
-  if (safeEndExclusive.getTime() <= companyStart.getTime()) {
-    return []
-  }
-
-  const segments: CompanyRateSegment[] = []
-
-  normalizedEvents.forEach((record, index) => {
-    const next = normalizedEvents[index + 1]
-    const nextStart = next?.date ?? safeEndExclusive
-    const start = maxDate(record.date, companyStart)
-    const end = minDate(nextStart, safeEndExclusive)
-
-    if (end.getTime() <= start.getTime()) {
-      return
-    }
-
-    segments.push({
-      companyId: company.id,
-      companyName: company.displayName,
-      start,
-      end,
-      monthlyRate: normalizeAmountToMonthly(
-        record.source.amount,
-        company.compensationType,
-        monthlyWorkHours
-      ),
-    })
-  })
-
-  return segments
-}
-
-function buildCurrencyMismatchInfo(
-  baseCurrency: string,
-  selectedCompanies: PathCompaniesEntity[],
-  includedCompanyIds: Set<string>
-): CurrencyMismatchInfo | null {
-  const excludedCompanies = selectedCompanies.filter(
-    (company) => !includedCompanyIds.has(company.id)
-  )
-
-  if (excludedCompanies.length === 0) {
-    return null
-  }
-
-  return {
-    baseCurrency,
-    excludedCompanyIds: excludedCompanies.map((company) => company.id),
-    excludedCompanyNames: excludedCompanies.map((company) => company.displayName),
-    excludedCount: excludedCompanies.length,
-  }
 }
 
 export function buildRateChartSeries(
@@ -700,151 +550,6 @@ export function buildRateChartSeries(
   })
 
   return result
-}
-
-export function buildCumulativeIncomeSeries(
-  options: BuildCumulativeIncomeSeriesOptions
-): BuildCumulativeIncomeSeriesResult {
-  const referenceDate = options.referenceDate ?? new Date()
-  const monthlyWorkHours = options.monthlyWorkHours ?? DEFAULT_MONTHLY_WORK_HOURS
-  const selectedCompanies = options.companies.filter((company) =>
-    options.companyIds.includes(company.id)
-  )
-  const baseCurrency = resolveBaseCurrency(selectedCompanies, options.baseCurrency)
-  const includedCompanies = selectedCompanies.filter(
-    (company) => company.currency.toUpperCase() === baseCurrency
-  )
-  const includedCompanyIds = new Set(includedCompanies.map((company) => company.id))
-
-  const currencyMismatch = buildCurrencyMismatchInfo(
-    baseCurrency,
-    selectedCompanies,
-    includedCompanyIds
-  )
-
-  if (includedCompanies.length === 0) {
-    return {
-      series: [],
-      currencyMismatch,
-    }
-  }
-
-  const eventsByCompany = buildCompanyEventsMap(options.events)
-  const segments = includedCompanies.flatMap((company) =>
-    buildCumulativeSegmentsForCompany(
-      company,
-      eventsByCompany.get(company.id) ?? [],
-      monthlyWorkHours,
-      referenceDate
-    )
-  )
-
-  if (segments.length === 0) {
-    return {
-      series: [],
-      currencyMismatch,
-    }
-  }
-
-  const boundaries = Array.from(
-    new Set(
-      segments.flatMap((segment) => [
-        segment.start.getTime(),
-        segment.end.getTime(),
-      ])
-    )
-  )
-    .sort((left, right) => left - right)
-    .map((value) => new Date(value))
-
-  const firstBoundary = boundaries[0]
-
-  if (!firstBoundary) {
-    return {
-      series: [],
-      currencyMismatch,
-    }
-  }
-
-  let cumulativeValue = 0
-
-  const initialActiveSegments = segments.filter((segment) =>
-    isDateInSegment(segment, firstBoundary)
-  )
-  const initialActiveCompanyIds = Array.from(
-    new Set(initialActiveSegments.map((segment) => segment.companyId))
-  )
-  const initialActiveCompanyNames = Array.from(
-    new Set(initialActiveSegments.map((segment) => segment.companyName))
-  )
-  const initialMonthlyTotal = initialActiveSegments.reduce(
-    (total, segment) => total + segment.monthlyRate,
-    0
-  )
-
-  const points: PersonalPathChartSeriesPoint[] = [
-    {
-      time: toDateKey(firstBoundary),
-      value: cumulativeValue,
-      meta: {
-        type: "cumulative",
-        currency: baseCurrency,
-        monthlyTotal: initialMonthlyTotal,
-        activeCompanyIds: initialActiveCompanyIds,
-        activeCompanyNames: initialActiveCompanyNames,
-      },
-    },
-  ]
-
-  for (let index = 0; index < boundaries.length - 1; index += 1) {
-    const segmentStart = boundaries[index]
-    const segmentEnd = boundaries[index + 1]
-
-    if (!segmentStart || !segmentEnd) {
-      continue
-    }
-
-    const activeSegments = segments.filter((segment) =>
-      isDateInSegment(segment, segmentStart)
-    )
-    const monthlyTotal = activeSegments.reduce(
-      (total, segment) => total + segment.monthlyRate,
-      0
-    )
-    const days = (segmentEnd.getTime() - segmentStart.getTime()) / DAY_MS
-    const segmentIncome = monthlyTotal * (12 / 365) * days
-
-    cumulativeValue += segmentIncome
-
-    points.push({
-      time: toDateKey(segmentEnd),
-      value: cumulativeValue,
-      meta: {
-        type: "cumulative",
-        currency: baseCurrency,
-        monthlyTotal,
-        activeCompanyIds: Array.from(
-          new Set(activeSegments.map((segment) => segment.companyId))
-        ),
-        activeCompanyNames: Array.from(
-          new Set(activeSegments.map((segment) => segment.companyName))
-        ),
-      },
-    })
-  }
-
-  return {
-    series: [
-      {
-        id: "cumulative-income",
-        label: "Cumulative income",
-        color: "#0F766E",
-        lineType: "simple",
-        points: filterPointsByRange(points, options.range, referenceDate),
-      },
-    ],
-    currencyMismatch,
-  }
 }
 
 export function buildPersonalPathCompanyTableRows(

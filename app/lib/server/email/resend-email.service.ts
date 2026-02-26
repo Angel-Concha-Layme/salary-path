@@ -102,7 +102,7 @@ export async function sendRouteOtpEmail({
   const config = getResendConfigOrThrow()
   const resend = getResendClient(config)
   const idempotencyKey = `route-otp/${ownerUserId}/${routeKey}/${challengeId}`
-  const subject = "Salary Path verification code"
+  const subject = "Capital Path verification code"
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6">
       <h2>Verify access to ${routeKey}</h2>

@@ -8,12 +8,10 @@ import type {
 import { apiClient } from "@/app/lib/services/api-client"
 
 export interface ListPathCompanyEventsOptions {
-  limit?: number
   signal?: AbortSignal
 }
 
 export interface ListPathCompanyEventsByOwnerOptions {
-  limit?: number
   signal?: AbortSignal
 }
 
@@ -57,9 +55,6 @@ async function listPathCompanyEvents(
   const response = await apiClient.get<PathCompanyEventsListResponse>(
     `/personal-path/companies/${pathCompanyId}/events`,
     {
-      query: {
-        limit: options.limit ?? 50,
-      },
       signal: options.signal,
     }
   )
@@ -71,9 +66,6 @@ async function listPathCompanyEventsByOwner(
   options: ListPathCompanyEventsByOwnerOptions = {}
 ) {
   const response = await apiClient.get<PathCompanyEventsListResponse>("/personal-path/company-events", {
-    query: {
-      limit: options.limit ?? 100,
-    },
     signal: options.signal,
   })
 

@@ -22,6 +22,7 @@ interface SingleDatePickerFieldProps {
   allowClear?: boolean
   clearLabel?: string
   disabledDays?: ComponentProps<typeof Calendar>["disabled"]
+  triggerClassName?: string
 }
 
 export function SingleDatePickerField({
@@ -37,11 +38,12 @@ export function SingleDatePickerField({
   allowClear = false,
   clearLabel = "Clear date",
   disabledDays,
+  triggerClassName,
 }: SingleDatePickerFieldProps) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="relative w-full">
       <Popover
         open={open}
         onOpenChange={(nextOpen) => {
@@ -61,7 +63,9 @@ export function SingleDatePickerField({
             disabled={disabled}
             className={cn(
               "h-10 w-full justify-start text-left font-normal",
-              !value && "text-muted-foreground"
+              allowClear && value ? "pr-10" : undefined,
+              !value && "text-muted-foreground",
+              triggerClassName
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -91,10 +95,15 @@ export function SingleDatePickerField({
       {allowClear && value ? (
         <Button
           type="button"
-          variant="outline"
-          size="icon"
-          onClick={() => {
+          variant="ghost"
+          size="icon-xs"
+          className="absolute top-1/2 right-1.5 z-10 -translate-y-1/2 rounded-md border border-border/60 bg-background/80 text-muted-foreground hover:text-foreground"
+          disabled={disabled}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
             onChange(null)
+            setOpen(false)
             onBlur?.()
           }}
           aria-label={clearLabel}

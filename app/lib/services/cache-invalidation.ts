@@ -11,6 +11,7 @@ export type CacheDomain =
   | "roles"
   | "security"
   | "personalPath"
+  | "finance"
   | "onboarding"
 
 type QueryKeyFactory = () => QueryKey
@@ -18,16 +19,24 @@ type QueryKeyFactory = () => QueryKey
 const domainInvalidationMap: Record<CacheDomain, readonly QueryKeyFactory[]> = {
   me: [queryKeys.me.root],
   adminUsers: [queryKeys.adminUsers.root],
-  settings: [queryKeys.settings.root, queryKeys.me.root, queryKeys.profile.root],
+  settings: [
+    queryKeys.settings.root,
+    queryKeys.me.root,
+    queryKeys.profile.root,
+    queryKeys.personalPath.root,
+    queryKeys.finance.root,
+  ],
   profile: [queryKeys.profile.root, queryKeys.me.root],
   companies: [queryKeys.companies.root, queryKeys.personalPath.root],
   roles: [queryKeys.roles.root],
   security: [queryKeys.security.root],
+  finance: [queryKeys.finance.root, queryKeys.personalPath.root, queryKeys.profile.root],
   personalPath: [
     queryKeys.personalPath.root,
     queryKeys.profile.root,
     queryKeys.companies.root,
     queryKeys.roles.root,
+    queryKeys.finance.root,
   ],
   onboarding: [
     queryKeys.onboarding.root,
@@ -35,6 +44,7 @@ const domainInvalidationMap: Record<CacheDomain, readonly QueryKeyFactory[]> = {
     queryKeys.profile.root,
     queryKeys.settings.root,
     queryKeys.personalPath.root,
+    queryKeys.finance.root,
     queryKeys.companies.root,
     queryKeys.roles.root,
   ],

@@ -1,4 +1,4 @@
-# Salary Path
+# Capital Path
 
 Web application for modeling professional salary progression, with authentication, onboarding, employment history management, and versioned APIs.
 

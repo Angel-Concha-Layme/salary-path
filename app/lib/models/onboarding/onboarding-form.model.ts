@@ -10,6 +10,10 @@ import {
   type CompensationTypeValue,
   type CurrencyCodeValue,
 } from "@/app/lib/models/common/domain-enums"
+import {
+  buildDefaultWorkSchedule,
+  workScheduleSchema,
+} from "@/app/lib/models/work-schedule/work-schedule.model"
 
 export { currencyOptions, compensationTypeOptions, getCompensationRateStep }
 
@@ -32,8 +36,7 @@ const onboardingFormBaseSchema = z.object({
   currency: currencyCodeSchema,
   initialRate: z.number().min(0),
   currentRate: z.number().min(0),
-  monthlyWorkHours: z.number().int().positive().max(744),
-  workDaysPerYear: z.number().int().min(1).max(366),
+  defaultWorkSchedule: workScheduleSchema,
 })
 
 export const onboardingFormSchema = onboardingFormBaseSchema
@@ -60,8 +63,7 @@ export const onboardingStep2Schema = onboardingFormBaseSchema.pick({
 })
 
 export const onboardingStep3Schema = onboardingFormBaseSchema.pick({
-  monthlyWorkHours: true,
-  workDaysPerYear: true,
+  defaultWorkSchedule: true,
 })
 
 export const onboardingStepSchemas = [
@@ -80,6 +82,5 @@ export const onboardingDefaultValues: OnboardingFormValues = {
   currency: "USD",
   initialRate: 0,
   currentRate: 0,
-  monthlyWorkHours: 174,
-  workDaysPerYear: 261,
+  defaultWorkSchedule: buildDefaultWorkSchedule(),
 }

@@ -3,10 +3,11 @@
 import { useMemo, useRef, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { useStore } from "@tanstack/react-store"
-import { InfoIcon } from "lucide-react"
+import { InfoIcon, PlusIcon } from "lucide-react"
 import { z } from "zod"
 
 import { useCompanyCatalogListQuery } from "@/app/hooks/companies/use-company-catalog"
+import { useBreakpointData } from "@/app/hooks/use-breakpoint-data"
 import { useRoleCatalogListQuery } from "@/app/hooks/roles/use-role-catalog"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import {
@@ -20,6 +21,7 @@ import {
   currencyOptions,
   getCompensationRateStep,
 } from "@/app/lib/models/onboarding/onboarding-form.model"
+import { normalizeNonNegativeAmountInput } from "@/app/lib/input-utils"
 import { getRandomCompanyColor, isValidCompanyColor } from "@/app/lib/models/personal-path/company-colors"
 import type { PathCompaniesCreateInput } from "@/app/lib/models/personal-path/path-companies.model"
 import { NumberStepperInput } from "@/components/onboarding/number-stepper-input"
@@ -38,6 +40,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
 interface CreateCompanyDialogProps {
   onCreate: (input: {
@@ -47,6 +50,7 @@ interface CreateCompanyDialogProps {
   }) => Promise<void>
   disabled?: boolean
   isPending?: boolean
+  triggerVariant?: "default" | "fab"
 }
 
 interface CreateCompanyFormValues {
@@ -75,43 +79,13 @@ function buildDefaultValues(): CreateCompanyFormValues {
   }
 }
 
-function isFutureDate(date: Date) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return date.getTime() > today.getTime()
-}
-
-function normalizeNonNegativeAmountInput(rawValue: string): string | null {
-  const value = rawValue.trim()
-
-  if (value.length === 0) {
-    return ""
-  }
-
-  if (!/^\d*\.?\d*$/.test(value)) {
-    return null
-  }
-
-  if (value === ".") {
-    return "0."
-  }
-
-  const [integerPartRaw = "", decimalPartRaw] = value.split(".")
-  const normalizedIntegerPart = integerPartRaw.replace(/^0+(?=\d)/, "") || "0"
-  const hasDecimalPart = decimalPartRaw !== undefined
-  const normalizedValue = hasDecimalPart
-    ? `${normalizedIntegerPart}.${decimalPartRaw}`
-    : normalizedIntegerPart
-
-  const parsed = Number(normalizedValue)
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    return null
-  }
-
-  return normalizedValue
-}
-
-export function CreateCompanyDialog({ onCreate, disabled = false, isPending = false }: CreateCompanyDialogProps) {
+export function CreateCompanyDialog({
+  onCreate,
+  disabled = false,
+  isPending = false,
+  triggerVariant = "default",
+}: CreateCompanyDialogProps) {
+  const breakpoint = useBreakpointData()
   const { dictionary } = useDictionary()
   const [open, setOpen] = useState(false)
   const [companySearch, setCompanySearch] = useState("")
@@ -148,16 +122,6 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
           path: ["startDate"],
         })
         .refine(
-          (value) =>
-            !value.startDate ||
-            isFutureDate(value.startDate) ||
-            value.endDate !== null,
-          {
-            message: dictionary.companies.validations.endDateRequired,
-            path: ["endDate"],
-          }
-        )
-        .refine(
           (value) => !value.startDate || !value.endDate || value.endDate.getTime() >= value.startDate.getTime(),
           {
             message: dictionary.companies.validations.endDate,
@@ -178,10 +142,6 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
     },
     onSubmit: async ({ value }) => {
       if (!value.startDate) {
-        return
-      }
-
-      if (!isFutureDate(value.startDate) && !value.endDate) {
         return
       }
 
@@ -240,13 +200,17 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
     return current ? Array.from(new Set([current, ...names])) : names
   }, [roleCatalogQuery.data?.items, formValues.roleName])
 
-  const requiresEndDate = formValues.startDate ? !isFutureDate(formValues.startDate) : false
+  const isDesktop = breakpoint.up("lg")
+  const startDatePlaceholder = breakpoint.up("lg")
+    ? dictionary.companies.placeholders.startDate
+    : `${dictionary.companies.labels.startDate.charAt(0).toLowerCase()}${dictionary.companies.labels.startDate.slice(1)}`
+  const finalRateHelperText = dictionary.companies.placeholders.currentRate
+  const finalRateInputPlaceholder = finalRateHelperText
 
   const canCreateCompany =
     formValues.companyName.trim().length > 0 &&
     formValues.roleName.trim().length > 0 &&
     formValues.startDate !== null &&
-    (!requiresEndDate || formValues.endDate !== null) &&
     formValues.currency.trim().length > 0 &&
     formValues.initialRate >= 0 &&
     (formValues.finalRate.trim().length === 0 ||
@@ -268,12 +232,33 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
       }}
     >
       <DialogTrigger asChild>
-        <Button type="button" disabled={disabled || isPending} className="hover:bg-primary/90">
-          {dictionary.companies.actions.addCompany}
+        <Button
+          type="button"
+          size={triggerVariant === "fab" ? "icon-lg" : "default"}
+          disabled={disabled || isPending}
+          className={cn(
+            "hover:bg-primary/90",
+            triggerVariant === "fab" && "h-10 w-10 rounded-full shadow-sm"
+          )}
+        >
+          {triggerVariant === "fab" ? (
+            <>
+              <PlusIcon className="size-4" />
+              <span className="sr-only">{dictionary.companies.actions.addCompany}</span>
+            </>
+          ) : (
+            dictionary.companies.actions.addCompany
+          )}
         </Button>
       </DialogTrigger>
 
-      <DialogContent ref={dialogContentRef} className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent
+        ref={dialogContentRef}
+        className="max-h-[90vh] overflow-y-auto sm:max-w-xl"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault()
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{dictionary.companies.dialogs.addCompanyTitle}</DialogTitle>
           <DialogDescription>{dictionary.companies.dialogs.addCompanyDescription}</DialogDescription>
@@ -403,7 +388,7 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
               }}
             </form.Field>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <form.Field name="startDate">
                 {(field) => {
                   const isInvalid = field.state.meta.isBlurred && !field.state.meta.isValid
@@ -431,7 +416,8 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
                         }}
                         onBlur={field.handleBlur}
                         ariaInvalid={isInvalid}
-                        placeholder={dictionary.companies.placeholders.startDate}
+                        placeholder={startDatePlaceholder}
+                        triggerClassName="h-8"
                         disabled={isPending}
                       />
                       {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
@@ -454,6 +440,7 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
                         onBlur={field.handleBlur}
                         ariaInvalid={isInvalid}
                         placeholder={dictionary.companies.placeholders.endDate}
+                        triggerClassName="h-8"
                         allowClear
                         disabled={isPending || !formValues.startDate}
                         disabledDays={formValues.startDate ? { before: formValues.startDate } : undefined}
@@ -465,7 +452,7 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
               </form.Field>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <form.Field name="compensationType">
                 {(field) => {
                   const isInvalid = field.state.meta.isBlurred && !field.state.meta.isValid
@@ -562,7 +549,7 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
               </form.Field>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <form.Field name="initialRate">
                 {(field) => {
                   const isInvalid = field.state.meta.isBlurred && !field.state.meta.isValid
@@ -618,26 +605,35 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
                       <FieldLabel htmlFor="create-company-final-rate">
                         {dictionary.companies.labels.currentRate}
                       </FieldLabel>
-                      <Input
-                        id="create-company-final-rate"
-                        name={field.name}
-                        type="number"
-                        min={0}
-                        step={String(compensationRateStep)}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) => {
-                          const normalizedValue = normalizeNonNegativeAmountInput(event.target.value)
-                          if (normalizedValue === null) {
-                            return
-                          }
+                      <div className="relative">
+                        <Input
+                          id="create-company-final-rate"
+                          name={field.name}
+                          type="number"
+                          min={0}
+                          step={String(compensationRateStep)}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) => {
+                            const normalizedValue = normalizeNonNegativeAmountInput(event.target.value)
+                            if (normalizedValue === null) {
+                              return
+                            }
 
-                          field.handleChange(normalizedValue)
-                        }}
-                        aria-invalid={isInvalid}
-                        placeholder={dictionary.companies.placeholders.currentRate}
-                        disabled={isPending}
-                      />
+                            field.handleChange(normalizedValue)
+                          }}
+                          aria-invalid={isInvalid}
+                          placeholder={isDesktop ? finalRateInputPlaceholder : ""}
+                          disabled={isPending}
+                        />
+                        {!isDesktop && field.state.value.trim().length === 0 ? (
+                          <div className="pointer-events-none absolute inset-y-0 left-2.5 right-2.5 flex items-center overflow-hidden whitespace-nowrap">
+                            <p className="companies-final-rate-helper-marquee text-sm text-muted-foreground">
+                              {finalRateInputPlaceholder}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
                       {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
                     </Field>
                   )
@@ -666,6 +662,13 @@ export function CreateCompanyDialog({ onCreate, disabled = false, isPending = fa
               }}
             </form.Field>
           </FieldGroup>
+
+          <div className="mt-3 mb-4 flex items-start gap-2.5 rounded-lg border border-border/70 bg-muted/35 px-3.5 pt-3 pb-3">
+            <InfoIcon className="mt-0.5 size-4 text-[color:var(--ui-accent-current)]" />
+            <p className="text-sm leading-6 text-muted-foreground">
+              {dictionary.companies.hints.defaultWorkScheduleOnCreate}
+            </p>
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>

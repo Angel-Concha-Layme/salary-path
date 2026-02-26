@@ -2,6 +2,7 @@
 
 import { MinusIcon, PlusIcon } from "lucide-react"
 
+import { selectInputOnZeroFocus } from "@/app/lib/input-utils"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
 
 interface NumberStepperInputProps {
@@ -89,17 +90,7 @@ export function NumberStepperInput({
         max={max}
         step={step}
         onBlur={onBlur}
-        onFocus={(event) => {
-          if (value !== 0) {
-            return
-          }
-
-          const inputElement = event.currentTarget
-
-          requestAnimationFrame(() => {
-            inputElement.select()
-          })
-        }}
+        onFocus={selectInputOnZeroFocus(value)}
         onChange={(event) => {
           const parsed = Number(event.target.value)
 

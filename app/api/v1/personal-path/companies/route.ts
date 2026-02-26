@@ -8,12 +8,7 @@ import { requireApiSession } from "@/app/lib/server/require-api-session"
 export async function GET(request: Request) {
   try {
     const session = await requireApiSession(request)
-    const searchParams = new URL(request.url).searchParams
-    const requestedLimit = Number(searchParams.get("limit") ?? 50)
-
-    const result = await listPathCompanies(session.user.id, {
-      limit: requestedLimit,
-    })
+    const result = await listPathCompanies(session.user.id)
 
     return jsonOkWithoutNulls(result)
   } catch (error) {

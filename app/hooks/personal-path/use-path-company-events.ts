@@ -10,41 +10,22 @@ import { useDomainMutation } from "@/app/hooks/use-domain-mutation"
 import { queryKeys } from "@/app/lib/services/query-keys"
 import { pathCompanyEventsService } from "@/app/lib/services/personal-path/path-company-events.service"
 
-export interface UsePathCompanyEventsListParams {
-  limit?: number
-}
-
-export interface UsePathCompanyEventsByOwnerListParams {
-  limit?: number
-}
-
 const PERSONAL_DATA_STALE_TIME_MS = 1000 * 60 * 10
 const PERSONAL_DATA_CACHE_TIME_MS = 1000 * 60 * 20
 
-export function getPathCompanyEventsByOwnerListQueryOptions(
-  params: UsePathCompanyEventsByOwnerListParams = {}
-) {
-  const limit = params.limit ?? 100
-
+export function getPathCompanyEventsByOwnerListQueryOptions() {
   return queryOptions({
-    queryKey: queryKeys.personalPath.companyEvents.list({ limit }),
-    queryFn: ({ signal }) =>
-      pathCompanyEventsService.listPathCompanyEventsByOwner({ limit, signal }),
+    queryKey: queryKeys.personalPath.companyEvents.list(),
+    queryFn: ({ signal }) => pathCompanyEventsService.listPathCompanyEventsByOwner({ signal }),
     staleTime: PERSONAL_DATA_STALE_TIME_MS,
     cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
   })
 }
 
-export function getPathCompanyEventsListQueryOptions(
-  pathCompanyId: string,
-  params: UsePathCompanyEventsListParams = {}
-) {
-  const limit = params.limit ?? 50
-
+export function getPathCompanyEventsListQueryOptions(pathCompanyId: string) {
   return queryOptions({
-    queryKey: queryKeys.personalPath.companies.events.list(pathCompanyId, { limit }),
-    queryFn: ({ signal }) =>
-      pathCompanyEventsService.listPathCompanyEvents(pathCompanyId, { limit, signal }),
+    queryKey: queryKeys.personalPath.companies.events.list(pathCompanyId),
+    queryFn: ({ signal }) => pathCompanyEventsService.listPathCompanyEvents(pathCompanyId, { signal }),
     staleTime: PERSONAL_DATA_STALE_TIME_MS,
     cacheTime: PERSONAL_DATA_CACHE_TIME_MS,
     enabled: Boolean(pathCompanyId),
@@ -62,17 +43,12 @@ export function getPathCompanyEventDetailQueryOptions(pathCompanyId: string, eve
   })
 }
 
-export function usePathCompanyEventsListQuery(
-  pathCompanyId: string,
-  params: UsePathCompanyEventsListParams = {}
-) {
-  return useQuery(getPathCompanyEventsListQueryOptions(pathCompanyId, params))
+export function usePathCompanyEventsListQuery(pathCompanyId: string) {
+  return useQuery(getPathCompanyEventsListQueryOptions(pathCompanyId))
 }
 
-export function usePathCompanyEventsByOwnerListQuery(
-  params: UsePathCompanyEventsByOwnerListParams = {}
-) {
-  return useQuery(getPathCompanyEventsByOwnerListQueryOptions(params))
+export function usePathCompanyEventsByOwnerListQuery() {
+  return useQuery(getPathCompanyEventsByOwnerListQueryOptions())
 }
 
 export function usePathCompanyEventDetailQuery(pathCompanyId: string, eventId: string) {
@@ -89,6 +65,9 @@ export function useCreatePathCompanyEventMutation() {
         }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.profile.root(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.finance.root(),
         }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.events.root(variables.pathCompanyId),
@@ -117,6 +96,9 @@ export function useUpdatePathCompanyEventMutation() {
           queryKey: queryKeys.profile.root(),
         }),
         queryClient.invalidateQueries({
+          queryKey: queryKeys.finance.root(),
+        }),
+        queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.events.root(variables.pathCompanyId),
         }),
       ])
@@ -143,6 +125,9 @@ export function useDeletePathCompanyEventMutation() {
         }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.profile.root(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.finance.root(),
         }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.personalPath.companies.events.root(variables.pathCompanyId),

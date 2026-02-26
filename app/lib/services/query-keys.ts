@@ -18,6 +18,10 @@ export interface RoleCatalogListParams {
   search?: string
 }
 
+export interface MonthlyIncomeListParams {
+  range?: "all" | "ytd" | "last12m" | "last36m"
+}
+
 export const queryKeys = {
   me: {
     root: () => ["me"] as const,
@@ -63,6 +67,19 @@ export const queryKeys = {
       detail: (roleId: string) => ["roles", "catalog", "detail", roleId] as const,
     },
   },
+  finance: {
+    root: () => ["finance"] as const,
+    monthlyIncome: {
+      root: () => ["finance", "monthly-income"] as const,
+      list: (params: MonthlyIncomeListParams = {}) =>
+        [
+          "finance",
+          "monthly-income",
+          "list",
+          { range: params.range ?? "all" },
+        ] as const,
+    },
+  },
   onboarding: {
     root: () => ["onboarding"] as const,
     status: () => ["onboarding", "status"] as const,
@@ -79,26 +96,23 @@ export const queryKeys = {
     root: () => ["personal-path"] as const,
     companyEvents: {
       root: () => ["personal-path", "company-events"] as const,
-      list: (params: PaginationParams = {}) =>
-        ["personal-path", "company-events", "list", { limit: params.limit ?? 50 }] as const,
+      list: () => ["personal-path", "company-events", "list"] as const,
     },
     companies: {
       root: () => ["personal-path", "companies"] as const,
-      list: (params: PaginationParams = {}) =>
-        ["personal-path", "companies", "list", { limit: params.limit ?? 50 }] as const,
+      list: () => ["personal-path", "companies", "list"] as const,
       detail: (pathCompanyId: string) =>
         ["personal-path", "companies", "detail", pathCompanyId] as const,
       events: {
         root: (pathCompanyId: string) =>
           ["personal-path", "companies", pathCompanyId, "events"] as const,
-        list: (pathCompanyId: string, params: PaginationParams = {}) =>
+        list: (pathCompanyId: string) =>
           [
             "personal-path",
             "companies",
             pathCompanyId,
             "events",
             "list",
-            { limit: params.limit ?? 50 },
           ] as const,
         detail: (pathCompanyId: string, eventId: string) =>
           ["personal-path", "companies", pathCompanyId, "events", "detail", eventId] as const,

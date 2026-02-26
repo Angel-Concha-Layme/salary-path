@@ -382,6 +382,7 @@ export function ProfileScreen() {
             notAvailableLabel={dictionary.profile.notAvailable}
             eventsByCompanyId={summaryEventsByCompanyId}
             eventTypeLabels={eventTypeLabels}
+            detailsTitle={dictionary.personalPath.drawer.detailsTitle}
             eventsTitle={dictionary.profile.currentSummary.eventsTitle}
             noEventsLabel={dictionary.profile.empty.events}
             defaultExpanded={false}
@@ -402,6 +403,7 @@ export function ProfileScreen() {
         locale={profile.financeSettings?.locale ?? profile.usefulInfo.preferredLocale}
         monthlyWorkHours={profile.usefulInfo.monthlyWorkHours}
         workDaysPerYear={profile.usefulInfo.workDaysPerYear}
+        hasHourlyCompany={profile.salary.byCompany.some((companySalary) => companySalary.compensationType === "hourly")}
         showDescription={false}
       />
     </ProfileSection>

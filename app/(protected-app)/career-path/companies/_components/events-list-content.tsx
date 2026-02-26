@@ -1,6 +1,9 @@
 "use client"
 
+import { ArrowRightIcon } from "lucide-react"
+
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface EventsListContentProps {
@@ -17,6 +20,9 @@ interface EventsListContentProps {
   unknownErrorMessage: string
   getEventTypeLabel: (eventType: PathCompanyEventsEntity["eventType"]) => string
   onSelectEvent: (eventId: string) => void
+  showDetailsAction?: boolean
+  viewDetailsLabel?: string
+  onViewDetails?: (eventId: string) => void
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -61,7 +67,13 @@ export function EventsListContent({
   unknownErrorMessage,
   getEventTypeLabel,
   onSelectEvent,
+  showDetailsAction = false,
+  viewDetailsLabel,
+  onViewDetails,
 }: EventsListContentProps) {
+  const canViewDetails = showDetailsAction && Boolean(viewDetailsLabel) && Boolean(onViewDetails)
+  const detailsLabel = viewDetailsLabel ?? ""
+
   if (!selectedCompanyId) {
     return renderEmptyState(emptyNoCompanyMessage)
   }
@@ -84,29 +96,47 @@ export function EventsListContent({
         const isSelected = event.id === selectedEventId
 
         return (
-          <button
+          <div
             key={event.id}
-            type="button"
-            onClick={() => onSelectEvent(event.id)}
             className={cn(
-              "w-full cursor-pointer rounded-lg border border-border/80 px-3 py-2 text-left transition-colors hover:bg-[color-mix(in_oklch,var(--ui-accent-current)_16%,transparent)]",
+              "w-full rounded-lg bg-background/75 px-3 py-2 transition-colors hover:bg-[color-mix(in_oklch,var(--ui-accent-current)_16%,transparent)] md:border md:border-border/80",
               isSelected
-                ? "bg-[color-mix(in_oklch,var(--ui-accent-current)_22%,transparent)]"
-                : "bg-background"
+                ? "bg-[color-mix(in_oklch,var(--ui-accent-current)_22%,transparent)] md:bg-[color-mix(in_oklch,var(--ui-accent-current)_22%,transparent)]"
+                : "bg-background md:bg-background"
             )}
           >
-            <div className="flex items-center justify-between gap-2">
-              <p className={cn("text-sm font-medium", isSelected && "text-foreground")}>
-                {getEventTypeLabel(event.eventType)}
+            <button
+              type="button"
+              onClick={() => onSelectEvent(event.id)}
+              className="w-full cursor-pointer text-left"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className={cn("text-sm font-medium", isSelected && "text-foreground")}>
+                  {getEventTypeLabel(event.eventType)}
+                </p>
+                <p className={cn("text-xs text-muted-foreground", isSelected && "text-foreground/75")}>
+                  {formatAmount(locale, selectedCompanyCurrency, event.amount)}
+                </p>
+              </div>
+              <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-foreground/70")}>
+                {dateFormatter.format(new Date(event.effectiveDate))}
               </p>
-              <p className={cn("text-xs text-muted-foreground", isSelected && "text-foreground/75")}>
-                {formatAmount(locale, selectedCompanyCurrency, event.amount)}
-              </p>
-            </div>
-            <p className={cn("mt-1 text-xs text-muted-foreground", isSelected && "text-foreground/70")}>
-              {dateFormatter.format(new Date(event.effectiveDate))}
-            </p>
-          </button>
+            </button>
+
+            {canViewDetails ? (
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-md border border-[color-mix(in_oklch,var(--ui-accent-current)_42%,var(--border))] bg-[color-mix(in_oklch,var(--ui-accent-current)_64%,black)] px-3 text-xs font-semibold text-white hover:bg-[color-mix(in_oklch,var(--ui-accent-current)_70%,black)]"
+                  onClick={() => onViewDetails?.(event.id)}
+                >
+                  {detailsLabel}
+                  <ArrowRightIcon className="size-3.5" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         )
       })}
     </div>

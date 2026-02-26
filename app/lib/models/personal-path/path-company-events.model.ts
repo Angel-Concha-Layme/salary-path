@@ -33,10 +33,6 @@ export interface PathCompanyEventsUpdateInput {
   notes?: string | null
 }
 
-export interface PathCompanyEventsListParams {
-  limit?: number
-}
-
 export interface PathCompanyEventsListResponse {
   items: PathCompanyEventsEntity[]
   total: number

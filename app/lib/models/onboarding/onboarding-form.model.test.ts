@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  getCompensationRateStep,
-  compensationStepByCurrency,
-  currencyOptions,
-  onboardingDefaultValues,
-  onboardingFormSchema,
-  onboardingStep1Schema,
-  onboardingStep2Schema,
   onboardingStep3Schema,
+  onboardingStep2Schema,
+  onboardingStep1Schema,
+  onboardingFormSchema,
+  onboardingDefaultValues,
+  currencyOptions,
+  compensationStepByCurrency,
+  getCompensationRateStep,
 } from "@/app/lib/models/onboarding/onboarding-form.model"
+import { buildDefaultWorkSchedule } from "@/app/lib/models/work-schedule/work-schedule.model"
 
 describe("onboarding form schema", () => {
   const legacyStepCurrencies = [
@@ -26,8 +27,7 @@ describe("onboarding form schema", () => {
   ] as const
 
   it("provides expected defaults", () => {
-    expect(onboardingDefaultValues.monthlyWorkHours).toBe(174)
-    expect(onboardingDefaultValues.workDaysPerYear).toBe(261)
+    expect(onboardingDefaultValues.defaultWorkSchedule).toEqual(buildDefaultWorkSchedule())
     expect(onboardingDefaultValues.compensationType).toBe("monthly")
   })
 
@@ -103,8 +103,7 @@ describe("onboarding form schema", () => {
   it("accepts step 3 with valid work settings", () => {
     const result = onboardingStep3Schema.safeParse({
       ...onboardingDefaultValues,
-      monthlyWorkHours: 160,
-      workDaysPerYear: 240,
+      defaultWorkSchedule: buildDefaultWorkSchedule(),
     })
 
     expect(result.success).toBe(true)

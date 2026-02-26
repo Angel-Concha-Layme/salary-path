@@ -27,8 +27,19 @@ import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-co
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
 import type { UserFinanceSettingsEntity } from "@/app/lib/models/settings/user-finance-settings.model"
 import { getRandomCompanyColor } from "@/app/lib/models/personal-path/company-colors"
+import {
+  buildDefaultWorkSchedule,
+  deriveLegacyWorkSettingsFromSchedule,
+  workScheduleSchema,
+  type WorkSchedule,
+} from "@/app/lib/models/work-schedule/work-schedule.model"
 import { ApiError } from "@/app/lib/server/api-error"
 import { normalizeSearchText, toIso, toSlug } from "@/app/lib/server/domain/common"
+import { recomputeMonthlyIncomeLedgerFromDate } from "@/app/lib/server/domain/finance/monthly-income.domain"
+import {
+  replacePathCompanyWorkScheduleDays,
+  replaceUserWorkScheduleDays,
+} from "@/app/lib/server/domain/finance/work-schedule.domain"
 import { syncEndOfEmploymentEvent } from "@/app/lib/server/domain/personal-path/end-of-employment-event-sync"
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0]
@@ -43,8 +54,7 @@ const completeSchema = z
     currency: currencyCodeSchema,
     initialRate: z.number().min(0),
     currentRate: z.number().min(0),
-    monthlyWorkHours: z.number().int().positive().max(744).optional(),
-    workDaysPerYear: z.number().int().min(1).max(366).optional(),
+    defaultWorkSchedule: workScheduleSchema.optional(),
     locale: z.string().trim().min(2).max(20).optional(),
   })
   .refine((value) => !value.endDate || value.endDate >= value.startDate, {
@@ -52,7 +62,10 @@ const completeSchema = z
     path: ["endDate"],
   })
 
-function mapPathCompanyEntity(row: typeof pathCompanies.$inferSelect): PathCompaniesEntity {
+function mapPathCompanyEntity(
+  row: typeof pathCompanies.$inferSelect,
+  workSchedule: WorkSchedule | null = null
+): PathCompaniesEntity {
   return {
     id: row.id,
     ownerUserId: row.ownerUserId,
@@ -70,6 +83,7 @@ function mapPathCompanyEntity(row: typeof pathCompanies.$inferSelect): PathCompa
     createdAt: toIso(row.createdAt) ?? new Date(0).toISOString(),
     updatedAt: toIso(row.updatedAt) ?? new Date(0).toISOString(),
     deletedAt: toIso(row.deletedAt),
+    workSchedule,
   }
 }
 
@@ -90,7 +104,8 @@ function mapPathCompanyEventEntity(
 }
 
 function mapUserFinanceSettingsEntity(
-  row: typeof userFinanceSettings.$inferSelect
+  row: typeof userFinanceSettings.$inferSelect,
+  defaultWorkSchedule: WorkSchedule
 ): UserFinanceSettingsEntity {
   return {
     id: row.id,
@@ -99,6 +114,7 @@ function mapUserFinanceSettingsEntity(
     locale: row.locale,
     monthlyWorkHours: row.monthlyWorkHours,
     workDaysPerYear: row.workDaysPerYear,
+    defaultWorkSchedule,
     createdAt: toIso(row.createdAt) ?? new Date(0).toISOString(),
     updatedAt: toIso(row.updatedAt) ?? new Date(0).toISOString(),
     deletedAt: toIso(row.deletedAt),
@@ -267,8 +283,10 @@ export async function completeOnboarding(
   input: OnboardingCompleteInput
 ): Promise<OnboardingCompleteResponse> {
   const payload = completeSchema.parse(input)
+  const defaultWorkSchedule = payload.defaultWorkSchedule ?? buildDefaultWorkSchedule()
+  const derivedWorkSettings = deriveLegacyWorkSettingsFromSchedule(defaultWorkSchedule)
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const now = new Date()
 
     const company = await resolveCompanyCatalog(tx, payload.companyName, now)
@@ -300,6 +318,8 @@ export async function completeOnboarding(
     if (!pathCompany) {
       throw new ApiError(500, "INTERNAL_ERROR", "Failed to create initial path company")
     }
+
+    await replacePathCompanyWorkScheduleDays(pathCompany.id, defaultWorkSchedule, now, tx)
 
     const startEventRows = await tx
       .insert(pathCompanyEvents)
@@ -402,8 +422,8 @@ export async function completeOnboarding(
           ownerUserId,
           currency: payload.currency,
           locale: payload.locale ?? "es",
-          monthlyWorkHours: payload.monthlyWorkHours ?? 174,
-          workDaysPerYear: payload.workDaysPerYear ?? 261,
+          monthlyWorkHours: derivedWorkSettings.monthlyWorkHours,
+          workDaysPerYear: derivedWorkSettings.workDaysPerYear,
           createdAt: now,
           updatedAt: now,
         })
@@ -415,8 +435,8 @@ export async function completeOnboarding(
         .update(userFinanceSettings)
         .set({
           currency: payload.currency,
-          monthlyWorkHours: payload.monthlyWorkHours ?? existingSettings.monthlyWorkHours,
-          workDaysPerYear: payload.workDaysPerYear ?? existingSettings.workDaysPerYear,
+          monthlyWorkHours: derivedWorkSettings.monthlyWorkHours,
+          workDaysPerYear: derivedWorkSettings.workDaysPerYear,
           locale: payload.locale ?? existingSettings.locale,
           updatedAt: now,
         })
@@ -436,6 +456,8 @@ export async function completeOnboarding(
       throw new ApiError(500, "INTERNAL_ERROR", "Failed to upsert finance settings")
     }
 
+    await replaceUserWorkScheduleDays(ownerUserId, defaultWorkSchedule, now, tx)
+
     const userRows = await tx
       .update(user)
       .set({
@@ -453,9 +475,13 @@ export async function completeOnboarding(
 
     return {
       completedAt: toIso(userRow.onboardingCompletedAt) ?? now.toISOString(),
-      pathCompany: mapPathCompanyEntity(pathCompany),
+      pathCompany: mapPathCompanyEntity(pathCompany, defaultWorkSchedule),
       createdEvents: createdEvents.map(mapPathCompanyEventEntity),
-      settings: mapUserFinanceSettingsEntity(settingsRow),
+      settings: mapUserFinanceSettingsEntity(settingsRow, defaultWorkSchedule),
     }
   })
+
+  await recomputeMonthlyIncomeLedgerFromDate(ownerUserId, payload.startDate)
+
+  return result
 }

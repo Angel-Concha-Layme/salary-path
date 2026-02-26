@@ -34,6 +34,7 @@ interface PersonalPathCompaniesTableMobileLayoutProps
   extends PersonalPathCompaniesTableBaseLayoutProps {
   eventsByCompanyId: Map<string, PathCompanyEventsEntity[]>
   eventTypeLabels: Record<string, string>
+  detailsTitle: string
   eventsTitle: string
   noEventsLabel: string
   defaultExpanded?: boolean
@@ -209,6 +210,7 @@ export function PersonalPathCompaniesTableMobileLayout({
   notAvailableLabel,
   eventsByCompanyId,
   eventTypeLabels,
+  detailsTitle,
   eventsTitle,
   noEventsLabel,
   defaultExpanded = true,
@@ -262,7 +264,7 @@ export function PersonalPathCompaniesTableMobileLayout({
                   return [...current, row.id]
                 })
               }}
-              className="w-full text-left"
+              className={cn("w-full text-left", isExpanded && "border-b border-border/60 pb-2")}
               aria-label={`${labels.displayName}: ${row.displayName}`}
               aria-expanded={isExpanded}
             >
@@ -280,7 +282,7 @@ export function PersonalPathCompaniesTableMobileLayout({
                 </p>
                 <ChevronDownIcon
                   className={cn(
-                    "size-4 shrink-0 text-muted-foreground transition-transform",
+                    "size-4 shrink-0 text-primary/70 transition-transform",
                     isExpanded && "rotate-180"
                   )}
                 />
@@ -288,36 +290,41 @@ export function PersonalPathCompaniesTableMobileLayout({
             </button>
 
             {isExpanded ? (
-              <div className="mt-2 space-y-2 border-t border-border/70 pt-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      {labels.roleDisplayName}
-                    </p>
-                    <p className="text-xs text-foreground">{row.roleDisplayName}</p>
+              <div className="mt-3 space-y-3 pt-1">
+                <section className="pl-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-foreground">
+                    {detailsTitle}
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        {labels.roleDisplayName}
+                      </p>
+                      <p className="text-xs text-foreground">{row.roleDisplayName}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        {labels.annualSalary}
+                      </p>
+                      <p className="text-xs font-semibold tabular-nums text-foreground">{annualSalary}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        {labels.startDate}
+                      </p>
+                      <p className="text-xs text-foreground">{formatDateValue(row.startDate, locale)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        {labels.endDate}
+                      </p>
+                      <p className="text-xs text-foreground">{formatDateValue(row.endDate, locale)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      {labels.annualSalary}
-                    </p>
-                    <p className="text-xs font-semibold tabular-nums text-foreground">{annualSalary}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      {labels.startDate}
-                    </p>
-                    <p className="text-xs text-foreground">{formatDateValue(row.startDate, locale)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      {labels.endDate}
-                    </p>
-                    <p className="text-xs text-foreground">{formatDateValue(row.endDate, locale)}</p>
-                  </div>
-                </div>
+                </section>
 
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                <section className="pl-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-foreground">
                     {eventsTitle}
                   </p>
                   {companyEvents.length === 0 ? (
@@ -353,7 +360,7 @@ export function PersonalPathCompaniesTableMobileLayout({
                       ))}
                     </ul>
                   )}
-                </div>
+                </section>
               </div>
             ) : null}
           </article>

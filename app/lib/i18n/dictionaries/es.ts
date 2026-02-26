@@ -176,14 +176,20 @@ export const esDictionary = {
     stepProgress: "Paso {current} de {total}",
     completionHint: "Podrás editar esta información después.",
     steps: {
-      companyRole: "Empresa, rol y fecha de inicio",
+      companyRole: "Datos de tu trabajo actual",
       dates: "Fechas",
       compensation: "Compensación",
-      workSettings: "Work Settings",
+      workSettings: "Jornada laboral",
+    },
+    descriptions: {
+      companyRole:
+        "Ingresa los datos de la empresa donde trabajas actualmente. Al terminar el onboarding podrás agregar trabajos anteriores.",
+      compensation: "Define el tipo de compensación, la moneda y tus montos inicial y actual.",
+      workSettings: "Configura tu jornada semanal para normalizar correctamente tus cálculos salariales.",
     },
     fields: {
       companyName: "Nombre de empresa",
-      roleName: "Nombre del rol",
+      roleName: "Nombre del rol actual",
       startDate: "Fecha de inicio",
       dateRange: "Rango de fechas",
       currentCompany: "Empresa actual",
@@ -218,6 +224,26 @@ export const esDictionary = {
       workDaysPerYearLimit:
         "Límite: 366 días por año (año bisiesto). No puedes ingresar más porque un año no tiene más días.",
     },
+    tooltips: {
+      companyName:
+        "Si trabajas para el sector público, escribe la entidad (por ejemplo, ministerio, municipalidad o institución). Si trabajas por cuenta propia, puedes usar \"Independiente\" o tu nombre comercial.",
+      roleName: "Ingresa el nombre de tu rol actual en esta empresa.",
+      startDate:
+        "Usa la fecha en que empezaste en la empresa, no la fecha de tu último ascenso o cambio de rol.",
+      compensationType:
+        "Indica cómo se define tu pago actual en esta empresa: por hora o mensual.",
+      currency: "Moneda en la que recibes tu compensación (por ejemplo, PEN o USD).",
+      initialRate: "Monto de compensación con el que iniciaste en esta empresa.",
+      currentRate: "Monto de compensación que recibes actualmente en esta empresa.",
+      weeklySchedule: "Marca tus días laborables y el horario habitual de cada día.",
+      quickEdit:
+        "Aplica rápidamente la misma hora de inicio y fin a todos los días marcados como laborables. Puedes seguir marcando o desmarcando días.",
+      dayStatus: "Actívalo si trabajas ese día; desactívalo si es día de descanso.",
+      fromTime: "Hora de inicio de tu jornada en ese día.",
+      toTime: "Hora de fin de tu jornada en ese día.",
+      breakDuration:
+        "Tiempo libre dentro de la jornada (por ejemplo almuerzo) en formato HH:MM. Se descuenta del total de horas trabajadas.",
+    },
     actions: {
       previous: "Anterior",
       next: "Siguiente",
@@ -245,7 +271,7 @@ export const esDictionary = {
     },
     completionAnimation: {
       title: "Estamos creando tu cuenta",
-      description: "Gracias por usar Salary Path.",
+      description: "Gracias por usar Capital Path.",
     },
   },
   comparisonOnboarding: {
@@ -366,22 +392,37 @@ export const esDictionary = {
     actions: {
       addCompany: "Agregar empresa",
       addEvent: "Agregar evento",
+      addReview: "Agregar reseña",
+      viewDetails: "Ver detalles",
       save: "Guardar cambios",
       reset: "Reset",
       deleteCompany: "Eliminar empresa",
       deleteEvent: "Eliminar evento",
       cancel: "Cancelar",
       create: "Crear",
+      editWorkSchedule: "Editar jornada",
+      saveWorkSchedule: "Guardar jornada",
     },
     dialogs: {
       addCompanyTitle: "Agregar empresa",
       addCompanyDescription: "Crea una empresa con rol, fechas, compensación y color.",
       addEventTitle: "Agregar evento",
       addEventDescription: "Registra un cambio salarial para la empresa seleccionada.",
+      addReviewTitle: "Agregar reseña",
+      addReviewDescription: "Edita tu reseña personal y el puntaje de esta empresa.",
       deleteCompanyTitle: "Eliminar empresa",
       deleteCompanyDescription: "Esta acción también eliminará sus eventos asociados.",
       deleteEventTitle: "Eliminar evento",
       deleteEventDescription: "Esta acción no se puede deshacer.",
+      compensationTypeChangeTitle: "Confirmar cambio de tipo de compensación",
+      compensationTypeMonthlyToHourlyDescription:
+        "Este cambio será retroactivo y afectará todos los eventos de esta empresa. Revisa y configura las horas libres diarias antes de confirmar si lo necesitas.",
+      compensationTypeHourlyToMonthlyDescription:
+        "Este cambio será retroactivo y afectará todos los eventos de esta empresa. Se mantendrá el horario, pero las horas libres se reiniciarán a 0.",
+      confirmCompensationTypeChange: "Confirmar cambio",
+      editWorkScheduleTitle: "Editar jornada laboral",
+      editWorkScheduleDescription:
+        "Ajusta la jornada semanal de esta empresa. Los cambios se aplicarán al guardar la jornada.",
     },
     empty: {
       companies: "Aún no tienes empresas. Agrega la primera para comenzar.",
@@ -399,11 +440,12 @@ export const esDictionary = {
       color: "#0F766E",
       selectEventType: "Selecciona tipo de evento",
       selectCurrency: "Selecciona moneda",
-      currentRate: "Compensación final opcional",
+      currentRate: "Compensación actual opcional",
     },
     labels: {
       companyName: "Nombre de empresa",
       roleName: "Nombre del rol",
+      useGlobalSchedule: "Usar jornada global",
       compensationType: "Tipo de compensación",
       currency: "Moneda",
       startDate: "Fecha de inicio",
@@ -448,6 +490,10 @@ export const esDictionary = {
     hints: {
       eventsEditable: "Luego podrás editar fechas y agregar más eventos a esta empresa.",
       companyReview: "Esta es tu reseña personal sobre la empresa.",
+      defaultWorkScheduleOnCreate:
+        "Importante: al crear la empresa se usará tu jornada por defecto. Luego podrás editarla desde los detalles de la empresa.",
+      usingGlobalScheduleSummary:
+        "Esta empresa está usando la jornada global. Desactiva esa opción si quieres definir una jornada específica.",
     },
     notifications: {
       createCompanyLoading: "Creando empresa...",
@@ -485,6 +531,8 @@ export const esDictionary = {
       rangeLabel: "Rango",
       rateBasisLabel: "Base de compensación",
       companiesLabel: "Empresas",
+      compensationTitle: "Evolución de compensación",
+      realMonthlyIncomeTitle: "Ingresos reales por mes",
       views: {
         rate: "Evolución de la compensación",
         cumulativeIncome: "Ingreso acumulado",
@@ -514,6 +562,71 @@ export const esDictionary = {
       activeCompaniesLabel: "Empresas activas",
       currencyWarning: "Se excluyeron {count} empresas en la vista acumulada.",
       currencyWarningSuffix: "Solo se incluyen empresas con moneda",
+    },
+    monthly: {
+      subtitle: "Ledger mensual persistido con ajustes manuales.",
+      legendTitle: "Monedas",
+      emptyState: "No hay ingresos mensuales para el rango seleccionado.",
+      tableTitle: "Detalle mensual de ingresos",
+      emptyTable: "Aún no hay registros mensuales.",
+      emptySources: "No hay fuentes para este mes.",
+      saving: "Guardando...",
+      labels: {
+        month: "Mes",
+        final: "Total final",
+        employment: "Empleo",
+        bonus: "Bonus",
+        extraIncome: "Ingreso extra",
+        adjustment: "Ajuste",
+        computed: "Calculado",
+      },
+      sourceTypes: {
+        employment: "Empleo",
+        bonus: "Bonus",
+        extra_income: "Ingreso extra",
+        adjustment: "Ajuste",
+      },
+      actions: {
+        addBonus: "+ Bonus",
+        addExtraIncome: "+ Extra",
+        editAdjustment: "Ajuste",
+        editOverride: "Editar override",
+        clearOverride: "Limpiar override",
+        edit: "Editar",
+        delete: "Eliminar",
+      },
+      prompts: {
+        amount: "Monto",
+        overrideAmount: "Monto final override",
+        note: "Nota (opcional)",
+      },
+      oldMonthWarning:
+        "Estás editando un mes con más de un mes de antigüedad ({month}). Confirma para continuar.",
+      deleteConfirm: "¿Eliminar esta entrada manual?",
+      confirmDialog: {
+        title: "Confirmar acción",
+        confirm: "Confirmar",
+        cancel: "Cancelar",
+      },
+      toasts: {
+        saved: "Ingresos mensuales actualizados.",
+      },
+      yearFilter: {
+        label: "Año",
+        allYears: "Todos los años",
+      },
+      tooltips: {
+        bonus: "Pagos de bonus únicos para este mes (ej. bonus por desempeño, aguinaldo).",
+        extraIncome: "Ingresos adicionales de trabajos secundarios, freelance u otras fuentes no regulares.",
+        adjustment: "Ajuste manual para corregir el total calculado de este mes.",
+      },
+      form: {
+        amountLabel: "Monto",
+        noteLabel: "Nota",
+        notePlaceholder: "Nota opcional...",
+        save: "Guardar",
+        cancel: "Cancelar",
+      },
     },
     table: {
       title: "Tabla de empresas",
@@ -557,7 +670,7 @@ export const esDictionary = {
       allCollapsed: "All collapsed",
       allExpanded: "All expanded",
       collapsedHint:
-        "Default: todas las secciones colapsadas excepto la seccion de la ruta actual.",
+        "Todas las secciones colapsadas excepto la seccion de la ruta actual.",
       expandedHint: "Todas las secciones quedan expandidas por defecto.",
     },
     appearance: {
@@ -681,6 +794,14 @@ export const esDictionary = {
     workSettings: {
       title: "Configuración de jornada",
       description: "Define cómo trabajas para normalizar salarios por hora, mes y año.",
+      weeklyScheduleLabel: "Jornada semanal",
+      workingDay: "Laborable",
+      nonWorkingDay: "Descanso",
+      labels: {
+        from: "Desde",
+        to: "Hasta",
+        breakDuration: "Horas libres",
+      },
       presetsLabel: "Preconfiguraciones",
       presetSummary: "{hours} h/día · {days} d/semana",
       presetComputed: "{monthly} h/mes · {yearly} d/año",
@@ -706,10 +827,19 @@ export const esDictionary = {
         save: "Guardar jornada",
         saving: "Guardando...",
         reset: "Restablecer",
+        quickEdit: "Edición rápida",
+        applyMondayToWorking: "Aplicar lunes a laborables",
       },
       hints: {
         monthlyWorkHours: "Rango permitido: 1 a 744 horas.",
         workDaysPerYear: "Rango permitido: 1 a 366 días.",
+        quickEdit:
+          "Aplica rápidamente la misma hora de inicio y fin a todos los días marcados como laborables. Puedes seguir marcando o desmarcando días.",
+        breakDuration:
+          "Ingresa el tiempo libre diario en formato HH:MM. Este valor se resta del total de horas laborables del día.",
+        quickEditInvalid: "La hora de fin debe ser mayor que la hora de inicio.",
+        breakInvalid:
+          "Las horas libres deben ser menores que la duración total entre inicio y fin.",
         affectsCalculations: "Se usa para los cálculos de eventos de carrera y salario actual.",
       },
       toasts: {

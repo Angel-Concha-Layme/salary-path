@@ -35,6 +35,7 @@ import {
 import { CompaniesListContent } from "@/app/(protected-app)/career-path/companies/_components/companies-list-content"
 import { CreateCompanyDialog } from "@/app/(protected-app)/career-path/companies/_components/create-company-dialog"
 import { CreateEventDialog } from "@/app/(protected-app)/career-path/companies/_components/create-event-dialog"
+import { CompanyReviewDialog } from "@/app/(protected-app)/career-path/companies/_components/company-review-dialog"
 import { EventsListContent } from "@/app/(protected-app)/career-path/companies/_components/events-list-content"
 import { RouteScreen } from "@/components/layout/route-screen"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -75,8 +76,8 @@ export function CompaniesScreen() {
 
   const sortDirection = companiesSortOrder === "oldest_first" ? 1 : -1
 
-  const companiesQuery = usePathCompaniesListQuery({ limit: 100 })
-  const companyEventsQuery = usePathCompanyEventsByOwnerListQuery({ limit: 100 })
+  const companiesQuery = usePathCompaniesListQuery()
+  const companyEventsQuery = usePathCompanyEventsByOwnerListQuery()
 
   const companies = useMemo(() => {
     const items = companiesQuery.data?.items ?? []
@@ -313,15 +314,21 @@ export function CompaniesScreen() {
     setSelectedEventId(fallbackEvent?.id ?? null)
   }
 
+  const showMobileDetailsAction = !breakpoint.isDesktop
+  const hideMobileColumnHeader = !breakpoint.isDesktop
+
   const companiesPanel = (
     <CompaniesColumnPanel
       title={dictionary.companies.columns.companies}
-      action={
-        <CreateCompanyDialog
-          onCreate={handleCreateCompany}
-          isPending={createCompanyMutation.isLoading || createEventMutation.isLoading}
-        />
-      }
+      action={breakpoint.isDesktop
+        ? (
+            <CreateCompanyDialog
+              onCreate={handleCreateCompany}
+              isPending={createCompanyMutation.isLoading || createEventMutation.isLoading}
+            />
+          )
+        : undefined}
+      hideHeader={hideMobileColumnHeader}
     >
       <CompaniesListContent
         companies={companies}
@@ -336,6 +343,13 @@ export function CompaniesScreen() {
           setSelectedEventId(null)
           setActiveMobileTab("events")
         }}
+        showDetailsAction={showMobileDetailsAction}
+        viewDetailsLabel={dictionary.companies.actions.viewDetails}
+        onViewDetails={(companyId) => {
+          setSelectedCompanyId(companyId)
+          setSelectedEventId(null)
+          setActiveMobileTab("details")
+        }}
       />
     </CompaniesColumnPanel>
   )
@@ -343,16 +357,19 @@ export function CompaniesScreen() {
   const eventsPanel = (
     <CompaniesColumnPanel
       title={dictionary.companies.columns.events}
-      action={
-        <CreateEventDialog
-          key={selectedCompanyId ?? "no-company"}
-          canCreate={Boolean(selectedCompanyId)}
-          compensationType={selectedCompany?.compensationType ?? "monthly"}
-          currency={selectedCompany?.currency ?? "USD"}
-          onCreate={handleCreateEvent}
-          isPending={createEventMutation.isLoading}
-        />
-      }
+      action={breakpoint.isDesktop
+        ? (
+            <CreateEventDialog
+              key={selectedCompanyId ?? "no-company"}
+              canCreate={Boolean(selectedCompanyId)}
+              compensationType={selectedCompany?.compensationType ?? "monthly"}
+              currency={selectedCompany?.currency ?? "USD"}
+              onCreate={handleCreateEvent}
+              isPending={createEventMutation.isLoading}
+            />
+          )
+        : undefined}
+      hideHeader={hideMobileColumnHeader}
     >
       <EventsListContent
         events={events}
@@ -371,12 +388,31 @@ export function CompaniesScreen() {
           setSelectedEventId(eventId)
           setActiveMobileTab("details")
         }}
+        showDetailsAction={showMobileDetailsAction}
+        viewDetailsLabel={dictionary.companies.actions.viewDetails}
+        onViewDetails={(eventId) => {
+          setSelectedEventId(eventId)
+          setActiveMobileTab("details")
+        }}
       />
     </CompaniesColumnPanel>
   )
 
   const detailsPanel = (
-    <CompaniesColumnPanel title={dictionary.companies.columns.details}>
+    <CompaniesColumnPanel
+      title={dictionary.companies.columns.details}
+      action={breakpoint.isDesktop
+        ? (
+            <CompanyReviewDialog
+              key={selectedCompany?.id ?? "no-company"}
+              company={selectedCompany}
+              onSubmit={handleUpdateCompany}
+              disabled={updateCompanyMutation.isLoading || deleteCompanyMutation.isLoading}
+            />
+          )
+        : undefined}
+      hideHeader={hideMobileColumnHeader}
+    >
       <CompaniesDetailsContent
         selectedCompany={selectedCompany}
         selectedEventId={selectedEventId}
@@ -402,9 +438,11 @@ export function CompaniesScreen() {
       title={dictionary.companies.title}
       subtitle={dictionary.companies.subtitle}
       isLoading={isScreenLoading}
-      className={cn(breakpoint.isDesktop && "h-full min-h-0 flex flex-col")}
+      className={cn("h-full min-h-0 flex flex-col")}
       bodyClassName={cn(
-        breakpoint.isDesktop && "mt-0 flex min-h-0 flex-1 flex-col space-y-0 px-3 pb-3 pt-4"
+        breakpoint.isDesktop
+          ? "mt-0 flex min-h-0 flex-1 flex-col space-y-0 px-3 pb-3 pt-4"
+          : "min-h-0 flex-1 space-y-0 overflow-hidden"
       )}
       headerActions={(
         <div>
@@ -441,6 +479,24 @@ export function CompaniesScreen() {
             companiesPanel,
             eventsPanel,
             detailsPanel,
+            floatingAction:
+              activeMobileTab === "companies" ? (
+                <CreateCompanyDialog
+                  onCreate={handleCreateCompany}
+                  isPending={createCompanyMutation.isLoading || createEventMutation.isLoading}
+                  triggerVariant="fab"
+                />
+              ) : activeMobileTab === "events" ? (
+                <CreateEventDialog
+                  key={selectedCompanyId ?? "no-company"}
+                  canCreate={Boolean(selectedCompanyId)}
+                  compensationType={selectedCompany?.compensationType ?? "monthly"}
+                  currency={selectedCompany?.currency ?? "USD"}
+                  onCreate={handleCreateEvent}
+                  isPending={createEventMutation.isLoading}
+                  triggerVariant="fab"
+                />
+              ) : undefined,
             tabLabels: {
               companies: dictionary.companies.tabs.companies,
               events: dictionary.companies.tabs.events,

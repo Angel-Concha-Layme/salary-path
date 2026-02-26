@@ -6,15 +6,12 @@ import { usePathCompaniesListQuery } from "@/app/hooks/personal-path/use-path-co
 import { usePathCompanyEventsByOwnerListQuery } from "@/app/hooks/personal-path/use-path-company-events"
 import { useUserFinanceSettingsListQuery } from "@/app/hooks/settings/use-user-finance-settings"
 import {
-  buildCumulativeIncomeSeries,
   buildPersonalPathCompanyTableRows,
   buildRateChartSeries,
   PERSONAL_PATH_NO_COMPANIES_SELECTION,
-  resolveBaseCurrency,
   type PersonalPathChartFilters,
   type PersonalPathChartSeries,
   type PersonalPathCompanyTableRow,
-  type CurrencyMismatchInfo,
 } from "@/app/lib/models/personal-path/personal-path-chart.model"
 import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-companies.model"
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
@@ -31,8 +28,6 @@ interface PersonalPathDashboardResult {
   selectedCompanyIds: string[]
   availableCompanyIds: string[]
   series: PersonalPathChartSeries[]
-  currencyMismatch: CurrencyMismatchInfo | null
-  baseCurrency: string
   isLoading: boolean
   isError: boolean
   errorMessage: string | null
@@ -53,8 +48,8 @@ function readErrorMessage(error: unknown): string | null {
 export function usePersonalPathDashboard({
   filters,
 }: UsePersonalPathDashboardOptions): PersonalPathDashboardResult {
-  const companiesQuery = usePathCompaniesListQuery({ limit: 100 })
-  const eventsQuery = usePathCompanyEventsByOwnerListQuery({ limit: 100 })
+  const companiesQuery = usePathCompaniesListQuery()
+  const eventsQuery = usePathCompanyEventsByOwnerListQuery()
   const financeSettingsQuery = useUserFinanceSettingsListQuery({ limit: 1 })
 
   const companies = useMemo(() => companiesQuery.data?.items ?? [], [companiesQuery.data?.items])
@@ -85,12 +80,7 @@ export function usePersonalPathDashboard({
     return constrained.length > 0 ? constrained : availableCompanyIds
   }, [availableCompanyIds, filters.companyIds])
 
-  const baseCurrency = useMemo(
-    () => resolveBaseCurrency(companies, financeSettings?.currency),
-    [companies, financeSettings?.currency]
-  )
-
-  const rateSeries = useMemo(
+  const series = useMemo(
     () =>
       buildRateChartSeries({
         companies,
@@ -102,31 +92,6 @@ export function usePersonalPathDashboard({
       }),
     [companies, events, filters.range, filters.rateBasis, financeSettings?.monthlyWorkHours, selectedCompanyIds]
   )
-
-  const cumulativeResult = useMemo(
-    () =>
-      buildCumulativeIncomeSeries({
-        companies,
-        events,
-        companyIds: selectedCompanyIds,
-        baseCurrency,
-        monthlyWorkHours: financeSettings?.monthlyWorkHours,
-        range: filters.range,
-      }),
-    [
-      baseCurrency,
-      companies,
-      events,
-      filters.range,
-      financeSettings?.monthlyWorkHours,
-      selectedCompanyIds,
-    ]
-  )
-
-  const series = filters.view === "rate" ? rateSeries : cumulativeResult.series
-  const currencyMismatch = filters.view === "cumulativeIncome"
-    ? cumulativeResult.currencyMismatch
-    : null
 
   const tableRows = useMemo(
     () => buildPersonalPathCompanyTableRows(companies, events, financeSettings?.monthlyWorkHours),
@@ -147,8 +112,6 @@ export function usePersonalPathDashboard({
     selectedCompanyIds,
     availableCompanyIds,
     series,
-    currencyMismatch,
-    baseCurrency,
     isLoading,
     isError,
     errorMessage,

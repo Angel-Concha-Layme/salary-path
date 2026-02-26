@@ -125,6 +125,30 @@
   }
 }
 
+@keyframes companies-final-rate-helper-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.companies-final-rate-helper-marquee {
+  display: inline-block;
+  min-width: max-content;
+  will-change: transform;
+  animation: companies-final-rate-helper-marquee 8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .companies-final-rate-helper-marquee {
+    animation: none;
+    transform: none;
+    white-space: normal;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

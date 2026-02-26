@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { useStore } from "@tanstack/react-store"
+import { PlusIcon } from "lucide-react"
 import { z } from "zod"
 
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
@@ -23,6 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 interface CreateEventDialogProps {
   canCreate: boolean
@@ -30,6 +32,7 @@ interface CreateEventDialogProps {
   currency: string
   onCreate: (input: PathCompanyEventsCreateInput) => Promise<void>
   isPending?: boolean
+  triggerVariant?: "default" | "fab"
 }
 
 interface CreateEventFormValues {
@@ -52,6 +55,7 @@ export function CreateEventDialog({
   currency,
   onCreate,
   isPending = false,
+  triggerVariant = "default",
 }: CreateEventDialogProps) {
   const { dictionary } = useDictionary()
   const [open, setOpen] = useState(false)
@@ -116,8 +120,23 @@ export function CreateEventDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button type="button" disabled={!canCreate || isPending} className="hover:bg-primary/90">
-          {dictionary.companies.actions.addEvent}
+        <Button
+          type="button"
+          size={triggerVariant === "fab" ? "icon-lg" : "default"}
+          disabled={!canCreate || isPending}
+          className={cn(
+            "hover:bg-primary/90",
+            triggerVariant === "fab" && "h-10 w-10 rounded-full shadow-sm"
+          )}
+        >
+          {triggerVariant === "fab" ? (
+            <>
+              <PlusIcon className="size-4" />
+              <span className="sr-only">{dictionary.companies.actions.addEvent}</span>
+            </>
+          ) : (
+            dictionary.companies.actions.addEvent
+          )}
         </Button>
       </DialogTrigger>
 

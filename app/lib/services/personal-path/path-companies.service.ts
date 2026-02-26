@@ -8,7 +8,6 @@ import type {
 import { apiClient } from "@/app/lib/services/api-client"
 
 export interface ListPathCompaniesOptions {
-  limit?: number
   signal?: AbortSignal
 }
 
@@ -49,9 +48,6 @@ function hydratePathCompaniesListResponse(
 
 async function listPathCompanies(options: ListPathCompaniesOptions = {}) {
   const response = await apiClient.get<PathCompaniesListResponse>("/personal-path/companies", {
-    query: {
-      limit: options.limit ?? 50,
-    },
     signal: options.signal,
   })
 

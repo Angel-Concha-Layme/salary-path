@@ -2,7 +2,13 @@ import { and, desc, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 
 import { db } from "@/app/lib/db/client"
-import { companyCatalog, pathCompanies, pathCompanyEvents, roleCatalog } from "@/app/lib/db/schema"
+import {
+  companyCatalog,
+  pathCompanies,
+  pathCompanyEvents,
+  roleCatalog,
+  userMonthlyIncomeSources,
+} from "@/app/lib/db/schema"
 import {
   CompensationType,
   CurrencyCode,
@@ -19,13 +25,23 @@ import {
 import type {
   PathCompaniesCreateInput,
   PathCompaniesEntity,
-  PathCompaniesListParams,
   PathCompaniesListResponse,
   PathCompaniesUpdateInput,
 } from "@/app/lib/models/personal-path/path-companies.model"
+import {
+  areWorkSchedulesEqual,
+  workScheduleSchema,
+} from "@/app/lib/models/work-schedule/work-schedule.model"
 import { ApiError } from "@/app/lib/server/api-error"
-import { clampLimit, requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
+import { requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
 import { resolveCompanyCatalogByName } from "@/app/lib/server/domain/companies/company-catalog.domain"
+import { recomputeMonthlyIncomeLedgerFromDate } from "@/app/lib/server/domain/finance/monthly-income.domain"
+import {
+  clearPathCompanyWorkScheduleDays,
+  listPathCompanyWorkScheduleDays,
+  replacePathCompanyWorkScheduleDays,
+  resolveUserWorkSchedule,
+} from "@/app/lib/server/domain/finance/work-schedule.domain"
 import {
   clearEndOfEmploymentEvents,
   syncEndOfEmploymentEvent,
@@ -54,6 +70,7 @@ const baseSchema = z.object({
   review: z.string().trim().max(1000).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().nullable().optional(),
+  workSchedule: workScheduleSchema.nullable().optional(),
 })
 
 const createSchema = baseSchema
@@ -87,7 +104,10 @@ const createSchema = baseSchema
 
 const updateSchema = baseSchema.partial()
 
-function mapEntity(row: typeof pathCompanies.$inferSelect): PathCompaniesEntity {
+function mapEntity(
+  row: typeof pathCompanies.$inferSelect,
+  workSchedule: PathCompaniesEntity["workSchedule"] = null
+): PathCompaniesEntity {
   return {
     id: row.id,
     ownerUserId: row.ownerUserId,
@@ -105,6 +125,7 @@ function mapEntity(row: typeof pathCompanies.$inferSelect): PathCompaniesEntity 
     createdAt: toIso(row.createdAt) ?? new Date(0).toISOString(),
     updatedAt: toIso(row.updatedAt) ?? new Date(0).toISOString(),
     deletedAt: toIso(row.deletedAt),
+    workSchedule,
   }
 }
 
@@ -223,21 +244,16 @@ export async function assertPathCompanyOwnership(ownerUserId: string, pathCompan
   return getRecordOrThrow(ownerUserId, pathCompanyId)
 }
 
-export async function listPathCompanies(
-  ownerUserId: string,
-  params: PathCompaniesListParams = {}
-): Promise<PathCompaniesListResponse> {
-  const limit = clampLimit(params.limit)
-
+export async function listPathCompanies(ownerUserId: string): Promise<PathCompaniesListResponse> {
   const rows = await db
     .select()
     .from(pathCompanies)
     .where(and(eq(pathCompanies.ownerUserId, ownerUserId), isNull(pathCompanies.deletedAt)))
     .orderBy(desc(pathCompanies.startDate))
-    .limit(limit)
+  const scheduleByCompanyId = await listPathCompanyWorkScheduleDays(rows.map((row) => row.id))
 
   return {
-    items: rows.map(mapEntity),
+    items: rows.map((row) => mapEntity(row, scheduleByCompanyId.get(row.id) ?? null)),
     total: rows.length,
   }
 }
@@ -247,7 +263,8 @@ export async function getPathCompanyById(
   pathCompanyId: string
 ): Promise<PathCompaniesEntity> {
   const row = await getRecordOrThrow(ownerUserId, pathCompanyId)
-  return mapEntity(row)
+  const scheduleByCompanyId = await listPathCompanyWorkScheduleDays([row.id])
+  return mapEntity(row, scheduleByCompanyId.get(row.id) ?? null)
 }
 
 export async function createPathCompany(
@@ -258,6 +275,8 @@ export async function createPathCompany(
   const now = new Date()
   const companyReference = await resolveCompanyReference(payload)
   const roleReference = await resolveRoleReference(payload)
+  const userSchedule = await resolveUserWorkSchedule(ownerUserId)
+  const nextWorkSchedule = payload.workSchedule ?? userSchedule
 
   if (!companyReference) {
     throw new ApiError(400, "VALIDATION_ERROR", "companyName is required")
@@ -303,10 +322,14 @@ export async function createPathCompany(
       })
     }
 
+    await replacePathCompanyWorkScheduleDays(inserted.id, nextWorkSchedule, now, tx)
+
     return inserted
   })
 
-  return mapEntity(row)
+  await recomputeMonthlyIncomeLedgerFromDate(ownerUserId, payload.startDate)
+
+  return mapEntity(row, nextWorkSchedule)
 }
 
 export async function updatePathCompany(
@@ -314,9 +337,40 @@ export async function updatePathCompany(
   pathCompanyId: string,
   input: PathCompaniesUpdateInput
 ): Promise<PathCompaniesEntity> {
-  const payload = requirePatchPayload(updateSchema.parse(input))
+  const parsedPayload = requirePatchPayload(updateSchema.parse(input))
+  const hasWorkScheduleField = Object.prototype.hasOwnProperty.call(parsedPayload, "workSchedule")
+  const needsCompanyResolve = Boolean(
+    parsedPayload.companyName ||
+    parsedPayload.displayName ||
+    Object.prototype.hasOwnProperty.call(parsedPayload, "companyCatalogId")
+  )
+  const needsRoleResolve = Boolean(
+    parsedPayload.roleName ||
+    parsedPayload.roleDisplayName ||
+    Object.prototype.hasOwnProperty.call(parsedPayload, "roleCatalogId")
+  )
+
+  const [current, currentScheduleMap, companyReference, roleReference] = await Promise.all([
+    getRecordOrThrow(ownerUserId, pathCompanyId),
+    listPathCompanyWorkScheduleDays([pathCompanyId]),
+    needsCompanyResolve ? resolveCompanyReference(parsedPayload) : null,
+    needsRoleResolve ? resolveRoleReference(parsedPayload) : null,
+  ])
+  const currentSchedule = currentScheduleMap.get(pathCompanyId) ?? null
+  const payload = { ...parsedPayload }
+  const hasWorkScheduleChange = hasWorkScheduleField
+    ? !areWorkSchedulesEqual(payload.workSchedule ?? null, currentSchedule)
+    : false
+
+  if (hasWorkScheduleField && !hasWorkScheduleChange) {
+    delete payload.workSchedule
+  }
+
+  if (Object.keys(payload).length === 0) {
+    return mapEntity(current, currentSchedule)
+  }
+
   const hasEndDateChange = Object.prototype.hasOwnProperty.call(payload, "endDate")
-  const current = await getRecordOrThrow(ownerUserId, pathCompanyId)
 
   const nextStartDate = payload.startDate ?? current.startDate
   const nextEndDate = Object.prototype.hasOwnProperty.call(payload, "endDate")
@@ -329,9 +383,7 @@ export async function updatePathCompany(
 
   const nextValues: Partial<typeof pathCompanies.$inferInsert> = {}
 
-  if (payload.companyName || payload.displayName || Object.prototype.hasOwnProperty.call(payload, "companyCatalogId")) {
-    const companyReference = await resolveCompanyReference(payload)
-
+  if (needsCompanyResolve) {
     if (companyReference) {
       nextValues.companyCatalogId = companyReference.companyCatalogId
       nextValues.displayName = companyReference.displayName
@@ -340,9 +392,7 @@ export async function updatePathCompany(
     }
   }
 
-  if (payload.roleName || payload.roleDisplayName || Object.prototype.hasOwnProperty.call(payload, "roleCatalogId")) {
-    const roleReference = await resolveRoleReference(payload)
-
+  if (needsRoleResolve) {
     if (roleReference) {
       nextValues.roleCatalogId = roleReference.roleCatalogId
       nextValues.roleDisplayName = roleReference.roleDisplayName
@@ -380,6 +430,9 @@ export async function updatePathCompany(
   }
 
   const updatedAt = new Date()
+  const affectedStartDate = new Date(
+    Math.min(current.startDate.getTime(), nextStartDate.getTime())
+  )
 
   const row = await db.transaction(async (tx) => {
     const rows = await tx
@@ -416,6 +469,14 @@ export async function updatePathCompany(
       })
     }
 
+    if (hasWorkScheduleChange) {
+      if (payload.workSchedule === null) {
+        await clearPathCompanyWorkScheduleDays(pathCompanyId, updatedAt, tx)
+      } else if (payload.workSchedule) {
+        await replacePathCompanyWorkScheduleDays(pathCompanyId, payload.workSchedule, updatedAt, tx)
+      }
+    }
+
     return updated
   })
 
@@ -423,10 +484,41 @@ export async function updatePathCompany(
     throw new ApiError(404, "NOT_FOUND", "Path company not found")
   }
 
-  return mapEntity(row)
+  const needsIncomeRecompute = Boolean(
+    payload.startDate ||
+    hasEndDateChange ||
+    payload.compensationType ||
+    payload.currency ||
+    hasWorkScheduleChange
+  )
+
+  if (needsIncomeRecompute) {
+    await recomputeMonthlyIncomeLedgerFromDate(ownerUserId, affectedStartDate)
+  } else if (nextValues.displayName) {
+    await db
+      .update(userMonthlyIncomeSources)
+      .set({
+        companyNameSnapshot: nextValues.displayName,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(userMonthlyIncomeSources.pathCompanyId, pathCompanyId),
+          isNull(userMonthlyIncomeSources.deletedAt)
+        )
+      )
+  }
+
+  return mapEntity(
+    row,
+    hasWorkScheduleChange
+      ? payload.workSchedule ?? null
+      : currentSchedule
+  )
 }
 
 export async function deletePathCompany(ownerUserId: string, pathCompanyId: string) {
+  const current = await getRecordOrThrow(ownerUserId, pathCompanyId)
   const deletedAt = new Date()
 
   const row = await db.transaction(async (tx) => {
@@ -442,6 +534,8 @@ export async function deletePathCompany(ownerUserId: string, pathCompanyId: stri
           isNull(pathCompanyEvents.deletedAt)
         )
       )
+
+    await clearPathCompanyWorkScheduleDays(pathCompanyId, deletedAt, tx)
 
     const rows = await tx
       .update(pathCompanies)
@@ -464,6 +558,8 @@ export async function deletePathCompany(ownerUserId: string, pathCompanyId: stri
   if (!row || !row.deletedAt) {
     throw new ApiError(404, "NOT_FOUND", "Path company not found")
   }
+
+  await recomputeMonthlyIncomeLedgerFromDate(ownerUserId, current.startDate)
 
   return {
     id: row.id,

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest"
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
 import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-companies.model"
 import {
-  buildCumulativeIncomeSeries,
   buildPersonalPathCompanyTableRows,
   buildRateChartSeries,
   normalizeAmountToRateBasis,
@@ -28,6 +27,7 @@ const companiesFixture: PathCompaniesEntity[] = [
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     deletedAt: null,
+    workSchedule: null,
   },
   {
     id: "company-b",
@@ -46,6 +46,7 @@ const companiesFixture: PathCompaniesEntity[] = [
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-02-01T00:00:00.000Z",
     deletedAt: null,
+    workSchedule: null,
   },
   {
     id: "company-c",
@@ -64,6 +65,7 @@ const companiesFixture: PathCompaniesEntity[] = [
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     deletedAt: null,
+    workSchedule: null,
   },
 ]
 
@@ -302,45 +304,6 @@ describe("personal path chart model", () => {
     expect(endPointMeta.eventType).toBe("end_of_employment")
     expect(endPointMeta.increase).toBe(0)
     expect(continuationSeries).toBeUndefined()
-  })
-
-  it("calculates cumulative income with monthly and hourly normalization", () => {
-    const result = buildCumulativeIncomeSeries({
-      companies: companiesFixture,
-      events: eventsFixture,
-      companyIds: ["company-a", "company-b"],
-      baseCurrency: "USD",
-      monthlyWorkHours: 174,
-      range: "all",
-      referenceDate: new Date("2024-03-01T00:00:00.000Z"),
-    })
-
-    expect(result.currencyMismatch).toBeNull()
-    expect(result.series).toHaveLength(1)
-
-    const points = result.series[0]?.points ?? []
-    const lastPoint = points[points.length - 1]
-    const expectedSegmentOne = (3000 + 10 * 174) * (12 / 365) * 31
-    const expectedSegmentTwo = 4000 * (12 / 365) * 30
-    const expectedTotal = expectedSegmentOne + expectedSegmentTwo
-
-    expect(lastPoint?.value ?? 0).toBeCloseTo(expectedTotal, 6)
-  })
-
-  it("filters mixed currencies for cumulative view and reports mismatch", () => {
-    const result = buildCumulativeIncomeSeries({
-      companies: companiesFixture,
-      events: eventsFixture,
-      companyIds: ["company-a", "company-c"],
-      baseCurrency: "USD",
-      range: "all",
-      referenceDate: new Date("2024-03-01T00:00:00.000Z"),
-    })
-
-    expect(result.series).toHaveLength(1)
-    expect(result.currencyMismatch).not.toBeNull()
-    expect(result.currencyMismatch?.baseCurrency).toBe("USD")
-    expect(result.currencyMismatch?.excludedCompanyNames).toEqual(["EuroWorks"])
   })
 
   it("builds complete company rows with latest event summary", () => {

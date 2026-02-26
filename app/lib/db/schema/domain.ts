@@ -71,6 +71,73 @@ export const userFinanceSettings = sqliteTable(
   ]
 )
 
+export const userWorkScheduleDays = sqliteTable(
+  "user_work_schedule_days",
+  {
+    id: text("id").primaryKey(),
+    ownerUserId: text("owner_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    dayOfWeek: integer("day_of_week").notNull(),
+    isWorkingDay: integer("is_working_day").notNull().default(0),
+    startMinute: integer("start_minute"),
+    endMinute: integer("end_minute"),
+    breakMinute: integer("break_minute"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    uniqueIndex("user_work_schedule_days_owner_day_active_unique")
+      .on(table.ownerUserId, table.dayOfWeek)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("user_work_schedule_days_owner_deleted_idx").on(
+      table.ownerUserId,
+      table.deletedAt
+    ),
+    check(
+      "user_work_schedule_days_day_of_week_range",
+      sql`${table.dayOfWeek} BETWEEN 1 AND 7`
+    ),
+    check(
+      "user_work_schedule_days_is_working_day_boolean",
+      sql`${table.isWorkingDay} IN (0, 1)`
+    ),
+    check(
+      "user_work_schedule_days_start_minute_range",
+      sql`${table.startMinute} IS NULL OR ${table.startMinute} BETWEEN 0 AND 1440`
+    ),
+    check(
+      "user_work_schedule_days_end_minute_range",
+      sql`${table.endMinute} IS NULL OR ${table.endMinute} BETWEEN 0 AND 1440`
+    ),
+    check(
+      "user_work_schedule_days_break_minute_range",
+      sql`${table.breakMinute} IS NULL OR ${table.breakMinute} BETWEEN 0 AND 1440`
+    ),
+    check(
+      "user_work_schedule_days_consistency",
+      sql`(
+        ${table.isWorkingDay} = 0
+        AND ${table.startMinute} IS NULL
+        AND ${table.endMinute} IS NULL
+        AND ${table.breakMinute} IS NULL
+      ) OR (
+        ${table.isWorkingDay} = 1
+        AND ${table.startMinute} IS NOT NULL
+        AND ${table.endMinute} IS NOT NULL
+        AND ${table.breakMinute} IS NOT NULL
+        AND ${table.endMinute} > ${table.startMinute}
+        AND ${table.breakMinute} < (${table.endMinute} - ${table.startMinute})
+      )`
+    ),
+  ]
+)
+
 export const companyCatalog = sqliteTable(
   "company_catalog",
   {
@@ -233,6 +300,165 @@ export const pathCompanyEvents = sqliteTable(
   ]
 )
 
+export const pathCompanyWorkScheduleDays = sqliteTable(
+  "path_company_work_schedule_days",
+  {
+    id: text("id").primaryKey(),
+    pathCompanyId: text("path_company_id")
+      .notNull()
+      .references(() => pathCompanies.id, { onDelete: "cascade" }),
+    dayOfWeek: integer("day_of_week").notNull(),
+    isWorkingDay: integer("is_working_day").notNull().default(0),
+    startMinute: integer("start_minute"),
+    endMinute: integer("end_minute"),
+    breakMinute: integer("break_minute"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    uniqueIndex("path_company_work_schedule_days_company_day_active_unique")
+      .on(table.pathCompanyId, table.dayOfWeek)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("path_company_work_schedule_days_company_deleted_idx").on(
+      table.pathCompanyId,
+      table.deletedAt
+    ),
+    check(
+      "path_company_work_schedule_days_day_of_week_range",
+      sql`${table.dayOfWeek} BETWEEN 1 AND 7`
+    ),
+    check(
+      "path_company_work_schedule_days_is_working_day_boolean",
+      sql`${table.isWorkingDay} IN (0, 1)`
+    ),
+    check(
+      "path_company_work_schedule_days_start_minute_range",
+      sql`${table.startMinute} IS NULL OR ${table.startMinute} BETWEEN 0 AND 1440`
+    ),
+    check(
+      "path_company_work_schedule_days_end_minute_range",
+      sql`${table.endMinute} IS NULL OR ${table.endMinute} BETWEEN 0 AND 1440`
+    ),
+    check(
+      "path_company_work_schedule_days_break_minute_range",
+      sql`${table.breakMinute} IS NULL OR ${table.breakMinute} BETWEEN 0 AND 1440`
+    ),
+    check(
+      "path_company_work_schedule_days_consistency",
+      sql`(
+        ${table.isWorkingDay} = 0
+        AND ${table.startMinute} IS NULL
+        AND ${table.endMinute} IS NULL
+        AND ${table.breakMinute} IS NULL
+      ) OR (
+        ${table.isWorkingDay} = 1
+        AND ${table.startMinute} IS NOT NULL
+        AND ${table.endMinute} IS NOT NULL
+        AND ${table.breakMinute} IS NOT NULL
+        AND ${table.endMinute} > ${table.startMinute}
+        AND ${table.breakMinute} < (${table.endMinute} - ${table.startMinute})
+      )`
+    ),
+  ]
+)
+
+export const userMonthlyIncomeSources = sqliteTable(
+  "user_monthly_income_sources",
+  {
+    id: text("id").primaryKey(),
+    ownerUserId: text("owner_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    monthStart: integer("month_start", { mode: "timestamp_ms" }).notNull(),
+    currency: text("currency").notNull().default("USD"),
+    sourceType: text("source_type").notNull(),
+    pathCompanyId: text("path_company_id").references(() => pathCompanies.id, {
+      onDelete: "set null",
+    }),
+    companyNameSnapshot: text("company_name_snapshot"),
+    computedAmount: real("computed_amount").notNull().default(0),
+    finalAmount: real("final_amount").notNull().default(0),
+    isUserEdited: integer("is_user_edited").notNull().default(0),
+    note: text("note"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    index("user_monthly_income_sources_owner_deleted_month_idx").on(
+      table.ownerUserId,
+      table.deletedAt,
+      table.monthStart
+    ),
+    index("user_monthly_income_sources_company_deleted_month_idx").on(
+      table.pathCompanyId,
+      table.deletedAt,
+      table.monthStart
+    ),
+    check(
+      "user_monthly_income_sources_source_type_check",
+      sql`${table.sourceType} IN ('employment', 'bonus', 'extra_income', 'adjustment')`
+    ),
+    check(
+      "user_monthly_income_sources_is_user_edited_boolean",
+      sql`${table.isUserEdited} IN (0, 1)`
+    ),
+    check(
+      "user_monthly_income_sources_employment_requires_company",
+      sql`(${table.sourceType} != 'employment') OR (${table.pathCompanyId} IS NOT NULL)`
+    ),
+  ]
+)
+
+export const userMonthlyIncomeSnapshots = sqliteTable(
+  "user_monthly_income_snapshots",
+  {
+    id: text("id").primaryKey(),
+    ownerUserId: text("owner_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    monthStart: integer("month_start", { mode: "timestamp_ms" }).notNull(),
+    currency: text("currency").notNull().default("USD"),
+    employmentComputedTotal: real("employment_computed_total").notNull().default(0),
+    employmentFinalTotal: real("employment_final_total").notNull().default(0),
+    bonusTotal: real("bonus_total").notNull().default(0),
+    extraIncomeTotal: real("extra_income_total").notNull().default(0),
+    adjustmentTotal: real("adjustment_total").notNull().default(0),
+    finalTotal: real("final_total").notNull().default(0),
+    isAdjusted: integer("is_adjusted").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    uniqueIndex("user_monthly_income_snapshots_owner_month_currency_active_unique")
+      .on(table.ownerUserId, table.monthStart, table.currency)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("user_monthly_income_snapshots_owner_deleted_month_idx").on(
+      table.ownerUserId,
+      table.deletedAt,
+      table.monthStart
+    ),
+    check(
+      "user_monthly_income_snapshots_is_adjusted_boolean",
+      sql`${table.isAdjusted} IN (0, 1)`
+    ),
+  ]
+)
+
 export const pathCompaniesRelations = relations(pathCompanies, ({ one, many }) => ({
   companyCatalog: one(companyCatalog, {
     fields: [pathCompanies.companyCatalogId],
@@ -243,6 +469,7 @@ export const pathCompaniesRelations = relations(pathCompanies, ({ one, many }) =
     references: [roleCatalog.id],
   }),
   events: many(pathCompanyEvents),
+  workScheduleDays: many(pathCompanyWorkScheduleDays),
 }))
 
 export const roleCatalogRelations = relations(roleCatalog, ({ many }) => ({
@@ -255,3 +482,44 @@ export const pathCompanyEventsRelations = relations(pathCompanyEvents, ({ one })
     references: [pathCompanies.id],
   }),
 }))
+
+export const userWorkScheduleDaysRelations = relations(userWorkScheduleDays, ({ one }) => ({
+  owner: one(user, {
+    fields: [userWorkScheduleDays.ownerUserId],
+    references: [user.id],
+  }),
+}))
+
+export const pathCompanyWorkScheduleDaysRelations = relations(
+  pathCompanyWorkScheduleDays,
+  ({ one }) => ({
+    company: one(pathCompanies, {
+      fields: [pathCompanyWorkScheduleDays.pathCompanyId],
+      references: [pathCompanies.id],
+    }),
+  })
+)
+
+export const userMonthlyIncomeSourcesRelations = relations(
+  userMonthlyIncomeSources,
+  ({ one }) => ({
+    owner: one(user, {
+      fields: [userMonthlyIncomeSources.ownerUserId],
+      references: [user.id],
+    }),
+    company: one(pathCompanies, {
+      fields: [userMonthlyIncomeSources.pathCompanyId],
+      references: [pathCompanies.id],
+    }),
+  })
+)
+
+export const userMonthlyIncomeSnapshotsRelations = relations(
+  userMonthlyIncomeSnapshots,
+  ({ one }) => ({
+    owner: one(user, {
+      fields: [userMonthlyIncomeSnapshots.ownerUserId],
+      references: [user.id],
+    }),
+  })
+)

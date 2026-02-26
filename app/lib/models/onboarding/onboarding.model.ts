@@ -4,6 +4,7 @@ import type {
 import type { PathCompaniesEntity } from "@/app/lib/models/personal-path/path-companies.model"
 import type { PathCompanyEventsEntity } from "@/app/lib/models/personal-path/path-company-events.model"
 import type { UserFinanceSettingsEntity } from "@/app/lib/models/settings/user-finance-settings.model"
+import type { WorkSchedule } from "@/app/lib/models/work-schedule/work-schedule.model"
 
 export interface OnboardingStatusResponse {
   completed: boolean
@@ -19,8 +20,7 @@ export interface OnboardingCompleteInput {
   currency: string
   initialRate: number
   currentRate: number
-  monthlyWorkHours?: number
-  workDaysPerYear?: number
+  defaultWorkSchedule?: WorkSchedule
   locale?: string
 }
 

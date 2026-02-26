@@ -18,12 +18,7 @@ export async function GET(
   try {
     const session = await requireApiSession(request)
     const { pathCompanyId } = await context.params
-    const searchParams = new URL(request.url).searchParams
-    const requestedLimit = Number(searchParams.get("limit") ?? 50)
-
-    const result = await listPathCompanyEvents(session.user.id, pathCompanyId, {
-      limit: requestedLimit,
-    })
+    const result = await listPathCompanyEvents(session.user.id, pathCompanyId)
 
     return jsonOkWithoutNulls(result)
   } catch (error) {

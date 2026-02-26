@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "@tanstack/react-form"
 import { useStore } from "@tanstack/react-store"
+import { InfoIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { useCompanyCatalogListQuery } from "@/app/hooks/companies/use-company-catalog"
@@ -21,10 +22,15 @@ import {
   onboardingStepSchemas,
   type OnboardingFormValues,
 } from "@/app/lib/models/onboarding/onboarding-form.model"
+import {
+  normalizeWorkSchedule,
+  type WorkSchedule,
+} from "@/app/lib/models/work-schedule/work-schedule.model"
 import { useDictionary } from "@/app/lib/i18n/dictionary-context"
 import { SingleDatePickerField } from "@/components/shared/single-date-picker-field"
 import { NumberStepperInput } from "@/components/onboarding/number-stepper-input"
 import { OnboardingWizardShell } from "@/components/onboarding/onboarding-wizard-shell"
+import { WorkScheduleEditor } from "@/components/work-schedule-editor"
 import { Button } from "@/components/ui/button"
 import {
   Combobox,
@@ -40,12 +46,77 @@ import { cn } from "@/lib/utils"
 
 const TOTAL_STEPS = 3
 const COMPLETION_ANIMATION_DURATION_MS = 1500
+const DEFAULT_WORK_SCHEDULE = normalizeWorkSchedule(onboardingDefaultValues.defaultWorkSchedule)
 
 const STEP_FIELD_NAMES: Array<Array<keyof OnboardingFormValues>> = [
   ["companyName", "roleName", "startDate"],
   ["compensationType", "currency", "initialRate", "currentRate"],
-  ["monthlyWorkHours", "workDaysPerYear"],
+  ["defaultWorkSchedule"],
 ]
+
+function areWorkSchedulesEqual(left: WorkSchedule, right: WorkSchedule): boolean {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  for (let index = 0; index < left.length; index += 1) {
+    const leftDay = left[index]
+    const rightDay = right[index]
+
+    if (
+      !rightDay ||
+      leftDay.dayOfWeek !== rightDay.dayOfWeek ||
+      leftDay.isWorkingDay !== rightDay.isWorkingDay ||
+      leftDay.startMinute !== rightDay.startMinute ||
+      leftDay.endMinute !== rightDay.endMinute ||
+      leftDay.breakMinute !== rightDay.breakMinute
+    ) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function HelpTooltip({ text }: { text?: string }) {
+  if (!text) {
+    return null
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          className="h-5 w-5 rounded-full text-muted-foreground"
+          aria-label={text}
+        >
+          <InfoIcon className="size-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top">{text}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+function FieldLabelWithTooltip({
+  htmlFor,
+  label,
+  tooltip,
+}: {
+  htmlFor: string
+  label: string
+  tooltip?: string
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <FieldLabel htmlFor={htmlFor}>{label}</FieldLabel>
+      <HelpTooltip text={tooltip} />
+    </div>
+  )
+}
 
 export function OnboardingWizard() {
   const router = useRouter()
@@ -55,8 +126,6 @@ export function OnboardingWizard() {
   const [companySearch, setCompanySearch] = useState("")
   const [roleSearch, setRoleSearch] = useState("")
   const [isShowingCompletionAnimation, setIsShowingCompletionAnimation] = useState(false)
-  const [monthlyWorkHoursLimitFeedback, setMonthlyWorkHoursLimitFeedback] = useState(false)
-  const [workDaysPerYearLimitFeedback, setWorkDaysPerYearLimitFeedback] = useState(false)
 
   const companyCatalogQuery = useCompanyCatalogListQuery({
     limit: 10,
@@ -90,8 +159,7 @@ export function OnboardingWizard() {
           currency: value.currency,
           initialRate: value.initialRate,
           currentRate: value.currentRate,
-          monthlyWorkHours: value.monthlyWorkHours,
-          workDaysPerYear: value.workDaysPerYear,
+          defaultWorkSchedule: value.defaultWorkSchedule,
           locale,
         })
 
@@ -118,6 +186,16 @@ export function OnboardingWizard() {
 
   const selectedCompensationType = useStore(form.store, (state) => state.values.compensationType)
   const selectedCurrency = useStore(form.store, (state) => state.values.currency)
+  const selectedWorkSchedule = useStore(form.store, (state) => state.values.defaultWorkSchedule)
+
+  const isUsingDefaultWorkSchedule = useMemo(
+    () =>
+      areWorkSchedulesEqual(
+        normalizeWorkSchedule(selectedWorkSchedule),
+        DEFAULT_WORK_SCHEDULE
+      ),
+    [selectedWorkSchedule]
+  )
 
   const companyOptions = useMemo(() => {
     const catalogNames = (companyCatalogQuery.data?.items ?? []).map((c) => c.name)
@@ -152,15 +230,11 @@ export function OnboardingWizard() {
   async function handleNextStep() {
     const isValid = await validateCurrentStep()
     if (isValid) {
-      setMonthlyWorkHoursLimitFeedback(false)
-      setWorkDaysPerYearLimitFeedback(false)
       setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1))
     }
   }
 
   function handlePreviousStep() {
-    setMonthlyWorkHoursLimitFeedback(false)
-    setWorkDaysPerYearLimitFeedback(false)
     setStep((s) => Math.max(s - 1, 0))
   }
 
@@ -180,8 +254,6 @@ export function OnboardingWizard() {
       setRoleSearch("")
     }
 
-    setMonthlyWorkHoursLimitFeedback(false)
-    setWorkDaysPerYearLimitFeedback(false)
   }
 
   const progressLabel = dictionary.onboarding.stepProgress
@@ -200,18 +272,20 @@ export function OnboardingWizard() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_10%,rgba(255,255,255,0.12),transparent_28%),radial-gradient(circle_at_84%_88%,rgba(255,255,255,0.12),transparent_30%)]" />
 
       <OnboardingWizardShell
-        maxWidthClassName="max-w-6xl"
+        maxWidthClassName="max-w-[80rem]"
         containerClassName="flex min-h-screen items-center"
         outerPaddingClassName="px-4 py-8 sm:px-6 md:px-8"
         cardClassName="rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-2xl backdrop-blur-sm"
       >
           <div className="border-b border-border p-6 pb-4 md:p-8 md:pb-6">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Salary Path</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Capital Path</p>
+              <p className="text-right text-xs text-muted-foreground">{dictionary.onboarding.completionHint}</p>
+            </div>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
               {dictionary.onboarding.title}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground md:text-base">{dictionary.onboarding.subtitle}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{dictionary.onboarding.completionHint}</p>
 
             <div className="mt-6">
               <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
@@ -231,17 +305,21 @@ export function OnboardingWizard() {
 
           <form
             noValidate
-            className="p-6 md:p-8"
+            className="px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4"
             onSubmit={(e) => {
               e.preventDefault()
             }}
           >
-            <FieldGroup>
+            <TooltipProvider delayDuration={150}>
+              <FieldGroup>
               {step === 0 && (
                 <>
                   <h2 className="text-2xl font-semibold tracking-tight">
                     {dictionary.onboarding.steps.companyRole}
                   </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {dictionary.onboarding.descriptions.companyRole}
+                  </p>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <form.Field name="companyName">
@@ -250,9 +328,11 @@ export function OnboardingWizard() {
 
                         return (
                           <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor="onboarding-company">
-                              {dictionary.onboarding.fields.companyName}
-                            </FieldLabel>
+                            <FieldLabelWithTooltip
+                              htmlFor="onboarding-company"
+                              label={dictionary.onboarding.fields.companyName}
+                              tooltip={dictionary.onboarding.tooltips.companyName}
+                            />
                             <Combobox
                               items={companyOptions}
                               value={field.state.value || null}
@@ -310,9 +390,11 @@ export function OnboardingWizard() {
 
                         return (
                           <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor="onboarding-role">
-                              {dictionary.onboarding.fields.roleName}
-                            </FieldLabel>
+                            <FieldLabelWithTooltip
+                              htmlFor="onboarding-role"
+                              label={dictionary.onboarding.fields.roleName}
+                              tooltip={dictionary.onboarding.tooltips.roleName}
+                            />
                             <Combobox
                               items={roleOptions}
                               value={field.state.value || null}
@@ -371,9 +453,11 @@ export function OnboardingWizard() {
 
                       return (
                         <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor="onboarding-start-date">
-                            {dictionary.onboarding.fields.startDate}
-                          </FieldLabel>
+                          <FieldLabelWithTooltip
+                            htmlFor="onboarding-start-date"
+                            label={dictionary.onboarding.fields.startDate}
+                            tooltip={dictionary.onboarding.tooltips.startDate}
+                          />
                           <SingleDatePickerField
                             id="onboarding-start-date"
                             value={field.state.value}
@@ -395,106 +479,115 @@ export function OnboardingWizard() {
                   <h2 className="text-2xl font-semibold tracking-tight">
                     {dictionary.onboarding.steps.compensation}
                   </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {dictionary.onboarding.descriptions.compensation}
+                  </p>
 
-                  <form.Field name="compensationType">
-                    {(field) => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <form.Field name="compensationType">
+                      {(field) => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
 
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor="onboarding-compensation-type">
-                            {dictionary.onboarding.fields.compensationType}
-                          </FieldLabel>
-                          <Select
-                            name={field.name}
-                            value={field.state.value}
-                            onValueChange={(value) => {
-                              if (!isCompensationType(value)) {
-                                return
-                              }
-
-                              field.handleChange(value)
-                            }}
-                          >
-                            <SelectTrigger
-                              id="onboarding-compensation-type"
-                              aria-invalid={isInvalid}
-                              className="h-10 bg-background"
-                            >
-                              <SelectValue placeholder={dictionary.onboarding.fields.compensationType} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={CompensationType.HOURLY}>
-                                {dictionary.onboarding.options.compensationHourly}
-                              </SelectItem>
-                              <SelectItem value={CompensationType.MONTHLY}>
-                                {dictionary.onboarding.options.compensationMonthly}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                        </Field>
-                      )
-                    }}
-                  </form.Field>
-
-                  <form.Field name="currency">
-                    {(field) => {
-                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
-
-                      return (
-                        <Field data-invalid={isInvalid}>
-                          <FieldLabel htmlFor="onboarding-currency">
-                            {dictionary.onboarding.fields.currency}
-                          </FieldLabel>
-                          <Combobox
-                            items={currencyOptions}
-                            value={field.state.value || null}
-                            inputValue={field.state.value}
-                            onInputValueChange={(value, eventDetails) => {
-                              if (eventDetails.reason !== "input-change") {
-                                return
-                              }
-
-                              field.handleChange(value.toUpperCase())
-                            }}
-                            onValueChange={(value) => {
-                              if (typeof value !== "string") {
-                                return
-                              }
-
-                              field.handleChange(value)
-                            }}
-                          >
-                            <ComboboxInput
-                              id="onboarding-currency"
-                              name={field.name}
-                              onBlur={field.handleBlur}
-                              onKeyDown={(event) => {
-                                const expanded = event.currentTarget.getAttribute("aria-expanded") === "true"
-                                if (event.key === "Enter" && !expanded) {
-                                  event.preventDefault()
-                                }
-                              }}
-                              aria-invalid={isInvalid}
-                              placeholder={dictionary.onboarding.placeholders.selectCurrency}
-                              className="h-10 bg-background"
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabelWithTooltip
+                              htmlFor="onboarding-compensation-type"
+                              label={dictionary.onboarding.fields.compensationType}
+                              tooltip={dictionary.onboarding.tooltips.compensationType}
                             />
-                            <ComboboxContent>
-                              <ComboboxList>
-                                {(currency) => (
-                                  <ComboboxItem key={currency} value={currency}>
-                                    {currency}
-                                  </ComboboxItem>
-                                )}
-                              </ComboboxList>
-                            </ComboboxContent>
-                          </Combobox>
-                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                        </Field>
-                      )
-                    }}
-                  </form.Field>
+                            <Select
+                              name={field.name}
+                              value={field.state.value}
+                              onValueChange={(value) => {
+                                if (!isCompensationType(value)) {
+                                  return
+                                }
+
+                                field.handleChange(value)
+                              }}
+                            >
+                              <SelectTrigger
+                                id="onboarding-compensation-type"
+                                aria-invalid={isInvalid}
+                                className="w-full bg-background"
+                              >
+                                <SelectValue placeholder={dictionary.onboarding.fields.compensationType} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={CompensationType.HOURLY}>
+                                  {dictionary.onboarding.options.compensationHourly}
+                                </SelectItem>
+                                <SelectItem value={CompensationType.MONTHLY}>
+                                  {dictionary.onboarding.options.compensationMonthly}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        )
+                      }}
+                    </form.Field>
+
+                    <form.Field name="currency">
+                      {(field) => {
+                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
+
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabelWithTooltip
+                              htmlFor="onboarding-currency"
+                              label={dictionary.onboarding.fields.currency}
+                              tooltip={dictionary.onboarding.tooltips.currency}
+                            />
+                            <Combobox
+                              items={currencyOptions}
+                              value={field.state.value || null}
+                              inputValue={field.state.value}
+                              onInputValueChange={(value, eventDetails) => {
+                                if (eventDetails.reason !== "input-change") {
+                                  return
+                                }
+
+                                field.handleChange(value.toUpperCase())
+                              }}
+                              onValueChange={(value) => {
+                                if (typeof value !== "string") {
+                                  return
+                                }
+
+                                field.handleChange(value)
+                              }}
+                            >
+                              <ComboboxInput
+                                id="onboarding-currency"
+                                name={field.name}
+                                onBlur={field.handleBlur}
+                                onKeyDown={(event) => {
+                                  const expanded = event.currentTarget.getAttribute("aria-expanded") === "true"
+                                  if (event.key === "Enter" && !expanded) {
+                                    event.preventDefault()
+                                  }
+                                }}
+                                aria-invalid={isInvalid}
+                                placeholder={dictionary.onboarding.placeholders.selectCurrency}
+                                className="h-8 w-full bg-background"
+                              />
+                              <ComboboxContent>
+                                <ComboboxList>
+                                  {(currency) => (
+                                    <ComboboxItem key={currency} value={currency}>
+                                      {currency}
+                                    </ComboboxItem>
+                                  )}
+                                </ComboboxList>
+                              </ComboboxContent>
+                            </Combobox>
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        )
+                      }}
+                    </form.Field>
+                  </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <form.Field name="initialRate">
@@ -503,9 +596,11 @@ export function OnboardingWizard() {
 
                         return (
                           <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor="onboarding-initial-rate">
-                              {dictionary.onboarding.fields.initialRate}
-                            </FieldLabel>
+                            <FieldLabelWithTooltip
+                              htmlFor="onboarding-initial-rate"
+                              label={dictionary.onboarding.fields.initialRate}
+                              tooltip={dictionary.onboarding.tooltips.initialRate}
+                            />
                             <NumberStepperInput
                               id="onboarding-initial-rate"
                               name={field.name}
@@ -529,9 +624,11 @@ export function OnboardingWizard() {
 
                         return (
                           <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor="onboarding-current-rate">
-                              {dictionary.onboarding.fields.currentRate}
-                            </FieldLabel>
+                            <FieldLabelWithTooltip
+                              htmlFor="onboarding-current-rate"
+                              label={dictionary.onboarding.fields.currentRate}
+                              tooltip={dictionary.onboarding.tooltips.currentRate}
+                            />
                             <NumberStepperInput
                               id="onboarding-current-rate"
                               name={field.name}
@@ -561,125 +658,44 @@ export function OnboardingWizard() {
                   <h2 className="text-2xl font-semibold tracking-tight">
                     {dictionary.onboarding.steps.workSettings}
                   </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {dictionary.onboarding.descriptions.workSettings}
+                  </p>
+                  <form.Field name="defaultWorkSchedule">
+                    {(field) => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <form.Field name="monthlyWorkHours">
-                      {(field) => {
-                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
-
-                        return (
-                          <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor="onboarding-monthly-hours">
-                              {dictionary.onboarding.fields.monthlyWorkHours}
-                            </FieldLabel>
-                            <TooltipProvider delayDuration={100}>
-                              <Tooltip open={monthlyWorkHoursLimitFeedback}>
-                                <TooltipTrigger asChild>
-                                  <div>
-                                    <NumberStepperInput
-                                      id="onboarding-monthly-hours"
-                                      name={field.name}
-                                      value={field.state.value}
-                                      className={cn(
-                                        "bg-background",
-                                        monthlyWorkHoursLimitFeedback &&
-                                          "border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:ring-amber-500/35"
-                                      )}
-                                      min={1}
-                                      max={744}
-                                      step={1}
-                                      onBlur={field.handleBlur}
-                                      ariaInvalid={isInvalid}
-                                      onChange={(nextValue) => {
-                                        setMonthlyWorkHoursLimitFeedback(false)
-                                        field.handleChange(nextValue)
-                                      }}
-                                      onClamp={({ bound }) => {
-                                        if (bound === "max") {
-                                          setMonthlyWorkHoursLimitFeedback(true)
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="bottom"
-                                  align="start"
-                                  className="border border-amber-300/80 bg-amber-500 text-amber-950 ring-amber-700/35"
-                                >
-                                  {dictionary.onboarding.hints.monthlyWorkHoursLimit}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                          </Field>
-                        )
-                      }}
-                    </form.Field>
-
-                    <form.Field name="workDaysPerYear">
-                      {(field) => {
-                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
-
-                        return (
-                          <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor="onboarding-work-days">
-                              {dictionary.onboarding.fields.workDaysPerYear}
-                            </FieldLabel>
-                            <TooltipProvider delayDuration={100}>
-                              <Tooltip open={workDaysPerYearLimitFeedback}>
-                                <TooltipTrigger asChild>
-                                  <div>
-                                    <NumberStepperInput
-                                      id="onboarding-work-days"
-                                      name={field.name}
-                                      value={field.state.value}
-                                      className={cn(
-                                        "bg-background",
-                                        workDaysPerYearLimitFeedback &&
-                                          "border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:border-amber-500 has-[[data-slot=input-group-control]:focus-visible]:ring-amber-500/35"
-                                      )}
-                                      min={1}
-                                      max={366}
-                                      step={1}
-                                      onBlur={field.handleBlur}
-                                      ariaInvalid={isInvalid}
-                                      onChange={(nextValue) => {
-                                        setWorkDaysPerYearLimitFeedback(false)
-                                        field.handleChange(nextValue)
-                                      }}
-                                      onClamp={({ bound }) => {
-                                        if (bound === "max") {
-                                          setWorkDaysPerYearLimitFeedback(true)
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="bottom"
-                                  align="start"
-                                  className="border border-amber-300/80 bg-amber-500 text-amber-950 ring-amber-700/35"
-                                >
-                                  {dictionary.onboarding.hints.workDaysPerYearLimit}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                          </Field>
-                        )
-                      }}
-                    </form.Field>
-                  </div>
-
-                  <Field>
-                    <FieldDescription>{dictionary.onboarding.hints.workSettings}</FieldDescription>
-                  </Field>
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <WorkScheduleEditor
+                            value={field.state.value}
+                            onChange={field.handleChange}
+                            showDescription={false}
+                            showBreakMinute={selectedCompensationType === "hourly"}
+                            disabled={isShowingCompletionAnimation}
+                            helpText={{
+                              weeklySchedule: dictionary.onboarding.tooltips.weeklySchedule,
+                              quickEdit: dictionary.onboarding.tooltips.quickEdit,
+                              dayStatus: dictionary.onboarding.tooltips.dayStatus,
+                              from: dictionary.onboarding.tooltips.fromTime,
+                              to: dictionary.onboarding.tooltips.toTime,
+                              breakDuration: dictionary.onboarding.tooltips.breakDuration,
+                            }}
+                          />
+                          {isUsingDefaultWorkSchedule ? (
+                            <FieldDescription>{dictionary.onboarding.hints.workSettings}</FieldDescription>
+                          ) : null}
+                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        </Field>
+                      )
+                    }}
+                  </form.Field>
                 </>
               )}
-            </FieldGroup>
+              </FieldGroup>
+            </TooltipProvider>
 
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+            <div className="mt-8 grid grid-cols-[1fr_auto] items-end gap-3">
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
@@ -691,14 +707,13 @@ export function OnboardingWizard() {
                 </Button>
                 <Button
                   type="button"
+                  className="hidden md:inline-flex"
                   variant="outline"
                   disabled={isShowingCompletionAnimation}
                   onClick={() => {
                     form.reset()
                     setCompanySearch("")
                     setRoleSearch("")
-                    setMonthlyWorkHoursLimitFeedback(false)
-                    setWorkDaysPerYearLimitFeedback(false)
                     setStep(0)
                   }}
                 >
@@ -706,7 +721,7 @@ export function OnboardingWizard() {
                 </Button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2">
                 {step > 0 && (
                   <Button
                     type="button"

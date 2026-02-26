@@ -170,19 +170,25 @@ export const enDictionary = {
     system: "System",
   },
   onboarding: {
-    title: "Set up your salary path",
+    title: "Set up your capital path",
     subtitle: "Complete this once to unlock Personal Path.",
     stepProgress: "Step {current} of {total}",
     completionHint: "You can edit this information later.",
     steps: {
-      companyRole: "Company, role, and start date",
+      companyRole: "Current job details",
       dates: "Dates",
       compensation: "Compensation",
-      workSettings: "Work Settings",
+      workSettings: "Work schedule",
+    },
+    descriptions: {
+      companyRole:
+        "Enter details for the company where you currently work. You can add previous jobs after onboarding.",
+      compensation: "Set your compensation type, currency, and initial/current amounts.",
+      workSettings: "Define your weekly schedule so salary calculations are normalized correctly.",
     },
     fields: {
       companyName: "Company name",
-      roleName: "Role name",
+      roleName: "Current role title",
       startDate: "Start date",
       dateRange: "Date range",
       currentCompany: "Current company",
@@ -217,6 +223,25 @@ export const enDictionary = {
       workDaysPerYearLimit:
         "Limit: 366 work days per year (leap year). You cannot enter more because a year has no additional days.",
     },
+    tooltips: {
+      companyName:
+        "If you work in the public sector, enter the institution name. If you are self-employed, you can use \"Self-employed\" or your business name.",
+      roleName: "Enter your current role title at this company.",
+      startDate:
+        "Use the date you started at the company, not the date of your latest promotion or role change.",
+      compensationType: "How your current pay is defined at this company: hourly or monthly.",
+      currency: "Currency in which you receive your pay (for example, PEN or USD).",
+      initialRate: "Compensation amount when you started at this company.",
+      currentRate: "Compensation amount you currently receive at this company.",
+      weeklySchedule: "Mark your working days and usual hours for each day.",
+      quickEdit:
+        "Quickly apply the same start and end time to all days marked as working. You can still mark or unmark days.",
+      dayStatus: "Enable if you work that day; disable if it is a day off.",
+      fromTime: "Start time of your workday for that day.",
+      toTime: "End time of your workday for that day.",
+      breakDuration:
+        "Daily free time inside the shift (for example lunch) in HH:MM format. This is subtracted from worked hours.",
+    },
     actions: {
       previous: "Previous",
       next: "Next",
@@ -244,7 +269,7 @@ export const enDictionary = {
     },
     completionAnimation: {
       title: "We are creating your account",
-      description: "Thank you for using Salary Path.",
+      description: "Thank you for using Capital Path.",
     },
   },
   comparisonOnboarding: {
@@ -365,22 +390,37 @@ export const enDictionary = {
     actions: {
       addCompany: "Add company",
       addEvent: "Add event",
+      addReview: "Add review",
+      viewDetails: "View details",
       save: "Save changes",
       reset: "Reset",
       deleteCompany: "Delete company",
       deleteEvent: "Delete event",
       cancel: "Cancel",
       create: "Create",
+      editWorkSchedule: "Edit schedule",
+      saveWorkSchedule: "Save schedule",
     },
     dialogs: {
       addCompanyTitle: "Add company",
       addCompanyDescription: "Create a company with role, dates, compensation, rates, and color.",
       addEventTitle: "Add event",
       addEventDescription: "Register a compensation change for the selected company.",
+      addReviewTitle: "Add review",
+      addReviewDescription: "Edit your personal review and score for this company.",
       deleteCompanyTitle: "Delete company",
       deleteCompanyDescription: "This action will also delete related events.",
       deleteEventTitle: "Delete event",
       deleteEventDescription: "This action cannot be undone.",
+      compensationTypeChangeTitle: "Confirm compensation type change",
+      compensationTypeMonthlyToHourlyDescription:
+        "This change is retroactive and will affect all events for this company. Review and configure daily break time before confirming if needed.",
+      compensationTypeHourlyToMonthlyDescription:
+        "This change is retroactive and will affect all events for this company. The schedule is preserved, but daily break time will be reset to 0.",
+      confirmCompensationTypeChange: "Confirm change",
+      editWorkScheduleTitle: "Edit work schedule",
+      editWorkScheduleDescription:
+        "Adjust this company's weekly schedule. Changes will apply when you save the schedule.",
     },
     empty: {
       companies: "You have no companies yet. Add your first one to start.",
@@ -398,11 +438,12 @@ export const enDictionary = {
       color: "#0F766E",
       selectEventType: "Select event type",
       selectCurrency: "Select currency",
-      currentRate: "Optional final rate",
+      currentRate: "Optional current rate",
     },
     labels: {
       companyName: "Company name",
       roleName: "Role name",
+      useGlobalSchedule: "Use global schedule",
       compensationType: "Compensation type",
       currency: "Currency",
       startDate: "Start date",
@@ -447,6 +488,10 @@ export const enDictionary = {
     hints: {
       eventsEditable: "You can edit dates and add more events after creating the company.",
       companyReview: "This is your personal review for the company.",
+      defaultWorkScheduleOnCreate:
+        "Important: when creating the company, your default work schedule will be used. You can edit it later from company details.",
+      usingGlobalScheduleSummary:
+        "This company is currently using the global schedule. Turn it off to define a company-specific schedule.",
     },
     notifications: {
       createCompanyLoading: "Creating company...",
@@ -484,6 +529,8 @@ export const enDictionary = {
       rangeLabel: "Range",
       rateBasisLabel: "Rate basis",
       companiesLabel: "Companies",
+      compensationTitle: "Compensation progression",
+      realMonthlyIncomeTitle: "Real income by month",
       views: {
         rate: "Rate progression",
         cumulativeIncome: "Cumulative income",
@@ -513,6 +560,71 @@ export const enDictionary = {
       activeCompaniesLabel: "Active companies",
       currencyWarning: "{count} companies were excluded from cumulative view.",
       currencyWarningSuffix: "Only companies with currency",
+    },
+    monthly: {
+      subtitle: "Persisted monthly ledger with manual adjustments.",
+      legendTitle: "Currencies",
+      emptyState: "No monthly income data for selected range.",
+      tableTitle: "Monthly income details",
+      emptyTable: "No monthly records yet.",
+      emptySources: "No sources for this month.",
+      saving: "Saving...",
+      labels: {
+        month: "Month",
+        final: "Final total",
+        employment: "Employment",
+        bonus: "Bonus",
+        extraIncome: "Extra income",
+        adjustment: "Adjustment",
+        computed: "Computed",
+      },
+      sourceTypes: {
+        employment: "Employment",
+        bonus: "Bonus",
+        extra_income: "Extra income",
+        adjustment: "Adjustment",
+      },
+      actions: {
+        addBonus: "+ Bonus",
+        addExtraIncome: "+ Extra",
+        editAdjustment: "Adjustment",
+        editOverride: "Edit override",
+        clearOverride: "Clear override",
+        edit: "Edit",
+        delete: "Delete",
+      },
+      prompts: {
+        amount: "Amount",
+        overrideAmount: "Final amount override",
+        note: "Note (optional)",
+      },
+      oldMonthWarning:
+        "You are editing a month older than one month ({month}). Confirm to continue.",
+      deleteConfirm: "Delete this manual entry?",
+      confirmDialog: {
+        title: "Confirm action",
+        confirm: "Confirm",
+        cancel: "Cancel",
+      },
+      toasts: {
+        saved: "Monthly income updated.",
+      },
+      yearFilter: {
+        label: "Year",
+        allYears: "All years",
+      },
+      tooltips: {
+        bonus: "One-time bonus payments for this month (e.g., performance bonus, holiday bonus).",
+        extraIncome: "Additional income from side jobs, freelancing, or other non-regular sources.",
+        adjustment: "Manual adjustment to correct the computed total for this month.",
+      },
+      form: {
+        amountLabel: "Amount",
+        noteLabel: "Note",
+        notePlaceholder: "Optional note...",
+        save: "Save",
+        cancel: "Cancel",
+      },
     },
     table: {
       title: "Companies table",
@@ -556,7 +668,7 @@ export const enDictionary = {
       allCollapsed: "All collapsed",
       allExpanded: "All expanded",
       collapsedHint:
-        "Default: all sections collapsed except the current route section.",
+        "All sections collapsed except the current route section.",
       expandedHint: "All sections stay expanded by default.",
     },
     appearance: {
@@ -680,6 +792,14 @@ export const enDictionary = {
     workSettings: {
       title: "Work schedule settings",
       description: "Define your schedule to normalize hourly, monthly, and annual salary.",
+      weeklyScheduleLabel: "Weekly schedule",
+      workingDay: "Working day",
+      nonWorkingDay: "Day off",
+      labels: {
+        from: "From",
+        to: "To",
+        breakDuration: "Break (HH:MM)",
+      },
       presetsLabel: "Preset options",
       presetSummary: "{hours} h/day · {days} d/week",
       presetComputed: "{monthly} h/month · {yearly} d/year",
@@ -705,10 +825,18 @@ export const enDictionary = {
         save: "Save schedule",
         saving: "Saving...",
         reset: "Reset",
+        quickEdit: "Quick edit",
+        applyMondayToWorking: "Apply Monday to working days",
       },
       hints: {
         monthlyWorkHours: "Allowed range: 1 to 744 hours.",
         workDaysPerYear: "Allowed range: 1 to 366 days.",
+        quickEdit:
+          "Quickly apply the same start and end time to all days marked as working. You can still mark or unmark days.",
+        breakDuration:
+          "Enter daily break time using HH:MM format. This value is subtracted from total worked hours.",
+        quickEditInvalid: "End time must be later than start time.",
+        breakInvalid: "Break time must be shorter than the time between start and end.",
         affectsCalculations: "Used for career event and current salary calculations.",
       },
       toasts: {

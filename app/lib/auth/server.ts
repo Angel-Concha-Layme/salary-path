@@ -130,7 +130,7 @@ const signUpValidationPlugin = {
 }
 
 export const auth = betterAuth({
-  appName: "Salary Path",
+  appName: "Capital Path",
   baseURL: getRequiredEnv("BETTER_AUTH_URL"),
   secret: getRequiredEnv("BETTER_AUTH_SECRET"),
   trustedOrigins,

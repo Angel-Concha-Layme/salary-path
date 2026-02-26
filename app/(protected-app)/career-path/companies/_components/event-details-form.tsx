@@ -122,7 +122,7 @@ export function EventDetailsForm({
 
   return (
     <form
-      className="space-y-5"
+      className="flex min-h-full flex-col gap-5"
       noValidate
       onSubmit={(eventSubmit) => {
         eventSubmit.preventDefault()
@@ -244,7 +244,7 @@ export function EventDetailsForm({
         </form.Field>
       </FieldGroup>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
+      <div className="sticky bottom-0 z-20 -mx-1 mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border/70 bg-background/95 px-1 pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button type="button" variant="destructive" disabled={isSaving || isDeleting}>

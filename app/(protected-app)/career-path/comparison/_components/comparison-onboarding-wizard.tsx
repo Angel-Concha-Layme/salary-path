@@ -158,7 +158,7 @@ export function ComparisonOnboardingWizard() {
         cardClassName="rounded-2xl border border-border bg-background text-card-foreground"
       >
           <div className="border-b border-border p-6 pb-4 md:p-8 md:pb-6">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Salary Path</p>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Capital Path</p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
               {dictionary.comparisonOnboarding.title}
             </h1>
@@ -302,12 +302,12 @@ export function ComparisonOnboardingWizard() {
               ) : null}
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+            <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <Button type="button" variant="outline" onClick={handleReset}>
                 {dictionary.comparisonOnboarding.actions.reset}
               </Button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2 self-end">
                 {step > 0 ? (
                   <Button type="button" variant="outline" onClick={handlePreviousStep}>
                     {dictionary.comparisonOnboarding.actions.previous}

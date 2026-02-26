@@ -2,7 +2,7 @@ import { and, desc, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 
 import { db } from "@/app/lib/db/client"
-import { userFinanceSettings } from "@/app/lib/db/schema"
+import { pathCompanies, userFinanceSettings } from "@/app/lib/db/schema"
 import { currencyCodeSchema, normalizeCurrencyCode } from "@/app/lib/models/common/domain-enums"
 import type {
   UserFinanceSettingsCreateInput,
@@ -11,19 +11,35 @@ import type {
   UserFinanceSettingsListResponse,
   UserFinanceSettingsUpdateInput,
 } from "@/app/lib/models/settings/user-finance-settings.model"
+import {
+  buildDefaultWorkSchedule,
+  deriveLegacyWorkSettingsFromSchedule,
+  workScheduleSchema,
+  type WorkSchedule,
+} from "@/app/lib/models/work-schedule/work-schedule.model"
 import { ApiError } from "@/app/lib/server/api-error"
-import { clampLimit, requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
+import { toIso, clampLimit, requirePatchPayload } from "@/app/lib/server/domain/common"
+import {
+  listUserWorkScheduleDays,
+  replaceUserWorkScheduleDays,
+  resolveUserWorkSchedule,
+} from "@/app/lib/server/domain/finance/work-schedule.domain"
+import { recomputeMonthlyIncomeLedgerFromDate } from "@/app/lib/server/domain/finance/monthly-income.domain"
 
 const createSchema = z.object({
   currency: currencyCodeSchema,
   locale: z.string().trim().min(2).max(20),
   monthlyWorkHours: z.number().int().positive().max(744).optional(),
   workDaysPerYear: z.number().int().min(1).max(366).optional(),
+  defaultWorkSchedule: workScheduleSchema.optional(),
 })
 
 const updateSchema = createSchema.partial()
 
-function mapEntity(row: typeof userFinanceSettings.$inferSelect): UserFinanceSettingsEntity {
+function mapEntity(
+  row: typeof userFinanceSettings.$inferSelect,
+  defaultWorkSchedule: WorkSchedule
+): UserFinanceSettingsEntity {
   return {
     id: row.id,
     ownerUserId: row.ownerUserId,
@@ -31,10 +47,30 @@ function mapEntity(row: typeof userFinanceSettings.$inferSelect): UserFinanceSet
     locale: row.locale,
     monthlyWorkHours: row.monthlyWorkHours,
     workDaysPerYear: row.workDaysPerYear,
+    defaultWorkSchedule,
     createdAt: toIso(row.createdAt) ?? new Date(0).toISOString(),
     updatedAt: toIso(row.updatedAt) ?? new Date(0).toISOString(),
     deletedAt: toIso(row.deletedAt),
   }
+}
+
+async function recomputeMonthlyIncomeFromFirstCompany(ownerUserId: string) {
+  const rows = await db
+    .select({
+      startDate: pathCompanies.startDate,
+    })
+    .from(pathCompanies)
+    .where(and(eq(pathCompanies.ownerUserId, ownerUserId), isNull(pathCompanies.deletedAt)))
+    .orderBy(pathCompanies.startDate)
+    .limit(1)
+
+  const firstCompany = rows[0]
+
+  if (!firstCompany) {
+    return
+  }
+
+  await recomputeMonthlyIncomeLedgerFromDate(ownerUserId, firstCompany.startDate)
 }
 
 export async function listUserFinanceSettings(
@@ -50,8 +86,10 @@ export async function listUserFinanceSettings(
     .orderBy(desc(userFinanceSettings.updatedAt))
     .limit(limit)
 
+  const schedule = (await listUserWorkScheduleDays(ownerUserId)) ?? buildDefaultWorkSchedule()
+
   return {
-    items: rows.map(mapEntity),
+    items: rows.map((row) => mapEntity(row, schedule)),
     total: rows.length,
   }
 }
@@ -78,7 +116,9 @@ export async function getUserFinanceSettingsById(
     throw new ApiError(404, "NOT_FOUND", "Finance settings not found")
   }
 
-  return mapEntity(row)
+  const schedule = (await listUserWorkScheduleDays(ownerUserId)) ?? buildDefaultWorkSchedule()
+
+  return mapEntity(row, schedule)
 }
 
 export async function createUserFinanceSettings(
@@ -97,7 +137,10 @@ export async function createUserFinanceSettings(
     throw new ApiError(409, "CONFLICT", "Finance settings already exist for this user")
   }
 
+  const schedule = payload.defaultWorkSchedule ?? buildDefaultWorkSchedule()
+  const derived = deriveLegacyWorkSettingsFromSchedule(schedule)
   const now = new Date()
+
   const rows = await db
     .insert(userFinanceSettings)
     .values({
@@ -105,8 +148,8 @@ export async function createUserFinanceSettings(
       ownerUserId,
       currency: payload.currency,
       locale: payload.locale,
-      monthlyWorkHours: payload.monthlyWorkHours ?? 174,
-      workDaysPerYear: payload.workDaysPerYear ?? 261,
+      monthlyWorkHours: derived.monthlyWorkHours,
+      workDaysPerYear: derived.workDaysPerYear,
       createdAt: now,
       updatedAt: now,
     })
@@ -118,7 +161,10 @@ export async function createUserFinanceSettings(
     throw new ApiError(500, "INTERNAL_ERROR", "Failed to create finance settings")
   }
 
-  return mapEntity(row)
+  await replaceUserWorkScheduleDays(ownerUserId, schedule, now)
+  await recomputeMonthlyIncomeFromFirstCompany(ownerUserId)
+
+  return mapEntity(row, schedule)
 }
 
 export async function updateUserFinanceSettings(
@@ -128,11 +174,37 @@ export async function updateUserFinanceSettings(
 ): Promise<UserFinanceSettingsEntity> {
   const payload = requirePatchPayload(updateSchema.parse(input))
 
+  const existingRows = await db
+    .select()
+    .from(userFinanceSettings)
+    .where(
+      and(
+        eq(userFinanceSettings.id, id),
+        eq(userFinanceSettings.ownerUserId, ownerUserId),
+        isNull(userFinanceSettings.deletedAt)
+      )
+    )
+    .limit(1)
+
+  const existing = existingRows[0]
+
+  if (!existing) {
+    throw new ApiError(404, "NOT_FOUND", "Finance settings not found")
+  }
+
+  const currentSchedule = await resolveUserWorkSchedule(ownerUserId)
+  const nextSchedule = payload.defaultWorkSchedule ?? currentSchedule
+  const derived = deriveLegacyWorkSettingsFromSchedule(nextSchedule)
+  const now = new Date()
+
   const rows = await db
     .update(userFinanceSettings)
     .set({
-      ...payload,
-      updatedAt: new Date(),
+      currency: payload.currency ?? existing.currency,
+      locale: payload.locale ?? existing.locale,
+      monthlyWorkHours: derived.monthlyWorkHours,
+      workDaysPerYear: derived.workDaysPerYear,
+      updatedAt: now,
     })
     .where(
       and(
@@ -149,7 +221,12 @@ export async function updateUserFinanceSettings(
     throw new ApiError(404, "NOT_FOUND", "Finance settings not found")
   }
 
-  return mapEntity(row)
+  if (payload.defaultWorkSchedule !== undefined) {
+    await replaceUserWorkScheduleDays(ownerUserId, nextSchedule, now)
+    await recomputeMonthlyIncomeFromFirstCompany(ownerUserId)
+  }
+
+  return mapEntity(row, nextSchedule)
 }
 
 export async function deleteUserFinanceSettings(ownerUserId: string, id: string) {
@@ -200,14 +277,19 @@ export async function upsertUserFinanceSettings(
     return createUserFinanceSettings(ownerUserId, payload)
   }
 
+  const currentSchedule = await resolveUserWorkSchedule(ownerUserId)
+  const nextSchedule = payload.defaultWorkSchedule ?? currentSchedule
+  const derived = deriveLegacyWorkSettingsFromSchedule(nextSchedule)
+  const now = new Date()
+
   const rows = await db
     .update(userFinanceSettings)
     .set({
       currency: payload.currency,
       locale: payload.locale,
-      monthlyWorkHours: payload.monthlyWorkHours ?? existing.monthlyWorkHours,
-      workDaysPerYear: payload.workDaysPerYear ?? existing.workDaysPerYear,
-      updatedAt: new Date(),
+      monthlyWorkHours: derived.monthlyWorkHours,
+      workDaysPerYear: derived.workDaysPerYear,
+      updatedAt: now,
     })
     .where(
       and(
@@ -224,5 +306,10 @@ export async function upsertUserFinanceSettings(
     throw new ApiError(500, "INTERNAL_ERROR", "Failed to upsert finance settings")
   }
 
-  return mapEntity(row)
+  if (payload.defaultWorkSchedule !== undefined) {
+    await replaceUserWorkScheduleDays(ownerUserId, nextSchedule, now)
+    await recomputeMonthlyIncomeFromFirstCompany(ownerUserId)
+  }
+
+  return mapEntity(row, nextSchedule)
 }

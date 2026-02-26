@@ -10,12 +10,12 @@ import {
 import type {
   PathCompanyEventsCreateInput,
   PathCompanyEventsEntity,
-  PathCompanyEventsListParams,
   PathCompanyEventsListResponse,
   PathCompanyEventsUpdateInput,
 } from "@/app/lib/models/personal-path/path-company-events.model"
 import { ApiError } from "@/app/lib/server/api-error"
-import { clampLimit, requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
+import { requirePatchPayload, toIso } from "@/app/lib/server/domain/common"
+import { recomputeMonthlyIncomeByAffectedCompanyDate } from "@/app/lib/server/domain/finance/monthly-income.domain"
 import { syncEndOfEmploymentEventForCompany } from "@/app/lib/server/domain/personal-path/end-of-employment-event-sync"
 import { assertPathCompanyOwnership } from "@/app/lib/server/domain/personal-path/path-companies.domain"
 
@@ -68,12 +68,9 @@ async function getRecordOrThrow(ownerUserId: string, pathCompanyId: string, even
 
 export async function listPathCompanyEvents(
   ownerUserId: string,
-  pathCompanyId: string,
-  params: PathCompanyEventsListParams = {}
+  pathCompanyId: string
 ): Promise<PathCompanyEventsListResponse> {
   await assertPathCompanyOwnership(ownerUserId, pathCompanyId)
-
-  const limit = clampLimit(params.limit)
 
   const rows = await db
     .select()
@@ -85,7 +82,6 @@ export async function listPathCompanyEvents(
       )
     )
     .orderBy(desc(pathCompanyEvents.effectiveDate))
-    .limit(limit)
 
   return {
     items: rows.map(mapEntity),
@@ -94,11 +90,8 @@ export async function listPathCompanyEvents(
 }
 
 export async function listPathCompanyEventsByOwner(
-  ownerUserId: string,
-  params: PathCompanyEventsListParams = {}
+  ownerUserId: string
 ): Promise<PathCompanyEventsListResponse> {
-  const limit = clampLimit(params.limit, 50, 100)
-
   const rows = await db
     .select({
       id: pathCompanyEvents.id,
@@ -121,7 +114,6 @@ export async function listPathCompanyEventsByOwner(
       )
     )
     .orderBy(desc(pathCompanyEvents.effectiveDate))
-    .limit(limit)
 
   return {
     items: rows.map((row) => mapEntity(row)),
@@ -177,6 +169,12 @@ export async function createPathCompanyEvent(
     return created
   })
 
+  await recomputeMonthlyIncomeByAffectedCompanyDate(
+    ownerUserId,
+    [pathCompanyId],
+    payload.effectiveDate
+  )
+
   return mapEntity(row)
 }
 
@@ -187,6 +185,7 @@ export async function updatePathCompanyEvent(
   input: PathCompanyEventsUpdateInput
 ): Promise<PathCompanyEventsEntity> {
   await assertPathCompanyOwnership(ownerUserId, pathCompanyId)
+  const previous = await getRecordOrThrow(ownerUserId, pathCompanyId, eventId)
 
   const payload = requirePatchPayload(updateSchema.parse(input))
   const updatedAt = new Date()
@@ -225,6 +224,14 @@ export async function updatePathCompanyEvent(
     throw new ApiError(404, "NOT_FOUND", "Path company event not found")
   }
 
+  const fallbackDate = new Date(
+    Math.min(
+      previous.effectiveDate.getTime(),
+      (payload.effectiveDate ?? previous.effectiveDate).getTime()
+    )
+  )
+  await recomputeMonthlyIncomeByAffectedCompanyDate(ownerUserId, [pathCompanyId], fallbackDate)
+
   return mapEntity(row)
 }
 
@@ -234,6 +241,7 @@ export async function deletePathCompanyEvent(
   eventId: string
 ) {
   await assertPathCompanyOwnership(ownerUserId, pathCompanyId)
+  const previous = await getRecordOrThrow(ownerUserId, pathCompanyId, eventId)
 
   const deletedAt = new Date()
 
@@ -270,6 +278,12 @@ export async function deletePathCompanyEvent(
   if (!row || !row.deletedAt) {
     throw new ApiError(404, "NOT_FOUND", "Path company event not found")
   }
+
+  await recomputeMonthlyIncomeByAffectedCompanyDate(
+    ownerUserId,
+    [pathCompanyId],
+    previous.effectiveDate
+  )
 
   return {
     id: row.id,

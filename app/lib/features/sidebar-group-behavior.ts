@@ -6,7 +6,7 @@ export const SIDEBAR_GROUP_BEHAVIOR_STORAGE_KEY =
 const SIDEBAR_GROUP_BEHAVIOR_EVENT =
   "capital-path:sidebar-group-behavior-changed"
 
-export const DEFAULT_SIDEBAR_GROUP_BEHAVIOR: SidebarGroupBehavior = "all_collapsed"
+export const DEFAULT_SIDEBAR_GROUP_BEHAVIOR: SidebarGroupBehavior = "all_expanded"
 
 function isSidebarGroupBehavior(value: unknown): value is SidebarGroupBehavior {
   return value === "all_collapsed" || value === "all_expanded"

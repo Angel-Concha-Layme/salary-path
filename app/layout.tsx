@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Salary Path",
+  title: "Capital Path",
   description: "Professional salary progression modeling",
 }
 

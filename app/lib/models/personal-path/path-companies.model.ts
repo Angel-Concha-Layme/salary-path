@@ -2,6 +2,7 @@ import type {
   CompensationTypeValue,
   CurrencyCodeValue,
 } from "@/app/lib/models/common/domain-enums"
+import type { WorkSchedule } from "@/app/lib/models/work-schedule/work-schedule.model"
 
 export interface PathCompaniesEntity {
   id: string
@@ -20,6 +21,7 @@ export interface PathCompaniesEntity {
   createdAt: string
   updatedAt: string
   deletedAt: string | null
+  workSchedule: WorkSchedule | null
 }
 
 export interface PathCompaniesCreateInput {
@@ -36,6 +38,7 @@ export interface PathCompaniesCreateInput {
   review?: string
   startDate: string
   endDate?: string | null
+  workSchedule?: WorkSchedule | null
 }
 
 export interface PathCompaniesUpdateInput {
@@ -52,10 +55,7 @@ export interface PathCompaniesUpdateInput {
   review?: string
   startDate?: string
   endDate?: string | null
-}
-
-export interface PathCompaniesListParams {
-  limit?: number
+  workSchedule?: WorkSchedule | null
 }
 
 export interface PathCompaniesListResponse {
