@@ -120,6 +120,13 @@
       "when": 1765200000000,
       "tag": "0016_work_schedule_break_minutes",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1765300000000,
+      "tag": "0017_seed_company_and_role_catalogs",
+      "breakpoints": true
     }
   ]
 }
