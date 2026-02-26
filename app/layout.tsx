@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 import { createUiThemeBootstrapScript } from "@/app/lib/features/ui-theme-preset"
 import { getRequestLocale } from "@/app/lib/i18n/get-request-locale"
@@ -43,6 +44,7 @@ export default async function RootLayout({
         />
         <AppProviders locale={locale}>{children}</AppProviders>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
