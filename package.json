@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:preflight-empty-repair": "node scripts/db/preflight-empty-repair.mjs",
+    "db:preflight-empty-repair": "node --env-file=.env scripts/db/preflight-empty-repair.mjs",
     "db:migrate": "pnpm db:preflight-empty-repair && drizzle-kit migrate"
   },
   "dependencies": {
