@@ -176,15 +176,23 @@ export const enDictionary = {
     completionHint: "You can edit this information later.",
     steps: {
       companyRole: "Current job details",
-      dates: "Dates",
-      compensation: "Compensation",
+      compensationAndEvents: "Compensation and salary changes",
       workSettings: "Work schedule",
+      summary: "Summary and optional details",
     },
     descriptions: {
       companyRole:
         "Enter details for the company where you currently work. You can add previous jobs after onboarding.",
-      compensation: "Set your compensation type, currency, and initial/current amounts.",
-      workSettings: "Define your weekly schedule so salary calculations are normalized correctly.",
+      compensationAndEvents:
+        "Set compensation type and currency, then register real salary changes with their dates.",
+      workSettingsCurrent:
+        "Define the weekly schedule for your current job. It will also become your account default schedule.",
+      summary:
+        "Review your summary, validate ordered salary changes, and optionally add previous or parallel companies for better precision.",
+    },
+    eventTypeLabels: {
+      rate_increase: "Salary adjustment",
+      promotion: "Role change (promotion/lateral)",
     },
     fields: {
       companyName: "Company name",
@@ -193,7 +201,7 @@ export const enDictionary = {
       dateRange: "Date range",
       currentCompany: "Current company",
       compensationType: "Compensation type",
-      initialRate: "Initial rate",
+      startRate: "Starting compensation",
       currentRate: "Current rate",
       currency: "Currency",
       monthlyWorkHours: "Hours per month",
@@ -216,8 +224,6 @@ export const enDictionary = {
       roleSearch: "If it does not exist, it will be created automatically.",
       workSettings:
         "Defaults for people working 8 hours daily from Monday to Friday.",
-      sameRate:
-        "If initial and current rate are equal, no increase event is created.",
       monthlyWorkHoursLimit:
         "Limit: 744 hours per month (31 days x 24 hours). You cannot enter more because a month has no additional hours.",
       workDaysPerYearLimit:
@@ -231,7 +237,9 @@ export const enDictionary = {
         "Use the date you started at the company, not the date of your latest promotion or role change.",
       compensationType: "How your current pay is defined at this company: hourly or monthly.",
       currency: "Currency in which you receive your pay (for example, PEN or USD).",
-      initialRate: "Compensation amount when you started at this company.",
+      startRate: "Compensation amount when you started at this company.",
+      eventEffectiveDate:
+        "Salary changes apply from the effective date of the salary change, including that same day.",
       currentRate: "Compensation amount you currently receive at this company.",
       weeklySchedule: "Mark your working days and usual hours for each day.",
       quickEdit:
@@ -246,9 +254,55 @@ export const enDictionary = {
       previous: "Previous",
       next: "Next",
       submit: "Finish",
+      skipSummary: "Skip for now",
       resetStep: "Clear step",
       reset: "Clear all steps",
       complete: "Completing...",
+    },
+    events: {
+      title: "Salary changes",
+      description:
+        "Add salary changes you remember. This avoids misleading charts on your first experience.",
+      addEvent: "Add salary change",
+      startEvent: "Starting change (automatic)",
+      empty: "No salary changes added yet.",
+      setStartDateFirst: "Set a start date first to use suggested dates.",
+      typeGuidanceTitle: "Quick type guide",
+      typeGuidanceRateIncrease: "Salary adjustment: use it for negotiated or extraordinary increases.",
+      typeGuidancePromotion:
+        "Role change (promotion/lateral): use it when your role changes with compensation impact.",
+      typeGuidanceAnnual:
+        "Annual increase: we suggest January 1st of the next calendar year.",
+      typeGuidanceMidYear:
+        "Mid-year increase: we suggest July 1st of the applicable cycle.",
+      changeTypeLabel: "Salary change type",
+      selectTypePlaceholder: "Select salary change type",
+      effectiveDateLabel: "Effective date",
+      amountLabel: "Compensation",
+    },
+    summary: {
+      currentCompany: "Current company and salary changes",
+      precisionTitle: "More detail, more precision",
+      precisionDescription:
+        "Filling real data improves savings estimates, mortgage eligibility, and platform recommendations.",
+      additionalCompaniesTitle: "Additional companies (optional)",
+      additionalCompaniesDescription:
+        "You can add previous or parallel jobs with their salary changes and company-specific schedule.",
+      addCompany: "Add company",
+      addCompanyDialogTitle: "Add additional company",
+      editCompanyDialogTitle: "Edit additional company",
+      addCompanyDialogDescription:
+        "Complete company details, salary changes, and work schedule.",
+      noAdditionalCompanies: "No additional companies added.",
+      keepCurrentJob: "I still work here",
+      activeCompany: "Active",
+      editCompany: "Edit",
+      companyLabel: "Additional company {index}",
+      eventsOrderedLabel: "Ordered salary changes",
+      saveCompanyChanges: "Save changes",
+      confirmAddCompany: "Add company",
+      skipConfirm:
+        "If you continue, additional companies from this step will be discarded. Do you want to continue?",
     },
     validations: {
       companyName: "Enter a company.",
@@ -256,7 +310,7 @@ export const enDictionary = {
       dateRange: "Select start and end date (or mark current company).",
       startDate: "Select a start date.",
       compensationType: "Select a compensation type.",
-      initialRate: "Enter a valid initial rate.",
+      startRate: "Enter a valid initial rate.",
       currentRate: "Enter a valid current rate.",
       currency: "Select a currency.",
       monthlyWorkHours: "Enter valid monthly hours.",

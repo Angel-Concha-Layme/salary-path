@@ -177,15 +177,23 @@ export const esDictionary = {
     completionHint: "Podrás editar esta información después.",
     steps: {
       companyRole: "Datos de tu trabajo actual",
-      dates: "Fechas",
-      compensation: "Compensación",
+      compensationAndEvents: "Compensación y cambios salariales",
       workSettings: "Jornada laboral",
+      summary: "Resumen y detalle opcional",
     },
     descriptions: {
       companyRole:
         "Ingresa los datos de la empresa donde trabajas actualmente. Al terminar el onboarding podrás agregar trabajos anteriores.",
-      compensation: "Define el tipo de compensación, la moneda y tus montos inicial y actual.",
-      workSettings: "Configura tu jornada semanal para normalizar correctamente tus cálculos salariales.",
+      compensationAndEvents:
+        "Define tipo de compensación y moneda, luego registra los cambios salariales reales con sus fechas.",
+      workSettingsCurrent:
+        "Configura la jornada semanal de tu empleo actual. También será la jornada por defecto de tu cuenta.",
+      summary:
+        "Revisa tu resumen, valida cambios salariales ordenados y agrega empresas anteriores o paralelas si quieres mayor precisión.",
+    },
+    eventTypeLabels: {
+      rate_increase: "Ajuste salarial",
+      promotion: "Cambio de rol (ascenso/lateral)",
     },
     fields: {
       companyName: "Nombre de empresa",
@@ -194,7 +202,7 @@ export const esDictionary = {
       dateRange: "Rango de fechas",
       currentCompany: "Empresa actual",
       compensationType: "Tipo de compensación",
-      initialRate: "Compensación inicial",
+      startRate: "Compensación al inicio",
       currentRate: "Compensación actual",
       currency: "Moneda",
       monthlyWorkHours: "Horas por mes",
@@ -217,8 +225,6 @@ export const esDictionary = {
       roleSearch: "Si no existe, se creará automáticamente.",
       workSettings:
         "Valores por defecto para personas que trabajan 8 horas diarias de lunes a viernes.",
-      sameRate:
-        "Si la compensación inicial y actual son iguales, no se crea un evento de aumento.",
       monthlyWorkHoursLimit:
         "Límite: 744 horas por mes (31 días x 24 horas). No puedes ingresar más porque un mes no tiene más horas.",
       workDaysPerYearLimit:
@@ -233,7 +239,9 @@ export const esDictionary = {
       compensationType:
         "Indica cómo se define tu pago actual en esta empresa: por hora o mensual.",
       currency: "Moneda en la que recibes tu compensación (por ejemplo, PEN o USD).",
-      initialRate: "Monto de compensación con el que iniciaste en esta empresa.",
+      startRate: "Monto de compensación con el que iniciaste en esta empresa.",
+      eventEffectiveDate:
+        "El cambio de sueldo aplica desde la fecha efectiva del cambio salarial, incluyendo ese mismo día.",
       currentRate: "Monto de compensación que recibes actualmente en esta empresa.",
       weeklySchedule: "Marca tus días laborables y el horario habitual de cada día.",
       quickEdit:
@@ -248,9 +256,55 @@ export const esDictionary = {
       previous: "Anterior",
       next: "Siguiente",
       submit: "Finalizar",
+      skipSummary: "Saltar por ahora",
       resetStep: "Limpiar paso",
       reset: "Limpiar todo",
       complete: "Completando...",
+    },
+    events: {
+      title: "Cambios salariales",
+      description:
+        "Agrega los cambios salariales que recuerdes. Esto evita gráficos engañosos al ingresar por primera vez.",
+      addEvent: "Agregar cambio salarial",
+      startEvent: "Cambio inicial (automático)",
+      empty: "Aún no agregaste cambios salariales.",
+      setStartDateFirst: "Define fecha de inicio para poder precargar fechas sugeridas.",
+      typeGuidanceTitle: "Guía rápida de tipos",
+      typeGuidanceRateIncrease: "Ajuste salarial: úsalo para incrementos extraordinarios o negociados.",
+      typeGuidancePromotion:
+        "Cambio de rol (ascenso/lateral): úsalo cuando cambias de rol con ajuste de compensación.",
+      typeGuidanceAnnual:
+        "Aumento anual: sugerimos 1 de enero del siguiente año calendario.",
+      typeGuidanceMidYear:
+        "Aumento de medio año: sugerimos 1 de julio del ciclo aplicable.",
+      changeTypeLabel: "Tipo de cambio salarial",
+      selectTypePlaceholder: "Selecciona tipo de cambio salarial",
+      effectiveDateLabel: "Fecha efectiva",
+      amountLabel: "Compensación",
+    },
+    summary: {
+      currentCompany: "Empresa actual y cambios salariales",
+      precisionTitle: "Más detalle, mayor precisión",
+      precisionDescription:
+        "Completar tus datos reales mejora la calidad de cálculos de ahorro, crédito hipotecario y recomendaciones de la plataforma.",
+      additionalCompaniesTitle: "Empresas adicionales (opcional)",
+      additionalCompaniesDescription:
+        "Puedes agregar trabajos anteriores o paralelos con sus cambios salariales y jornada específica.",
+      addCompany: "Agregar empresa",
+      addCompanyDialogTitle: "Agregar empresa adicional",
+      editCompanyDialogTitle: "Editar empresa adicional",
+      addCompanyDialogDescription:
+        "Completa los datos de la empresa, cambios salariales y jornada laboral.",
+      noAdditionalCompanies: "No agregaste empresas adicionales.",
+      keepCurrentJob: "Mantengo este trabajo actualmente",
+      activeCompany: "Vigente",
+      editCompany: "Editar",
+      companyLabel: "Empresa adicional {index}",
+      eventsOrderedLabel: "Cambios salariales ordenados",
+      saveCompanyChanges: "Guardar cambios",
+      confirmAddCompany: "Agregar empresa",
+      skipConfirm:
+        "Si continúas, se descartarán las empresas adicionales que agregaste en este paso. ¿Deseas continuar?",
     },
     validations: {
       companyName: "Ingresa la empresa.",
@@ -258,7 +312,7 @@ export const esDictionary = {
       dateRange: "Selecciona fecha de inicio y fin (o marca empresa actual).",
       startDate: "Selecciona fecha de inicio.",
       compensationType: "Selecciona tipo de compensación.",
-      initialRate: "Ingresa una compensación inicial válida.",
+      startRate: "Ingresa una compensación inicial válida.",
       currentRate: "Ingresa una compensación actual válida.",
       currency: "Selecciona una moneda.",
       monthlyWorkHours: "Ingresa horas por mes válidas.",

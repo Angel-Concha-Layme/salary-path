@@ -11,22 +11,40 @@ export interface OnboardingStatusResponse {
   completedAt: string | null
 }
 
-export interface OnboardingCompleteInput {
+export type OnboardingEventType =
+  | "rate_increase"
+  | "annual_increase"
+  | "mid_year_increase"
+  | "promotion"
+
+export interface OnboardingCompanyEventInput {
+  eventType: OnboardingEventType
+  effectiveDate: string
+  amount: number
+  notes?: string | null
+}
+
+export interface OnboardingCompanyInput {
   companyName: string
   roleName: string
   startDate: string
   endDate?: string | null
   compensationType: CompensationTypeValue
   currency: string
-  initialRate: number
-  currentRate: number
-  defaultWorkSchedule?: WorkSchedule
+  startRate: number
+  events: OnboardingCompanyEventInput[]
+  workSchedule?: WorkSchedule
+}
+
+export interface OnboardingCompleteInput {
+  defaultWorkSchedule: WorkSchedule
+  companies: [OnboardingCompanyInput, ...OnboardingCompanyInput[]]
   locale?: string
 }
 
 export interface OnboardingCompleteResponse {
   completedAt: string
-  pathCompany: PathCompaniesEntity
+  createdCompanies: PathCompaniesEntity[]
   createdEvents: PathCompanyEventsEntity[]
   settings: UserFinanceSettingsEntity
 }

@@ -154,7 +154,7 @@ function countWorkingHoursInRange(
   return minutes / 60
 }
 
-function resolveRateAtDate(events: EngineEvent[], targetDate: Date): number | null {
+export function resolveRateAtDate(events: EngineEvent[], targetDate: Date): number | null {
   const sorted = [...events].sort(
     (left, right) => left.effectiveDate.getTime() - right.effectiveDate.getTime()
   )
@@ -171,7 +171,7 @@ function resolveRateAtDate(events: EngineEvent[], targetDate: Date): number | nu
   return currentRate
 }
 
-function calculateEmploymentEstimateForMonth(input: {
+export function calculateEmploymentEstimateForMonth(input: {
   company: EngineCompany
   monthStart: Date
   monthEndExclusive: Date
