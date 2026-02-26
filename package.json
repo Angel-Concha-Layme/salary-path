@@ -24,6 +24,7 @@
     "@tanstack/react-store": "^0.8.0",
     "@tanstack/store": "^0.8.0",
     "@tanstack/zod-form-adapter": "^0.42.1",
+    "@vercel/analytics": "^1.6.1",
     "better-auth": "^1.4.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
