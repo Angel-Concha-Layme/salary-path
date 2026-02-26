@@ -79,7 +79,8 @@ The app runs at [http://localhost:3001](http://localhost:3001).
 - `pnpm lint`: project linting.
 - `pnpm test`: unit tests with Vitest.
 - `pnpm db:generate`: generates migrations from schema.
-- `pnpm db:migrate`: applies pending migrations.
+- `pnpm db:migrate`: runs DB preflight and then applies pending migrations.
+- `pnpm db:preflight-empty-repair`: if DB is empty but `__drizzle_migrations` still has rows, clears the ledger so migrations can be replayed.
 
 ## Environment variables
 
@@ -142,6 +143,7 @@ Endpoint details: see [`/docs/api-v1.md`](docs/api-v1.md).
 - Schema: `app/lib/db/schema/*`
 - SQL migrations: `/drizzle`
 - `pnpm build` already runs `pnpm db:migrate` automatically before compiling.
+- Vercel build command is pinned in `vercel.json` to `pnpm build`.
 
 ## Documentation
 
